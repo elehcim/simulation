@@ -1,0 +1,11 @@
+# name  type            a1 a2 a3         d1 d2 d3       D1 D2           D_near          M_V     mu_V mu_V_err   [Fe/H] [Fe/H]_err M_HI          LV
+# Data taken from grebel et al. 2003: THE PROGENITORS OF DWARF SPHEROIDAL GALAXIES
+#
+# [Fe/H]: dex, mu_V: mag arscec^-2, M_HI: 10^6 M_sol, L_V: 10^6 L_sol
+#
+# 1     2               3               6               9               11              12      13              15              17              18
+# name  type            alpha           delta           D               D_near          M_V     mu_V (with err) Fe/H (with err) M_HI (with err) LV
+M32	dE2,N		00 42 42	+40 51 55	770 40		0.0		-16.5	11.5 0.5	-1.1 0.6	<2.5		383.0
+NGC_205	dE5p,N		00 40 22	+41 41 07	830 35		0.06		-16.4	20.4 0.4	-0.5 0.5	0.39		366.0
+NGC_147	dE5		00 33 12	+48 30 29	755 35		0.10		-15.1	21.6 0.2	-1.1 0.4	<.005		131.0
+NGC_185	dE3p		00 38 58	+48 20 12	620 25		0.17		-15.6	20.1 0.4	-0.8 0.4	0.13		125.0

@@ -1,0 +1,16 @@
+# name		M_V	M_B	disp	e_disp
+N3115_DW1	-17.14	-16.44	32	5
+N4472_DW8	-16.1	-15.4	38	4
+M87_DW1		-16.2	-15.5	42	5
+IC_3328		-17.3	-16.6	27	4
+N4472_DW6	-16.7	-16.0	40	6
+
+# data from Peterson & Caldwell (1993):
+#   Stellar velocity dispersions of dwarf elliptical galaxies
+# M_B = M_V + 0.7
+
+# NGC3115 DW1 M_B from Parodi, Barazza & Binggeli (2002):
+#   Structure and stellar content of dwarf galaxies. VII. B and R
+#   photometry of 25 southern field dwarfs and a disk parameter
+#   analysis of the complete sample of nearby irregulars
+# M_V = M_B - 0.7

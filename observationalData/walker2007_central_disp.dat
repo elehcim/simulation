@@ -1,0 +1,17 @@
+# name  M_V      disp
+carina	-9.3	 6.75
+draco	-8.8	 8.44
+fornax	-13.2	 11.81
+leoI	-11.9	 9.68
+leoII	-9.6	 6.70
+sculpt	-11.1	 8.83
+sextans	-9.5	 7.23
+
+
+# data ripped from Walker et al 2007
+#  -> dispersion profiles, from which we use only the data within the central 250 pc to calculate the average disp
+#
+# see file walker2007_disp_extract.dat
+#
+# magnitudes from mateo 1998
+#

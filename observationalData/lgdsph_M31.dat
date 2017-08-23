@@ -1,0 +1,16 @@
+# MV	sb0	D	re      n      [Fe/H]	 d	     d
+# V-I = 0.198*[Fe/H] +1.207		       
+-11.8	24.7	0.06	0.60	999	-1.4	AI	McConnachie_et_al._2006
+-12.6	24.5	0.19	1.06	0.60	-1.5	AII	McConnachie_et_al._2006/McConnachie_et_al._2007
+-10.2	24.8	0.075	0.36	999	-1.7	AIII	McConnachie_et_al._2006
+-9.6	25.3	0.11	0.30	0.59	-1.9	AV	McConnachie_et_al._2006/Caldwell_1999
+-11.5	24.1	0.27	0.42	0.72	-99	AVI	McConnachie_et_al._2006/Caldwell_1999
+-13.3	23.2	0.22	0.74	0.76	-99	AVII	McConnachie_et_al._2006/Caldwell_1999
+-8.3	26.5	0.04	0.53	0.625	-99	AIX	Chapman_et_al._2005/Zucker_et_al._2007
+-8.1	26.77	0.10	999	0.833	-99	AX	Zucker_et_al._2007
+-12.0	23.5	0.22	999	999	-1.5	Cas	Grebel_et_al._2003
+-9.8	24.7	0.28	999	999	-1.7	LGS3	Grebel_et_al._2003
+-11.3	25.0	0.68	0.60	999	-1.7	Cetus	Grebel_et_al._2003/McConnachie_et_al._2006
+-16.4	20.4	0.06	0.56	1.5359	-0.5	N205	Grebel_et_al._2003/McConnachie_et_al._2006
+-15.1	21.6	0.10	0.45	0.9	-1.1	N147	Grebel_et_al._2003/McConnachie_et_al._2006
+-15.6	20.1	0.17	0.45	1.1	-0.8   	N185	Grebel_et_al._2003/McConnachie_et_al._2006/Peletier_1993

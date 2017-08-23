@@ -1,0 +1,13 @@
+#MV	sb0	D	re	n	re	reArc	[Fe/H]	d	d
+# Re  = tan(re"/60.*pi/180.)*D
+# V-I = 0.198*[Fe/H] +1.207
+-13.4 	25.4	28	-99	-99	-99	-99	-0.5	Sgr	Grebel et al. 2003/Irwin et al. 1995
+-9.8	-99	405	-99	-99	-99	-99	-1.9	Phe	Grebel et al. 2003/
+-8.9	25.5	69	0.28	0.63	10.1	13.6	-1.9	UMi	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	
+-9.4	24.4	79	0.18	0.81	4.5	9.22	-2.0	Dra	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	
+-9.5	26.2	86	0.08	0.646	15.5	18.6	-1.9	Sex	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	
+-9.8	23.7	88	0.26	0.69	6.8	11.3	-1.5	Scl	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	
+-9.4	25.5	94	0.24	0.62	5.5	9.25	-1.8	Car	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	
+-13.1	23.4	138	0.67	0.46	9.9	19.1	-1.2	For	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	
+-10.1	24.0	205	0.18	0.577	1.5	2.78	-1.6	LeoII	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	
+-11.9	22.4	270	0.25	0.49	2.0	3.41	-1.4	LeoI	Grebel et al. 2003/McConnachie et al. 2006/Irwin et al. 1995	

@@ -1,0 +1,8 @@
+# name	       disp  	 M_V	M_B
+ursamajor      9.3	 -6.75	-5.65
+ursamajor      9.3	 -6.75	-5.65
+
+
+# velocity dispersion taken from kleyna (2005)
+# magnitude from reference in kleyna : willman 2005
+# M_B = M_V+0.9 (updated in 2010 from article)

@@ -1,0 +1,14 @@
+# mag_B   sig     sig_err
+15.81    46    5
+14.38    50    5
+15.72    56    15
+14.85    43    5
+15.34    29    10
+15.09    40    4
+13.78    48    4
+15.59    48    6
+15.92    47    6
+14.78    41    4
+15.62    37    6 
+# conversion to absolute magnitudes: M_B = -0.4*(mag_B -5*log10(15.4e5)-5.48) 
+# from article vanZee 2004

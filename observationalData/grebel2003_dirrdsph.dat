@@ -1,0 +1,16 @@
+# name  type            a1 a2 a3         d1 d2 d3       D1 D2           D_near          M_V     mu_V mu_V_err   [Fe/H] [Fe/H]_err M_HI          LV
+# Data taken from grebel et al. 2003: THE PROGENITORS OF DWARF SPHEROIDAL GALAXIES
+#
+# [Fe/H]: dex, mu_V: mag arscec^-2, M_HI: 10^6 M_sol, L_V: 10^6 L_sol
+#
+# NOTE the data for LGS_3, M_V was corrected: table stated -9.8, but L_V = 1.33 10^6 Lsol so M_V is about -10.48
+#      same for DDO_210
+#
+# 1     2               3               6               9               11              12      13              15              17              18
+# name  type            alpha           delta           D               D_near          M_V     mu_V (with err) Fe/H (with err) M_HI (with err) LV
+Phe	dIrr/dSph	01 51 06	-44 26 41	405 15		0		-9.8	0    0		-1.9 0.4	0.17		0.9
+LGS_3	dIrr/dSph	01 03 53	+21 53 05	620 20		0.28		-10.48	24.7 0.2	-1.7 0.3	0.2		1.33
+Peg_DIG	dIrr/dSph	23 28 36	+14 44 35	760 100		0.41		-12.9	0    0		-2.0 0.3	3.4		12.0
+DDO_210	dIrr/dSph	20 46 52	-12 50 53	950 50		0.96		-9.7	23.0 0.3	-1.9 0.3	2.7		0.8
+Ant	dIrr/dSph	10 04 04	-27 19 55	1330 100	0.04		-11.2	0    0		-1.9 0.2	0.72		2.4
+KKR_25	dIrr/dSph	16 13 48	+54 22 16	1860 120	1.79		-10.5	24.0 0.2	-2.1 0.3	1.0		1.2

@@ -1,0 +1,13 @@
+# name		M_V	 disp
+ursamin		-8.9 	 11.36
+ursamin		-8.9 	 11.36
+
+
+# data ripped from Wilkinson et al 2004
+#  -> dispersion profiles, from which we use only the data within the central 250 pc to calculate the average disp
+#  -> radius given in arcmin - mean distance to ursa minor = 0.074 Mpc => converted to kpc
+#
+# see file wilkinson2004_disp_extract.dat
+#
+# magnitude from mateo 1998
+#
