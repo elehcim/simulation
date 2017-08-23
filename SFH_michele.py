@@ -1,8 +1,11 @@
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 import math
 import matplotlib
+import argparse
+
 from hyplot.plot import PFigure
 from hyplot.visual.PRunData import PRunData, PFileData
 import chyplot
@@ -14,20 +17,23 @@ from cosmolopy import constants as cc
 
 matplotlib.rc('font', size=32)
 
-from markers import getMarker
 
-
-simulations = [14001] #List of simulations
-maxR = 3 #Maximum radius within which you select stars
+simulations = [60003]  # List of simulations
+maxR = 3  # Maximum radius within which you select stars
 
 timebinslength = 0.05 #Time resolution with which you want the star formation history
 timeMax = 13.15 #Maximum time
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--sim", "--simulations", nargs='+')
+parser.add_argument('--dir', default='~/sim')
 
-visual.fig = plt.figure(FigureClass = PFigure.PFigure, figsize=(15, 8))
-ax1 = visual.fig.add_my_subplot(121)
-ax2 = visual.fig.add_my_subplot(122)
+args = parser.parse_args()
+
+fig = plt.figure(FigureClass = PFigure.PFigure, figsize=(15, 8))
+ax1 = fig.add_my_subplot(121)
+ax2 = fig.add_my_subplot(122)
 
 axs = [ax1, ax2]
 
@@ -40,10 +46,12 @@ for simulation in simulations:
 
 	#Read the data
 	dr = chyplot.CDataGadget(float(simulation))
-	fdir = "/media/DATA/simulations/sim{}".format(simulation)
+	# fdir = "/media/DATA/simulations/sim{}".format(simulation)
+	fdir = os.path.join(os.path.expanduser(args.dir), "sim{:05d}".format(simulation))
 	dr.setPrefix( fdir )
 	dr.checkFilesPresent() # set the first and last dump
-	dr.set_file( dr.lastDump())
+	# dr.set_file( dr.lastDump())
+	dr.set_file( 66)
 	data = dr.readFile()
 
 	data.rcom(True, enums.T_star, 0, 0, 0, True)
@@ -128,12 +136,14 @@ ax5.set_xticklabels(['${}$'.format(z) if not z==redshifts[0] else '' for z in re
 ax5.set_xlabel('$z$')
 
 
-visual.fig.subplots_adjust(left = 0.1, right = 0.98, bottom = 0.12, top = 0.85,hspace = 0, wspace=0.25)
+fig.subplots_adjust(left = 0.1, right = 0.98, bottom = 0.12, top = 0.85,hspace = 0, wspace=0.25)
 
 directory = '/home/rpverbek/programs/results/SFR/'
 name = 'figureSFH_test.pdf'
 
 
-visual.finalize(name=directory+name, dpi=300, show=False)
+plt.show()
+# plt.savefig(name=directory+name, dpi=300, show=False)
+# finalize(name=directory+name, dpi=300, show=False)
 
 
