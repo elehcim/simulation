@@ -28,6 +28,7 @@ timeMax = 13.15 #Maximum time
 parser = argparse.ArgumentParser()
 parser.add_argument("--sim", "--simulations", nargs='+')
 parser.add_argument('--dir', default='~/sim')
+parser.add_argument('-n','--snap', default=None)
 
 args = parser.parse_args()
 
@@ -50,8 +51,12 @@ for simulation in simulations:
 	fdir = os.path.join(os.path.expanduser(args.dir), "sim{:05d}".format(simulation))
 	dr.setPrefix( fdir )
 	dr.checkFilesPresent() # set the first and last dump
-	# dr.set_file( dr.lastDump())
-	dr.set_file( 66)
+
+	if args.snap is None:
+		dr.set_file( dr.lastDump())
+	else:
+		dr.set_file(args.snap)
+
 	data = dr.readFile()
 
 	data.rcom(True, enums.T_star, 0, 0, 0, True)
