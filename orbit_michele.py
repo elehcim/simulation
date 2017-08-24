@@ -3,37 +3,58 @@
 
 import math
 import os, sys, time
-import getopt
+import argparse
 import numpy as np
 from scipy.optimize import newton
 
-# different paths depending on if you run it on the cluster or on your computer
-sys.path.append('/home/rpverbek/programs/scripts')
+import enums
 
 #Adjust!
 gadgetDir = "/home/rpverbek/programs/gadget/"
 trunkDir = "/home/rpverbek/programs/gadget/trunk/"
-outputDir = "/media/DATA/simulations/"
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--sim", "--simulation", default=60003, type=int)
+parser.add_argument('--newsim', default=0, help='A new simulation will be created. This is the name of the new simulation.')
+parser.add_argument('--simdir', default='~/sim', help='Path to the simultaions directory')
+parser.add_argument('--outdir', default='.', help='where to put the outputfile')
+
+
+parser.add_argument('-n', '--snapshot', '--snap', type=int, default=0, help='Snapshot')
+parser.add_argument('-m', '--halo-mass', dest='Mtot', default=1e12, help='Mass of the analytical halo')
+parser.add_argument('-r', '--retrograde', default=False)
+
+parser.add_argument('-p', '--rp', dest='r_p', default=15, help='Pericenter distance in kpc')
+parser.add_argument('-t', '--tp', dest='t_p', default=2, help='Time of pericenter passage in Gyr, after the current snapshot')
+parser.add_argument('-e', '--ecc', help='Eccentricity')
+
+
+args = parser.parse_args()
 
 import chyplot
-import enums
 
+r_p = args.r_p #15 # kpc. Pericenter distance
+t_p = args.t_p #2 # Gyr. Time of pericenter passage, after the current snapshot
+ecc = args.ecc
+simulation = args.sim
+prograde = not args.retrograde
 
-# **** Parameters to be set by hand ***
-# Simulation
-simulation = 14001
-# Snapshot
-snapshot = 36
-# Mass of the analytical halo
-Mtot = 1e12
-# This will create a new simulation. This is the name of the new simulation. 
-newsim = 1
-# Prograde or retrograde orbit
-prograde = True
+# # **** Parameters to be set by hand ***
+# # Simulation
+# simulation = 14001
+# # Snapshot
+# snapshot = 36
+# # Mass of the analytical halo
+# Mtot = 1e12
+# # This will create a new simulation. This is the name of the new simulation. 
+# newsim = 1
+# # Prograde or retrograde orbit
+# prograde = True
 
-r_p = 15 # kpc. Pericenter distance
-t_p = 2 # Gyr. Time of pericenter passage, after the current snapshot
-ecc = 1 #Eccentricity. ecc<1 is an ellipse (ecc=0 is a circle), ecc=1 is a parabola, ecc>1 is a hyperbola.
+# r_p = 15 # kpc. Pericenter distance
+# t_p = 2 # Gyr. Time of pericenter passage, after the current snapshot
+# ecc = 1  #Eccentricity. ecc<1 is an ellipse (ecc=0 is a circle), ecc=1 is a parabola, ecc>1 is a hyperbola.
 
 kpc_in_km = 3.08568025e16 # conversion of kpc to km
 gyr_in_s = 3.1556926e16 # conversion of gigayears to sec
@@ -42,7 +63,7 @@ G = 1.32749351440e21 #Gravitional constant in km^3/s^2/(10^10 Msol)
 r_p *= kpc_in_km # convert to km
 t_p *= gyr_in_s # convert to seconds
 
-#Use this function in case of a parabola
+# Use this function in case of a parabola
 def getPosVel_Parab(r_p, t_p, prograde, M_tot, printStuff=False):
 	global G, kpc_in_km
 
@@ -85,7 +106,7 @@ def getPosVel_Parab(r_p, t_p, prograde, M_tot, printStuff=False):
 
 	return x, y, z, vx, vy, vz
 
-#Helper functions for the hyperbolic orbit
+# Helper functions for the hyperbolic orbit
 def get_time_to_peri(r, e, r_p, mu):
 	#http://www.braeunig.us/space/orbmech.htm#hyperbolic
 	a = r_p / (1-e)
@@ -101,7 +122,7 @@ def get_time_to_peri(r, e, r_p, mu):
 def f(r, t0, e, r_p, mu):
 	return get_time_to_peri(r, e, r_p, mu) - t0
 
-#Use this function in case of a hyperbola
+# Use this function in case of a hyperbola
 def getPosVel_Hyperb(r_p, t_p, ecc, prograde, M_tot):
 	global G
 
@@ -144,18 +165,19 @@ if ecc <= 1:
 	if ecc < 1:
 		print "Elliptical orbits aren't implemented yet..."
 	print "Parabolic orbit"
-	x, y, z, vx, vy, vz = getPosVel_Parab(r_p, t_p, prograde, Mtot)
+	x, y, z, vx, vy, vz = getPosVel_Parab(r_p, t_p, prograde, args.Mtot)
 else:
 	print "Hyperbolic orbit"
-	x, y, z, vx, vy, vz = getPosVel_Hyperb(r_p, t_p, ecc, prograde, Mtot)
+	x, y, z, vx, vy, vz = getPosVel_Hyperb(r_p, t_p, ecc, prograde, args.Mtot)
 
 #x, y, z, vx, vy, vz = 0, 0, 0, 0, 0, 0
 
 # *************************************
 
 # now, print the input stuff
-print "We are using snapshot {} of sim {}.".format(snapshot, simulation)
-print "The new sim has name {}".format(newsim)
+print "We are using snapshot {} of sim {}.".format(args.snapshot, simulation)
+gic_file = "sim{:05}.gic".format(args.newsim)
+print "The ICs file to be created {}".format(gic_file)
 print "The galaxy is put at distance: ({:.2f}, {:.2f}, {:.2f}) kpc and with speed of: ({:.2f}, {:.2f}, {:.2f}) km/s".format(x, y, z, vx, vy, vz)
 
 
@@ -164,9 +186,9 @@ totalData = None
 reader = chyplot.CDataGadget()
 writer = chyplot.CWriteGadget()
 
-reader.setPrefix(os.path.join(outputDir, "sim%04.d"%simulation))
+reader.setPrefix(os.path.join(os.path.expanduser(args.simdir), "sim%04.d"%simulation))
 reader.setRunNumber(simulation)
-reader.set_file(snapshot)
+reader.set_file(args.snapshot)
 
 try:
 	data = reader.readFile()
@@ -179,7 +201,7 @@ except chyplot.IOError as e:
         sys.exit(12)
 
 print "time: {:.2f} Gyr".format(data.time())
-print "got sim", simulation
+print "got sim ", simulation
 data.rcom(True, enums.T_star, 0, 0, 0, True)
 data.vcom(True, enums.T_star)
 
@@ -188,7 +210,9 @@ data.kick(enums.T_all, vx, vy, vz) #Change the velocity of the galaxy
 
 
 try:
-    writer.writeFile(data, os.path.join(gadgetDir, "ICs", "sim{}.gic".format(newsim)), enums.T_all)
+	# output_dir =  os.path.join(args.outdir, "ICs")
+	# os.makedirs = output_dir
+    writer.writeFile(data, os.path.join(args.outdir, gic_file), enums.T_all)
 except chyplot.IOError as e:
     print
     print "****Error writing file****"
