@@ -1,6 +1,21 @@
+#!/usr/bin/env python
+# Adapted from a script of Robbert Verbeke
+ 
 # Script to put a galaxy in a certain orbit around a certain analytical halo.
-# You can adjust it to put the position and velocity of the galaxy by hand.
 
+# usage: kick_ic.py [-h] [-o OUTPUT_FILE] [-m MTOT] [-r RETROGRADE] [-p R_P]
+#                   [-t T_P] [-e ECC]
+#                   input_file
+
+# Inputs:
+# - Input file (a Gadget2 snapshot)
+# - Mass of the attactor
+# - Desired Pericenter distance
+# - Time of pericenter passage in Gyr, after the current snapshot
+# - Eccentricity of the orbit
+
+# Output:
+# - A snapshot file with the particles kicked wth the desired velocity in order to be in orbit (2 body orbit) around the attractor
 import math
 import os, sys, time
 import argparse
@@ -9,25 +24,23 @@ from scipy.optimize import newton
 
 import enums
 
-#Adjust!
-gadgetDir = "/home/rpverbek/programs/gadget/"
-trunkDir = "/home/rpverbek/programs/gadget/trunk/"
-
-
 parser = argparse.ArgumentParser()
-parser.add_argument("--sim", "--simulation", default=60003, type=int)
-parser.add_argument('--newsim', default=0, help='A new simulation will be created. This is the name of the new simulation.')
-parser.add_argument('--simdir', default='~/sim', help='Path to the simultaions directory')
-parser.add_argument('--outdir', default='.', help='where to put the outputfile')
+# parser.add_argument("--sim", "--simulation", default=60003, type=int)
+# parser.add_argument('--simdir', default='~/sim', help='Path to the simultaions directory')
+# parser.add_argument('-n', '--snapshot', '--snap', type=int, default=0, help='Snapshot')
 
+# parser.add_argument('--newsim', default=0, help='A new simulation will be created. This is the name of the new simulation.')
 
-parser.add_argument('-n', '--snapshot', '--snap', type=int, default=0, help='Snapshot')
-parser.add_argument('-m', '--halo-mass', dest='Mtot', default=1e12, help='Mass of the analytical halo')
+parser.add_argument('input_file', help='Input file')
+
+parser.add_argument('-o', '--output_file', '--out', help='Output file')
+
+parser.add_argument('-m', '--halo-mass', dest='Mtot', default=1e14, help='Mass of the analytical halo (Msol)')
 parser.add_argument('-r', '--retrograde', default=False)
 
-parser.add_argument('-p', '--rp', dest='r_p', default=15, help='Pericenter distance in kpc')
+parser.add_argument('-p', '--rp', dest='r_p', default=1000, help='Pericenter distance in kpc')
 parser.add_argument('-t', '--tp', dest='t_p', default=2, help='Time of pericenter passage in Gyr, after the current snapshot')
-parser.add_argument('-e', '--ecc', help='Eccentricity')
+parser.add_argument('-e', '--ecc', default=1, help='Eccentricity')
 
 
 args = parser.parse_args()
@@ -37,7 +50,7 @@ import chyplot
 r_p = args.r_p #15 # kpc. Pericenter distance
 t_p = args.t_p #2 # Gyr. Time of pericenter passage, after the current snapshot
 ecc = args.ecc
-simulation = args.sim
+# simulation = args.sim
 prograde = not args.retrograde
 
 # # **** Parameters to be set by hand ***
@@ -58,7 +71,12 @@ prograde = not args.retrograde
 
 kpc_in_km = 3.08568025e16 # conversion of kpc to km
 gyr_in_s = 3.1556926e16 # conversion of gigayears to sec
-G = 1.32749351440e21 #Gravitional constant in km^3/s^2/(10^10 Msol)
+G = 1.32749351440e21 # Gravitional constant in km^3/s^2/(10^10 Msol)
+
+# G = 6.674e-11 m^3/(kg s^2)
+# Msol=1.9891e30 kg
+# G m^3/(kg s^2) * 10^10 * Msol kg * (1e9 (km^3/m^3))
+# 1.32752534e21
 
 r_p *= kpc_in_km # convert to km
 t_p *= gyr_in_s # convert to seconds
@@ -74,7 +92,7 @@ def getPosVel_Parab(r_p, t_p, prograde, M_tot, printStuff=False):
 	B = (A+math.sqrt(A**2+1))**1./3.
 	nu = 2*math.atan(B-1/B)
 
-	R = 2*r_p/(1+math.cos(nu))/kpc_in_km#r_p/math.cos(theta) / 3.08567758e16 Starting radius between 2 galaxies. Should preferably be sufficiently large
+	R = 2*r_p/(1+math.cos(nu))/kpc_in_km #r_p/math.cos(theta) / 3.08567758e16 Starting radius between 2 galaxies. Should preferably be sufficiently large
 
 	theta = math.asin(math.sqrt(r_p/R/kpc_in_km))
 
@@ -83,11 +101,11 @@ def getPosVel_Parab(r_p, t_p, prograde, M_tot, printStuff=False):
 
 	# Put printStuff to True if you want more output
 	if printStuff:
-		print 'nu =', nu/math.pi*180, 'degrees'
-		print 'R =', R, 'kpc'
-		print 'theta =', theta/math.pi*180, 'degrees'
-		print 'v =', v, 'km/s'
-		print 'v_p =', v_p, 'km/s'
+		print 'nu = ', nu/math.pi*180, ' degrees'
+		print 'R = ', R, ' kpc'
+		print 'theta = ', theta/math.pi*180, ' degrees'
+		print 'v = ', v, ' km/s'
+		print 'v_p = ', v_p, ' km/s'
 
 	# x, y, z => distance where gas cloud should be placed (in kpc)
 	x = -1*R*math.sin(nu)
@@ -175,33 +193,41 @@ else:
 # *************************************
 
 # now, print the input stuff
-print "We are using snapshot {} of sim {}.".format(args.snapshot, simulation)
-gic_file = "sim{:05}.gic".format(args.newsim)
+# print "We are using snapshot {} of sim {}.".format(args.snapshot, simulation)
+# gic_file = "sim{:05}.gic".format(args.newsim)
+
+print "We are using file {}".format(args.input_file)
+if args.output_file is None:
+	gic_file = "{}.kicked".format(os.path.basename(args.input_file))
+else:
+	gic_file = "{}".format(args.output_file)
+
 print "The ICs file to be created {}".format(gic_file)
-print "The galaxy is put at distance: ({:.2f}, {:.2f}, {:.2f}) kpc and with speed of: ({:.2f}, {:.2f}, {:.2f}) km/s".format(x, y, z, vx, vy, vz)
-
-
+print "Galaxy position: ({:.2f}, {:.2f}, {:.2f}) kpc".format(x, y, z)
+print "Galaxy velocity: ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
 
 totalData = None
 reader = chyplot.CDataGadget()
 writer = chyplot.CWriteGadget()
 
-reader.setPrefix(os.path.join(os.path.expanduser(args.simdir), "sim%04.d"%simulation))
-reader.setRunNumber(simulation)
-reader.set_file(args.snapshot)
+# reader.setPrefix(os.path.join(os.path.expanduser(args.simdir), "sim%04.d"%simulation))
+# reader.setRunNumber(simulation)
+# reader.set_file(args.snapshot)
+
+reader.setFilename(args.input_file)
 
 try:
 	data = reader.readFile()
 except chyplot.IOError as e:
-        print
-        print "****Error reading file****"
-        print "simulation number:", simulation
-        print e
-        print e.what()
-        sys.exit(12)
+	print
+	print "****Error reading file****"
+	print "simulation number:", simulation
+	print e
+	print e.what()
+	sys.exit(12)
 
 print "time: {:.2f} Gyr".format(data.time())
-print "got sim ", simulation
+print "got file ", args.input_file
 data.rcom(True, enums.T_star, 0, 0, 0, True)
 data.vcom(True, enums.T_star)
 
@@ -212,14 +238,16 @@ data.kick(enums.T_all, vx, vy, vz) #Change the velocity of the galaxy
 try:
 	# output_dir =  os.path.join(args.outdir, "ICs")
 	# os.makedirs = output_dir
-    writer.writeFile(data, os.path.join(args.outdir, gic_file), enums.T_all)
+	outpath = os.path.join(os.getcwd(), gic_file)
+	print outpath
+	writer.writeFile(data, outpath, enums.T_all)
 except chyplot.IOError as e:
-    print
-    print "****Error writing file****"
-    print "simulation number:", newsim
-    print e
-    print e.what()
-    sys.exit(13)
+	print
+	print "****Error writing file****"
+	print "simulation number:", newsim
+	print e
+	print e.what()
+	sys.exit(13)
 
 print "timeNewSimulation: {:.2f} Gyr".format(data.time())
 
