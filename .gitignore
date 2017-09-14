@@ -1,0 +1,8 @@
+# IDEs and editors
+.project
+.cproject
+.settings/
+.idea/
+*.sublime-project
+*.sublime-workspace
+cmake-build*
