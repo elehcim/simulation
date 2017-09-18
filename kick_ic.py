@@ -24,6 +24,8 @@ import sys
 # from astropy import units as u
 import numpy as np
 
+DEBUG_PARTICLE = 4
+
 parser = argparse.ArgumentParser()
 # parser.add_argument("--sim", "--simulation", default=60003, type=int)
 # parser.add_argument('--simdir', default='~/sim', help='Path to the simultaions directory')
@@ -49,11 +51,11 @@ args = parser.parse_args()
 
 import chyplot
 
-rp = args.rp  # 15 # kpc. Pericenter distance
-ra = args.ra
-r = args.r
+rp = args.rp #* u.kpc # 15 # kpc. Pericenter distance
+ra = args.ra #* u.kpc
+r = args.r   #* u.kpc
 c = args.c
-M_h = args.M_h
+M_h = args.M_h #* u.solMass
 # prograde = not args.retrograde
 
 # # **** Parameters to be set by hand ***
@@ -130,7 +132,7 @@ R_s = halo_scaled_radius(M_h, c)
 # def V0(r):
 #     return - 4 * np.pi * G * rho_s * R_s**3 * np.log(1 + r/R_s) / r
 
-def V0(r, M=M_h, R_s=R_s):
+def V0(r, M=M_h, R_s=R_s, c=c):
     """Return the potential of a NFW density distribution
     From Annelies Cloet-Osselaert PhD thesis, appendix B"""
     return G * M * (np.log(1+r/R_s)/r - 1/R_s/(1+c))/(np.log(1+c) - c/(1+c))
@@ -138,7 +140,7 @@ def V0(r, M=M_h, R_s=R_s):
 # def dV0dr(r):
 #     return 4 * np.pi * G * rho_s * R_s**3 * ((r + R_s) * np.log(1 + r/R_s) - r) / (r**2 *(r+R_s))
 
-def dV0dr(r, M=M_h, R_s=R_s):
+def dV0dr(r, M=M_h, R_s=R_s, c=c):
     """Return the ardial derivative of potential of a NFW density distribution
     From Annelies Cloet-Osselaert PhD thesis, appendix B"""
     return G * M * (-np.log(1+r/R_s)/r^2 + 1/(r*R_s * (1+r/R_s))) / (np.log(1+c) - c/(1+c)) 
@@ -174,35 +176,38 @@ def get_velocity(rp, ra, r):
         raise ValueError("The following should be true: rperi < r < rapo ({} < {} < {})".format(rp, r, ra))
 
     E, J = turnp2mom(rp, ra, V0, dV0dr)
-    print("Binding energy = ", E)
-    print("J = ", J)
+    print "Binding energy =", E
+    print "J =", J 
 
     # E = V0 - r^2
     v = np.sqrt(2 * (V0(r) - E))
 
-    print(v)
+    print "velocity modulus", v, "km/s"
     
     v_theta = J / r
     v_r = np.sqrt(v**2 - v_theta**2)
 
     return v_r, v_theta
 
-# It's on the y axis
-x = 0
-z = 0
-y = np.sqrt(r**2 - x**2 - z**2)
-
-
 def polar_to_cartesian(x, y, v_r, v_theta):
     r2 = x**2 + y**2
     vx = v_r * x / r2 - v_theta * y / r2
     vy = np.sqrt(v_r**2 + v_theta**2 - vx**2)
-    return vx, vy, 0
+    return vx, vy
 
 v_r, v_theta = get_velocity(rp, ra, r)
-print(v_r, v_theta)
-vx, vy, vz = polar_to_cartesian(x, y, v_r, v_theta)
+print v_r, v_theta, "km/s"
 
+# The galaxy is on the y axis
+x = 0
+z = 0
+y = np.sqrt(r**2 - x**2 - z**2)  # still in km
+
+vx, vy = polar_to_cartesian(x, y, v_r, v_theta)
+vz = 0
+print "vx = ", vx
+
+position = np.array([x, y, z]) / kpc_in_km # to kpc
 
 print "We are using file {}".format(args.input_file)
 if args.output_file is None:
@@ -211,7 +216,7 @@ else:
     gic_file = "{}".format(args.output_file)
 
 print "The ICs file to be created {}".format(gic_file)
-print "Galaxy position: ({:.2f}, {:.2f}, {:.2f}) kpc".format(*np.array([x, y, z])/kpc_in_km)
+print "Galaxy position: ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position)
 print "Galaxy velocity: ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
 
 reader = chyplot.CDataGadget()
@@ -239,15 +244,22 @@ print "got file ", args.input_file
 data.rcom(True, enums.T_star, 0, 0, 0, True)
 data.vcom(True, enums.T_star)
 
-data.translate(enums.T_all, x, y, z)  # Move the center of the galaxy to the calculated position
-data.kick(enums.T_all, vx, vy, vz)  # Change the velocity of the galaxy
+print "vz =", vz
+print "Speed before kick    ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s"
+print "Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
+
+data.translate(enums.T_all, *position)  # Move the center of the galaxy to the calculated position
+data.kick(enums.T_all, vx, vy, vz)    # Change the velocity of the galaxy
+
+print "Speed after kick     ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s" 
+print "Position after kick  ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
 
 outpath = os.path.join(os.getcwd(), gic_file)
 
 try:
     # output_dir =  os.path.join(args.outdir, "ICs")
     # os.makedirs = output_dir
-    print outpath
+    print "Going to write: ", outpath
     writer.writeFile(data, outpath, enums.T_all)
 except chyplot.IOError as e:
     print
