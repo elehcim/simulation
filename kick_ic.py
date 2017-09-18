@@ -190,8 +190,8 @@ def get_velocity(rp, ra, r):
     return v_r, v_theta
 
 def polar_to_cartesian(x, y, v_r, v_theta):
-    r2 = x**2 + y**2
-    vx = v_r * x / r2 - v_theta * y / r2
+    r = np.sqrt(x**2 + y**2)
+    vx = v_r * x / r - v_theta * y / r
     vy = np.sqrt(v_r**2 + v_theta**2 - vx**2)
     return vx, vy
 
