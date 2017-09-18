@@ -76,22 +76,25 @@ M_h = args.M_h #* u.solMass
 
 kpc_in_km = 3.08568025e16  # conversion of kpc to km
 gyr_in_s = 3.1556926e16  # conversion of gigayears to sec
-G = 1.32749351440e21  # Gravitional constant in km^3/(s^2 * 10^10 Msol)
+# G = 1.32749351440e21  # Gravitional constant in km^3/(s^2 * 10^10 Msol)
+G = 1.32749351440e11  # Gravitional constant in km^3/(s^2 * Msol)
 Msol = 1.98855e30  # solar mass in kg
 # Mpc_in_km = 3.08567e19  # km
-
+G_SIunits = 6.67408e-11  # m^3 kg^-1 s^-2
 ## Cosmology part
 # cosmo = cosmology.Planck15
 # rho_c = cosmo.critical_density0.to('solMass/km**3')
 
 def critical_density(z, h=0.67, omega_m=0.24):
-    '''return the critical density at z in 10**10 MSol/km'''
+    '''return the critical density at z in MSol/km**3'''
     h /= (kpc_in_km * 1000) # in 1/s
     return 3 * (h * 100)**2  /(8 * np.pi * G) * (omega_m * (1+z)**3 + 1 - omega_m)
 
 rho_c = critical_density(0)
-print("Critical density {:.4g} 10^10 Msol/km^3".format(rho_c))
-print("Critical density {:.4g} g/cm^3".format(rho_c/(10**10 * Msol * 10**15)))
+print rho_c  # Msol/km**3
+print("Critical density {:.4g} Msol/km^3".format(rho_c))
+# print("Critical density {:.4g} g/cm^3".format(rho_c/( Msol * 10**3 * 10**15)))
+print("Critical density {:.4g} kg/m^3".format(rho_c * Msol/10**9))
 
 
 def halo_Wechsler2002(M):
@@ -110,11 +113,11 @@ def halo_Strigari2007(M):
 
 def halo_scaled_density(c, rho_c=rho_c, overdensity_factor=200.0):
     rho_s = overdensity_factor * c*c*c * rho_c / (3 * np.log(1+c) - c/(1+c))
-    return rho_s
+    return rho_s  # Msol/km^3
 
 def halo_scaled_radius(M, c, rho_c=rho_c, overdensity_factor=200.0):
     R_s = ((M / (4/3 * np.pi * overdensity_factor * rho_c)) ** (1. / 3)) / c
-    return R_s
+    return R_s  # km
 
 # G = 6.674e-11 m^3/(kg s^2)
 # Msol=1.9891e30 kg
@@ -126,15 +129,18 @@ ra *= kpc_in_km  # convert to km
 r *= kpc_in_km  # convert to km
 
 # TODO: to be put in a NFW class maybe
-rho_s = halo_scaled_density(M_h, c)
-R_s = halo_scaled_radius(M_h, c)
+rho_s = halo_scaled_density(M_h, c)   # Msol/km^3
+R_s = halo_scaled_radius(M_h, c)  # km 
 
 # def V0(r):
 #     return - 4 * np.pi * G * rho_s * R_s**3 * np.log(1 + r/R_s) / r
 
 def V0(r, M=M_h, R_s=R_s, c=c):
     """Return the potential of a NFW density distribution
-    From Annelies Cloet-Osselaert PhD thesis, appendix B"""
+    From Annelies Cloet-Osselaert PhD thesis, appendix B
+    output units are in km^2/s^2
+
+    """
     return G * M * (np.log(1+r/R_s)/r - 1/R_s/(1+c))/(np.log(1+c) - c/(1+c))
 
 # def dV0dr(r):
@@ -153,8 +159,8 @@ def turnp2mom(rm, rp, V0, dV0dr):
     """
     if abs(rm) < rp:
         print("Common case, V(rp)={:.4g}, V0(rm)={:.4g}".format(V0(rp), V0(rm)))
-        E = (rp * rp * V0(rp) - rm * rm * V0(abs(rm))) / (rp * rp - rm * rm)
-        J = rp * rm * np.sqrt(2 * (V0(rp) - V0(abs(rm))) / (rm * rm - rp * rp))
+        E = (rp * rp * V0(rp) - rm * rm * V0(abs(rm))) / (rp * rp - rm * rm)  # km^2/s^2
+        J = rp * rm * np.sqrt(2 * (V0(rp) - V0(abs(rm))) / (rm * rm - rp * rp))  # km/s
 
     elif abs(rm) == rp and rp != 0.0:
         J = rp ** 1.5 * np.sqrt(-dV0dr(rp)) if rm > 0 else -rp ** 1.5 * np.sqrt(-dV0dr(rp))
