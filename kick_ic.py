@@ -201,6 +201,27 @@ def polar_to_cartesian(x, y, v_r, v_theta):
     vy = np.sqrt(v_r**2 + v_theta**2 - vx**2)
     return vx, vy
 
+def get_particle_velocities(data):
+    part_vx = np.array(data.getDataArray(enums.T_all, chyplot.cglobals.plmap.getSecond('vx'), True))
+    part_vy = np.array(data.getDataArray(enums.T_all, chyplot.cglobals.plmap.getSecond('vy'), True))
+    part_vz = np.array(data.getDataArray(enums.T_all, chyplot.cglobals.plmap.getSecond('vz'), True))
+    return part_vx, part_vy, part_vz
+
+def print_average_particle_velocities(data):
+    part_vx, part_vy, part_vz = get_particle_velocities(data)
+    print "Mean velocity vx={:.2f} vy={:.2f} vz={:.2f}".format(part_vx.mean(), part_vy.mean(), part_vz.mean())
+
+def velocity_dispersion(v):
+    return np.sqrt((v**2 - v.mean()**2).mean())
+
+def data_velocity_dispersion(data):
+    part_vx, part_vy, part_vz = get_particle_velocities(data)
+    part_vx_disp = velocity_dispersion(part_vx)
+    part_vy_disp = velocity_dispersion(part_vy)
+    part_vz_disp = velocity_dispersion(part_vz)
+
+    return part_vx_disp, part_vy_disp, part_vz_disp
+
 v_r, v_theta = get_velocity(rp, ra, r)
 print v_r, v_theta, "km/s"
 
@@ -216,8 +237,10 @@ print "vx = ", vx
 position = np.array([x, y, z]) / kpc_in_km # to kpc
 
 print "We are using file {}".format(args.input_file)
+
+apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))
 if args.output_file is None:
-    gic_file = "{}.kicked".format(os.path.basename(args.input_file))
+    gic_file = "{}.kicked_p{}_a{}_r{}_c{}".format(os.path.basename(args.input_file), *(apsis + [c]))
 else:
     gic_file = "{}".format(args.output_file)
 
@@ -250,15 +273,28 @@ print "got file ", args.input_file
 data.rcom(True, enums.T_star, 0, 0, 0, True)
 data.vcom(True, enums.T_star)
 
-print "vz =", vz
-print "Speed before kick    ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s"
-print "Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
+print_average_particle_velocities(data)
+
+v_disp = data_velocity_dispersion(data)
+
+print "Velocity dispersion sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}".format(*v_disp)
+
+print "Velocity kick in z direction: vz =", vz, "(It should be zero!)"
+
+# debug 
+print "Print properties of particle {} for debug purposes:".format(DEBUG_PARTICLE)
+print "  Speed before kick    ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s"
+print "  Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
 
 data.translate(enums.T_all, *position)  # Move the center of the galaxy to the calculated position
-data.kick(enums.T_all, vx, vy, vz)    # Change the velocity of the galaxy
+print "Kicking particles..."
+data.kick(enums.T_all, vx, vy, vz)      # Change the velocity of the galaxy
 
-print "Speed after kick     ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s" 
-print "Position after kick  ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
+print_average_particle_velocities(data)
+v_disp_after = data_velocity_dispersion(data)
+print "Velocity dispersion sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}".format(*v_disp_after)
+print "  Speed after kick     ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s" 
+print "  Position after kick  ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
 
 outpath = os.path.join(os.getcwd(), gic_file)
 
