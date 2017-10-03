@@ -245,7 +245,7 @@ print "We are using file {}".format(args.input_file)
 
 apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))
 if args.output_file is None:
-    gic_file = "{}.kicked_p{}_a{}_r{}_c{}".format(os.path.basename(args.input_file), *(apsis + [c]))
+    gic_file = "{}.kicked_p{}_a{}_r{}_c{}.gic".format(os.path.basename(args.input_file), *(apsis + [c]))
 else:
     gic_file = "{}".format(args.output_file)
 
