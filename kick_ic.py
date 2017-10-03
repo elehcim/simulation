@@ -12,7 +12,7 @@
 # - Apocenter Distance
 # - Current distance from the attractor
 # Output:
-# - A snapshot file with the particles kicked wth the desired velocity
+# - A snapshot file with the particles kicked with the desired velocity
 #   in order to be in orbit (2 body orbit) around the attractor
 
 # from __future__ import print_function
@@ -107,7 +107,7 @@ def halo_Strigari2007(M):
     '''Return the NFW concentration factor following Strigari et al 2007 fitting formula
     M is in solar mass.
 
-    This formula is more suited for dwarf Galaxies'''
+    This formula is more suited for dwarf Galaxies (M < 1e8 Msol)'''
     c = 33 * (M/1e8)**-0.06
     return c
 
@@ -130,26 +130,31 @@ r *= kpc_in_km  # convert to km
 
 # TODO: to be put in a NFW class maybe
 rho_s = halo_scaled_density(M_h, c)   # Msol/km^3
-R_s = halo_scaled_radius(M_h, c)  # km 
-
+R_s = halo_scaled_radius(M_h, c)      # km 
+print "Halo parameters:"
+print "  Concentration factor    c =", c
+print "  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3)".format(rho_s * Msol/10**9, rho_s)
+print "  Halo scaled radius    R_s = {:.2f} kpc".format(R_s/kpc_in_km)
 # def V0(r):
 #     return - 4 * np.pi * G * rho_s * R_s**3 * np.log(1 + r/R_s) / r
 
 def V0(r, M=M_h, R_s=R_s, c=c):
-    """Return the potential of a NFW density distribution
-    From Annelies Cloet-Osselaert PhD thesis, appendix B
-    output units are in km^2/s^2
+    """Return the negative potential of a NFW density distribution
+    From Annelies Cloet-Osselaert PhD thesis, appendix B. 
+    I removed the constant (1/R_s)/(1+x_b) related to the fact that 
+    the integration has been limited and not extended to infinity.
+    Output units are in km^2/s^2
 
     """
-    return G * M * (np.log(1+r/R_s)/r - 1/R_s/(1+c))/(np.log(1+c) - c/(1+c))
+    return G * M * (np.log(1+r/R_s)/r )/(np.log(1+c) - c/(1+c))
 
 # def dV0dr(r):
 #     return 4 * np.pi * G * rho_s * R_s**3 * ((r + R_s) * np.log(1 + r/R_s) - r) / (r**2 *(r+R_s))
 
 def dV0dr(r, M=M_h, R_s=R_s, c=c):
-    """Return the ardial derivative of potential of a NFW density distribution
+    """Return the partial derivative of the negative potential of a NFW density distribution
     From Annelies Cloet-Osselaert PhD thesis, appendix B"""
-    return G * M * (-np.log(1+r/R_s)/r^2 + 1/(r*R_s * (1+r/R_s))) / (np.log(1+c) - c/(1+c)) 
+    return G * M * (-np.log(1+r/R_s)/r**2 + 1/(r*R_s * (1+r/R_s))) / (np.log(1+c) - c/(1+c)) 
 
 
 def turnp2mom(rm, rp, V0, dV0dr):
