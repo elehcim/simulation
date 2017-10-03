@@ -18,7 +18,6 @@ from cosmolopy import constants as cc
 matplotlib.rc('font', size=32)
 
 
-simulations = [60003]  # List of simulations
 maxR = 3  # Maximum radius within which you select stars
 
 timebinslength = 0.05 #Time resolution with which you want the star formation history
@@ -31,6 +30,7 @@ parser.add_argument('--dir', default='~/sim')
 parser.add_argument('-n','--snap', default=None)
 
 args = parser.parse_args()
+args.simulations = [60003]  # List of simulations
 
 fig = plt.figure(FigureClass = PFigure.PFigure, figsize=(15, 8))
 ax1 = fig.add_my_subplot(121)
@@ -38,7 +38,7 @@ ax2 = fig.add_my_subplot(122)
 
 axs = [ax1, ax2]
 
-for simulation in simulations:
+for simulation in args.simulations:
 
 	simulation = int(simulation)
 	maxRadiuses = [100000, maxR] #We are getting the SFH of all the stars in the simulation and then only within maxR
