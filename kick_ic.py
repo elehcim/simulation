@@ -104,7 +104,7 @@ print("Critical density {:.4g} kg/m^3".format(rho_c * Msol/10**9))
 def halo_Wechsler2002(M):
     '''Return the NFW concentration factor following Wechsler et al 2002 fitting formula
     M is in solar mass'''
-    c = 20 * (M/1e8)**-0.13
+    c = 20 * (M/1e11)**-0.13
     return c
 
 def halo_Strigari2007(M):
