@@ -23,6 +23,9 @@ import sys
 # from astropy import cosmology
 # from astropy import units as u
 import numpy as np
+from scipy.integrate import quad
+import matplotlib.pyplot as plt
+from scipy.integrate import simps
 
 DEBUG_PARTICLE = 4
 
@@ -43,6 +46,8 @@ parser.add_argument('-c', '--conc', dest='c', help='NFW halo concentration facto
 parser.add_argument('-p', '--peri', dest='rp', default=200, help='Pericenter distance in kpc', type=float)
 parser.add_argument('-a', '--apo', dest='ra', default=1000, help='Apocenter distance', type=float)
 parser.add_argument('-r', '--radius', dest='r', default=800, help='Distance in kpc', type=float)
+parser.add_argument('--plot_integrand', help='Plot the function to integrate to get the radial period', action="store_true")
+parser.add_argument('--debug', help='Debug mode', action="store_true")
 
                     #Time of pericenter passage in Gyr, after the current snapshot')
 # parser.add_argument('-e', '--ecc', help='Eccentricity')
@@ -145,6 +150,7 @@ def V0(r, M=M_h, R_s=R_s, c=c):
     From Annelies Cloet-Osselaert PhD thesis, appendix B. 
     I removed the constant (1/R_s)/(1+x_b) related to the fact that 
     the integration has been limited and not extended to infinity.
+    Moreover constants in the potential do not affect almost anything.
     Output units are in km^2/s^2
 
     """
@@ -159,17 +165,28 @@ def dV0dr(r, M=M_h, R_s=R_s, c=c):
     return G * M * (-np.log(1+r/R_s)/r**2 + 1/(r*R_s * (1+r/R_s))) / (np.log(1+c) - c/(1+c)) 
 
 
-def turnp2mom(rm, rp, V0, dV0dr):
-    """Convert turning points (pericenter and apocenter) to 
+def turnp2mom(periapsis, apoapsis, V0, dV0dr=None):
+    """Convert turning points (periapsis and apoapsis) to 
     binding energy E and angular momentum J.
+    
+    V0 is the negative potential and dV0dr its derivative.
+
+    Returns
+    -------
+    E in km^2/s^2
+    J in km^2/s
     J must have same sign as rm !!
     """
+    rm = periapsis
+    rp = apoapsis
     if abs(rm) < rp:
         print("Common case, V(rp)={:.4g}, V0(rm)={:.4g}".format(V0(rp), V0(rm)))
         E = (rp * rp * V0(rp) - rm * rm * V0(abs(rm))) / (rp * rp - rm * rm)  # km^2/s^2
-        J = rp * rm * np.sqrt(2 * (V0(rp) - V0(abs(rm))) / (rm * rm - rp * rp))  # km/s
+        J = rp * rm * np.sqrt(2 * (V0(rp) - V0(abs(rm))) / (rm * rm - rp * rp))  # km^2/s
 
     elif abs(rm) == rp and rp != 0.0:
+        if dV0dr is None:
+            raise ValueError("dV0dr should be provided in case rm==rp")
         J = rp ** 1.5 * np.sqrt(-dV0dr(rp)) if rm > 0 else -rp ** 1.5 * np.sqrt(-dV0dr(rp))
         E = V0(rp) - J * J / (2 * rp * rp)
 
@@ -178,7 +195,7 @@ def turnp2mom(rm, rp, V0, dV0dr):
         J = 0.0
 
     else:
-        raise ValueError("rp ({}) should be less or equal than rm ({}). Quitting.".format(rp, rm))
+        raise ValueError("rp ({}) should be greater than rm ({}). It's not. Quitting.".format(rp, rm))
     return E, J
 
 
@@ -189,13 +206,13 @@ def get_velocity(rp, ra, r):
         raise ValueError("The following should be true: rperi < r < rapo ({} < {} < {})".format(rp, r, ra))
 
     E, J = turnp2mom(rp, ra, V0, dV0dr)
-    print "Binding energy =", E
-    print "J =", J 
+    # print "Binding energy =", E, "km**2/s**2"
+    # print "J =", J, "km**2/s"
 
-    # E = V0 - r^2
+    # E = V0 - v^2/2
     v = np.sqrt(2 * (V0(r) - E))
 
-    print "velocity modulus", v, "km/s"
+    print "Kick velocity modulus", v, "km/s"
     
     v_theta = J / r
     v_r = np.sqrt(v**2 - v_theta**2)
@@ -229,8 +246,55 @@ def data_velocity_dispersion(data):
 
     return part_vx_disp, part_vy_disp, part_vz_disp
 
+def radial_period(r1, r2, E, V0, L):
+    """Return the radial period.
+
+    The time required for a particle in a spherically 
+    symmetric potential to travel from apocenter to pericenter and back.
+
+    Source: GD sec: 3.1 eq. 3.17"""
+    print r1
+    print r2
+    if not r1 < r2:
+        raise ValueError("The lower integral limit r1 should be less than the upper one r2")
+
+    def integrand(r):
+        # Phi_r = -V0(r)
+        return 2.0/gyr_in_s / np.sqrt(np.abs(2*(V0(r) - E) - J**2/r**2))
+
+    # # With scipy.integrate.simps you can easily avoid the problematic points but the
+    # # accuracy is much worse
+    # x = np.linspace(rp, ra, 100000)[1:-1]
+    # y = integrand(x)
+    # res = simps(y,x)
+    epsilon = 10
+    res = quad(integrand, r1+epsilon, r2-epsilon)  # Avoid apoasis because there 1/(dr/dt) is inf
+    return res
+
+def radial_period_integrand(r, E, V0, J):
+    res = 2.0 / np.sqrt(np.abs(2*(V0(r) - E) - J**2/r**2))
+    return res
+
+def plot_integrand(r1, r2, energy, V0, L):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    x_ = np.linspace(rp, ra, 100)[1:-1]
+    print len(x_)
+    y_ = radial_period_integrand(x_, E, V0, J)
+    ax.plot(x_,y_)
+    # plt.show()
+
+
+E, J = turnp2mom(rp, ra, V0, dV0dr)
+print "Binding energy = {:.2e} km^2/s^2".format(E)
+print "J = {:.2e} km^2/s".format(J)
+
+
+T_r, quad_error = radial_period(rp, ra, E, V0, J)
+print "Estimated integration error", quad_error, "Gyr"
+
 v_r, v_theta = get_velocity(rp, ra, r)
-print v_r, v_theta, "km/s"
+# print v_r, v_theta, "km/s"
 
 # The galaxy is on the y axis
 x = 0
@@ -239,21 +303,21 @@ y = np.sqrt(r**2 - x**2 - z**2)  # still in km
 
 vx, vy = polar_to_cartesian(x, y, v_r, v_theta)
 vz = 0
-print "vx = ", vx
 
 position = np.array([x, y, z]) / kpc_in_km # to kpc
 
 print "We are using file {}".format(args.input_file)
 
-apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))
+apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))  # in kpc
 if args.output_file is None:
     gic_file = "{}.kicked_p{}_a{}_r{}_c{}.gic".format(os.path.basename(args.input_file), *(apsis + [c]))
 else:
     gic_file = "{}".format(args.output_file)
 
 print "The ICs file to be created {}".format(gic_file)
-print "Galaxy position: ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position)
-print "Galaxy velocity: ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
+print "Position offset: ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position)
+print "Kick velocity:   ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
+print "Radial period:    {} Gyr".format(T_r)#/gyr_in_s)
 
 reader = chyplot.CDataGadget()
 writer = chyplot.CWriteGadget()
@@ -275,7 +339,8 @@ except chyplot.IOError as e:
     print e.what()
     sys.exit(12)
 
-print "time: {:.2f} Gyr".format(data.time())
+print "Simulation time: {:.2f} Gyr".format(data.time())
+print "Estimated siulation length: ", 13.5 - data.time(), "Gyr"
 print "got file ", args.input_file
 data.rcom(True, enums.T_star, 0, 0, 0, True)
 data.vcom(True, enums.T_star)
@@ -288,20 +353,26 @@ print "Velocity dispersion sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}".format(
 
 print "Velocity kick in z direction: vz =", vz, "(It should be zero!)"
 
-# debug 
-print "Print properties of particle {} for debug purposes:".format(DEBUG_PARTICLE)
-print "  Speed before kick    ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s"
-print "  Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
+# debug
+if args.debug:
+    print "Print properties of particle {} for debug purposes:".format(DEBUG_PARTICLE)
+    print "  Speed before kick    ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s"
+    print "  Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
 
+
+print "Translating particles of ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position)
 data.translate(enums.T_all, *position)  # Move the center of the galaxy to the calculated position
-print "Kicking particles..."
+
+print "Kicking particles of ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
 data.kick(enums.T_all, vx, vy, vz)      # Change the velocity of the galaxy
 
 print_average_particle_velocities(data)
 v_disp_after = data_velocity_dispersion(data)
-print "Velocity dispersion sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}".format(*v_disp_after)
-print "  Speed after kick     ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s" 
-print "  Position after kick  ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
+print "Velocity dispersion after kick sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}  (should be the same as before) ".format(*v_disp_after)
+
+if args.debug:
+    print "  Speed after kick     ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s" 
+    print "  Position after kick  ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
 
 outpath = os.path.join(os.getcwd(), gic_file)
 
@@ -320,6 +391,10 @@ except chyplot.IOError as e:
     sys.exit(13)
 
 print "timeNewSimulation: {:.2f} Gyr".format(data.time())
+
+if args.plot_integrand:
+    plot_integrand(rp, ra, E, V0, J)
+    plt.show()
 
 ## This code generates a .gic file. Now to do:
 ## change parameter file
