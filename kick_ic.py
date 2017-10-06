@@ -91,7 +91,6 @@ def critical_density(z, h=0.67, omega_m=0.24):
     return 3 * (h * 100)**2  /(8 * np.pi * G) * (omega_m * (1+z)**3 + 1 - omega_m)
 
 rho_c = critical_density(0)
-print rho_c  # Msol/km**3
 print("Critical density {:.4g} Msol/km^3".format(rho_c))
 # print("Critical density {:.4g} g/cm^3".format(rho_c/( Msol * 10**3 * 10**15)))
 print("Critical density {:.4g} kg/m^3".format(rho_c * Msol/10**9))
@@ -127,6 +126,9 @@ def halo_scaled_radius(M, c, rho_c=rho_c, overdensity_factor=200.0):
 rp *= kpc_in_km  # convert to km
 ra *= kpc_in_km  # convert to km
 r *= kpc_in_km  # convert to km
+print "rp = {} km".format(rp)
+print "ra = {} km".format(ra)
+print "r = {} km".format(r)
 
 # TODO: to be put in a NFW class maybe
 rho_s = halo_scaled_density(M_h, c)   # Msol/km^3
