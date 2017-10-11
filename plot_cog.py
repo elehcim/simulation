@@ -6,26 +6,39 @@ import sys
 import collections
 import numpy as np
 import astropy.units as u
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+import glob
 import enums
 
 parser = argparse.ArgumentParser()
 
 # parser.add_argument('--newsim', default=0, help='A new simulation will be created. This is the name of the new simulation.')
-parser.add_argument("--sim")
-parser.add_argument('--dir', default='~/sim/nfw_c3/out')
+parser.add_argument("--dir", default='~/sim/nfw_at_the_end/out')
 parser.add_argument('-n','--snap', default=None)
 parser.add_argument('--npy-file', help="Specify a file with cached COG data")
 
 args = parser.parse_args()
-
-snapshots = range(4,99)
+args.dir = os.path.expanduser(args.dir)
 
 import chyplot
 getProp = chyplot.cglobals.plmap.getSecond
 
+def first_last_snap(dirname, stem="snapshot_", fillwidth=4):
+	filelist = map(os.path.basename, glob.glob(os.path.join(dirname, stem) + "*"))
+	filelist.sort()
+	first = int(filelist[0][len(stem):])
+	last = int(filelist[-1][len(stem):])
+
+	return first, last
+
+first_snap, last_snap = first_last_snap(args.dir)
+print "Found snapshots [{}: {}]".format(first_snap, last_snap)
+
+# matplotlib.pyplot.ion()
+
+snapshots = range(first_snap, last_snap)
 
 def compute_cog(snapshots, directory, save_cache=True):
 	if not isinstance(snapshots, collections.Iterable):
@@ -36,8 +49,7 @@ def compute_cog(snapshots, directory, save_cache=True):
 	i = 0
 	for snap in snapshots:
 		dr = chyplot.CDataGadget(snap)
-		fdir = os.path.expanduser(args.dir)
-		dr.setPrefix( fdir )
+		dr.setPrefix( args.dir )
 
 		# if args.snap is None:
 		# 	dr.set_file(dr.lastDump())
@@ -59,7 +71,7 @@ def compute_cog(snapshots, directory, save_cache=True):
 		z = np.array(data.getDataArray(enums.T_all, getProp('z'), True))
 
 		tot_mass = mass.sum()
-		print "tot mass = {} 10^10 Msol".format(tot_mass)
+		# print "tot mass = {} 10^10 Msol".format(tot_mass)
 
 		cog[:,i] = ((x*mass).sum()/tot_mass,
 					(y*mass).sum()/tot_mass, 
@@ -88,7 +100,9 @@ if __name__ == '__main__':
 	ax2.set_xlabel("x (kpc)")
 	ax2.set_ylabel("y (kpc)")
 	ax2.scatter(*cog[:2])
-
+	
+	plt.axis('equal')
+	
 	plt.tight_layout()
 	plt.show()
 
