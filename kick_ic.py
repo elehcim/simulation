@@ -373,8 +373,9 @@ if args.debug:
     print "  Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
 
 
-print "Translating particles of ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position)
-data.translate(enums.T_all, *position)  # Move the center of the galaxy to the calculated position
+move = -position
+print "Translating particles of ({:.2f}, {:.2f}, {:.2f}) kpc".format(*move)
+data.translate(enums.T_all, *move)  # Move the center of the galaxy to the calculated position
 
 print "Kicking particles of ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
 data.kick(enums.T_all, vx, vy, vz)      # Change the velocity of the galaxy
