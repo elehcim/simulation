@@ -86,9 +86,21 @@ G = 1.32749351440e11  # Gravitional constant in km^3/(s^2 * Msol)
 Msol = 1.98855e30  # solar mass in kg
 # Mpc_in_km = 3.08567e19  # km
 G_SIunits = 6.67408e-11  # m^3 kg^-1 s^-2
+
 ## Cosmology part
+# from astropy import cosmology
 # cosmo = cosmology.Planck15
 # rho_c = cosmo.critical_density0.to('solMass/km**3')
+#   <Quantity 4.334700093862804e-48 solMass / km3>
+# cosmo = cosmology.Planck15   FlatLambdaCDM(name="Planck15", H0=67.7 km / (Mpc s), Om0=0.307, Tcmb0=2.725 K, Neff=3.05, m_nu=[ 0.    0.    0.06] eV, Ob0=0.0486)
+# print(cosmo.critical_density0.to('solMass/km**3'))         4.334700093862804e-48 solMass / km3
+# print(cosmo.critical_density0.to('kg/m**3'))               8.619444569510132e-27 kg / m3
+# print(cosmo.critical_density0.to('g/cm**3'))               8.619444569510134e-30 g / cm3
+# print(cosmo.critical_density0.to('10^10 solMass/km**3'))   4.334700093862805e-58 1e+10 solMass / km3
+# print(cosmo.critical_density0.to('10^10 solMass/kpc**3'))  1.2735344307113323e-08 1e+10 solMass / kpc3
+# from astropy import constants as c
+# rho_c = lambda z: 3 * (cosmo.H0)**2  /(8 * np.pi * c.G) * (cosmo.Om0 * (1 + z)**3 + 1 - cosmo.Om0)
+
 
 def critical_density(z, h=0.67, omega_m=0.24):
     '''return the critical density at z in MSol/km**3'''
@@ -99,6 +111,7 @@ rho_c = critical_density(0)
 print("Critical density {:.4g} Msol/km^3".format(rho_c))
 # print("Critical density {:.4g} g/cm^3".format(rho_c/( Msol * 10**3 * 10**15)))
 print("Critical density {:.4g} kg/m^3".format(rho_c * Msol/10**9))
+print("Critical density {:.4g} 10^10 Msol/kpc^3".format(rho_c * kpc_in_km**3 /10**10))
 
 
 def halo_Wechsler2002(M):
@@ -140,7 +153,7 @@ rho_s = halo_scaled_density(M_h, c)   # Msol/km^3
 R_s = halo_scaled_radius(M_h, c)      # km 
 print "Halo parameters:"
 print "  Concentration factor    c =", c
-print "  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3)".format(rho_s * Msol/10**9, rho_s)
+print "  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3) ({:.2e} 10^10 Msol/kpc^3)".format(rho_s * Msol/10**9, rho_s, rho_s * kpc_in_km**3 /10**10)
 print "  Halo scaled radius    R_s = {:.2f} kpc".format(R_s/kpc_in_km)
 # def V0(r):
 #     return - 4 * np.pi * G * rho_s * R_s**3 * np.log(1 + r/R_s) / r
@@ -253,8 +266,8 @@ def radial_period(r1, r2, E, V0, L):
     symmetric potential to travel from apocenter to pericenter and back.
 
     Source: GD sec: 3.1 eq. 3.17"""
-    print r1
-    print r2
+    # print r1
+    # print r2
     if not r1 < r2:
         raise ValueError("The lower integral limit r1 should be less than the upper one r2")
 
