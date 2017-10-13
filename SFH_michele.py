@@ -26,7 +26,7 @@ maxR = 3  # Maximum radius within which you select stars
 timebinslength = 0.05 # Time resolution with which you want the star formation history
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--sim", dest="simulations", default='~/sim', nargs='+')
+parser.add_argument("--sim", dest="simulations", default=('~/sim/sim60003',), nargs='+')
 # parser.add_argument('--dir', default='~/sim')
 parser.add_argument('-n','--snap', default=None, type=int)
 parser.add_argument('--max-time', default=None, type=float)
@@ -41,7 +41,6 @@ ax1 = fig.add_my_subplot(121)
 ax2 = fig.add_my_subplot(122)
 
 axs = [ax1, ax2]
-
 for simulation in args.simulations:
 
 	# We are getting the SFH of all the stars in the simulation and then only within maxR
@@ -51,6 +50,8 @@ for simulation in args.simulations:
 	# Read the data
 	dr = chyplot.CDataGadget()
 	fdir = os.path.expanduser(simulation)
+	print("Using snapshots in {}".format(fdir))
+
 	dr.setPrefix( fdir )
 	# dr.checkFilesPresent() # set the first and last dump # IT DOES NOT WORK!
 
@@ -77,17 +78,13 @@ for simulation in args.simulations:
 
 	time = np.arange(0, timeMax, timebinslength)
 
+
 	if args.no_pop3:
 		# Exclude Pop3 particles
-		datacopy = data.limitsCopy(visitor, 0, maxRadius, enums.T_star)
-		len("Number of star particles with POP3:    ", len(datacopy))
-		visitor2 = chyplot.cglobals.plmap.getSecond("[Fe/H]")
+		visitor2 = getProp("[Fe/H]")
 		data.applyLimits(visitor2, -5, 100, enums.T_star)
-		datacopy = data.limitsCopy(visitor, 0, maxRadius, enums.T_star)
-		len("Number of star particles without POP3: ", len(datacopy))
 
-
-	visitor = chyplot.cglobals.plmap.getSecond("dist_to_z")
+	visitor = getProp("dist_to_z")
 
 	print 'sim: {}'.format(simulation)
 	print 'Maximum lookback time {:.2f} Gyr'.format(timeMax)
@@ -95,9 +92,9 @@ for simulation in args.simulations:
 
 		datacopy = data.limitsCopy(visitor, 0, maxRadius, enums.T_star)
 
-		birthtimes = datacopy.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('birthtime'), True)
-		print "Number of star particles within radius {:8g} kpc: {}".format(maxRadius, len(birthtimes))
-		masses = datacopy.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('initialMass'), True)
+		birthtimes = datacopy.getDataArray(enums.T_star, getProp('birthtime'), True)
+		print "{:3d} star particles within radius {:g} kpc".format(len(birthtimes), maxRadius)
+		masses = datacopy.getDataArray(enums.T_star, getProp('initialMass'), True)
 
 		Mstar = sum(masses)
 
@@ -155,7 +152,7 @@ ax5.set_xticklabels(['${}$'.format(z) if not z==redshifts[0] else '' for z in re
 ax5.set_xlabel('$z$')
 
 
-fig.subplots_adjust(left = 0.1, right = 0.98, bottom = 0.12, top = 0.85,hspace = 0, wspace=0.25)
+fig.subplots_adjust(left = 0.1, right = 0.98, bottom = 0.12, top = 0.85, hspace=0, wspace=0.25)
 
 directory = '/home/rpverbek/programs/results/SFR/'
 name = 'figureSFH_test.pdf'
