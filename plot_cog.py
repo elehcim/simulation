@@ -9,7 +9,8 @@ import astropy.units as u
 import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import glob
+
+from util import first_last_snap
 import enums
 
 parser = argparse.ArgumentParser()
@@ -24,14 +25,6 @@ args.dir = os.path.expanduser(args.dir)
 
 import chyplot
 getProp = chyplot.cglobals.plmap.getSecond
-
-def first_last_snap(dirname, stem="snapshot_", fillwidth=4):
-	filelist = map(os.path.basename, glob.glob(os.path.join(dirname, stem) + "*"))
-	filelist.sort()
-	first = int(filelist[0][len(stem):])
-	last = int(filelist[-1][len(stem):])
-
-	return first, last
 
 first_snap, last_snap = first_last_snap(args.dir)
 print "Found snapshots [{}: {}]".format(first_snap, last_snap)
