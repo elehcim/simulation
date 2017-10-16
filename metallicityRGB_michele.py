@@ -7,7 +7,9 @@ from hyplot.plot import PFigure
 from hyplot.visual.PRunData import PRunData, PFileData
 import chyplot
 import enums
-from util import first_last_snap
+from util import first_last_snap, get_snapshot_data
+
+getProp = chyplot.cglobals.plmap.getSecond
 
 matplotlib.rc('font', size=13)
 
@@ -81,71 +83,50 @@ def plot_LV_FeH(ax, xMin=3, xMax=9, yMax=-0.5, yMin=-2.5):
 
 
 def w_average(prop, weighing_factor, log=False):
-	#Calculate the weighted average of a certain property.
-	#The first argument is a list of the properties for each stellar particle (e.g. the [Fe/H]s)
-	#2nd argument is the property to which it is weighted (e.g. number of RGB stars in a stellar particle)
-	#3rd optional argument determines the difference between the log of the average or the average of the log (<[Fe/H]> vs [<Fe/H>]). 
-	#Kirby 2014 uses the average of the log, so standard is False
+	# Calculate the weighted average of a certain property.
+	# The first argument is a list of the properties for each stellar particle (e.g. the [Fe/H]s)
+	# 2nd argument is the property to which it is weighted (e.g. number of RGB stars in a stellar particle)
+	# 3rd optional argument determines the difference between the log of the average or the average of the log (<[Fe/H]> vs [<Fe/H>]). 
+	# Kirby 2014 uses the average of the log, so standard is False
 
 	fehSol = -2.756
-	global math
 	tot = sum(weighing_factor)
 	if not log:
 		weighed_prop = [p*w for p, w in zip(prop, weighing_factor)]
 		return sum(weighed_prop)/tot
 	else:
-		weighed_prop = [10**(p+fehSol)*w for p, w in zip(prop, weighing_factor)]		
-		return math.log10(sum(weighed_prop)/tot)-fehSol
+		weighed_prop = [10**(p+fehSol)*w for p, w in zip(prop, weighing_factor)]
+		return np.log10(sum(weighed_prop)/tot)-fehSol
 
 fig = plt.figure(FigureClass = PFigure.PFigure, figsize=(6, 3))
 ax1 = fig.add_my_subplot(111)
 
-plot_LV_FeH(ax1) #Plot the observations
+plot_LV_FeH(ax1) # Plot the observations
 
 for simulation, R30, MV in zip(simulations, R30s, MVs):
 
 	# Read the data
-	dr = chyplot.CDataGadget()
-	fdir = os.path.expanduser(simulation)
-	print("Using snapshots in {}".format(fdir))
-
-	dr.setPrefix( fdir )
-
-	if args.snap is None:
-		first_snap, last_snap = first_last_snap(fdir)
-		print "Found snapshots [{}: {}]".format(first_snap, last_snap)
-		dr.set_file(last_snap)
-	else:
-		dr.set_file(args.snap)
-	
-
-	dr.checkFilesPresent() # set the first and last dump
-	# dr.set_file( 100) #) dr.lastDump())
-
-	print dr.lastDump()
-	data = dr.readFile()
+	data = get_snapshot_data(simulation, args.snap)
 
 	x,y,z = data.rcom(True, enums.T_star, 0, 0, 0, True)
 	data.vcom(True, enums.T_star)
 	data.convertUnits()
 
 	# Only look at stars within a certain area (R30 is the radius where the surface density drops below 30 mag/"^2
-	visitorR = chyplot.cglobals.plmap.getSecond("radius")
-	data.applyLimits(visitorR, 0, R30, enums.T_all) 
+	data.applyLimits(getProp("radius"), 0, R30, enums.T_all) 
 
 	# Divide the data into Pop3 and Pop2 stellar particles
-	visitor = chyplot.cglobals.plmap.getSecond("[Fe/H]")
-	dataPop3 = data.limitsCopy(visitor, -99, -5, enums.T_star)
-	dataPop2 = data.limitsCopy(visitor, -5, 100, enums.T_star)
+	dataPop3 = data.limitsCopy(getProp("[Fe/H]"), -99, -5, enums.T_star)
+	dataPop2 = data.limitsCopy(getProp("[Fe/H]"), -5, 100, enums.T_star)
 
 	# Get lists of the ages and masses of the stars
-	agesPop2Data = dataPop2.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('birthtime'), False)
+	agesPop2Data = dataPop2.getDataArray(enums.T_star, getProp('birthtime'), False)
 	agesPop2Data = [data.time() - a for a in agesPop2Data]
-	massesPop2Data = dataPop2.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('initialMass'), False)
+	massesPop2Data = dataPop2.getDataArray(enums.T_star, getProp('initialMass'), False)
 
-	agesPop3Data = dataPop3.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('birthtime'), False)
+	agesPop3Data = dataPop3.getDataArray(enums.T_star, getProp('birthtime'), False)
 	agesPop3Data = [data.time() - a for a in agesPop3Data]
-	massesPop3Data = dataPop3.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('initialMass'), False)
+	massesPop3Data = dataPop3.getDataArray(enums.T_star, getProp('initialMass'), False)
 
 	# Get the number of RGB stars per stellar particle, using the lists at the beginning of the script
 	RGBsPop2 = np.interp(agesPop2Data, agesPop2, nRGBsPop2)
@@ -155,8 +136,10 @@ for simulation, R30, MV in zip(simulations, R30s, MVs):
 	RGBsPop3 = [r*m*1e3 for r, m in zip(RGBsPop3, massesPop3Data)]
 
 	# Since the number of RGB stars in a Pop3 stellar particle is neglible, we only use the metallicity of the Pop2s.
-	metalPop2 = dataPop2.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('[Fe/H]'), False)
-	
+	metalPop2 = dataPop2.getDataArray(enums.T_star, getProp('[Fe/H]'), False)
+	if not metalPop2:
+		raise RuntimeError("No Pop2 stars")
+
 	weightedFeH = w_average(metalPop2, RGBsPop2)
 
 	galaxy = chyplot.CGalaxy(dataPop2)
@@ -174,7 +157,7 @@ for simulation, R30, MV in zip(simulations, R30s, MVs):
 directory = '/home/michele/sim/results/metallicity/' #Adjust
 name = 'metallicityRGB.pdf'
 
-fig.subplots_adjust(left = 0.1, right = 0.975, bottom = 0.15, top = 0.95,wspace = 0.2)
+fig.subplots_adjust(left = 0.1, right = 0.975, bottom = 0.15, top = 0.95, wspace = 0.2)
 
 plt.show()
 # fig.finalize(name=directory + name, dpi=300, show=False)
