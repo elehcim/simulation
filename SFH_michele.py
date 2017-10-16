@@ -31,6 +31,7 @@ parser.add_argument("--sim", dest="simulations", default=('~/sim/sim60003',), na
 parser.add_argument('-n','--snap', default=None, type=int)
 parser.add_argument('--max-time', default=None, type=float)
 parser.add_argument('--no-pop3', action='store_true')
+parser.add_argument('--sfr', action='store_true')
 
 args = parser.parse_args()
 
@@ -79,11 +80,18 @@ for simulation in args.simulations:
 	time = np.arange(0, timeMax, timebinslength)
 
 
+	# Exclude Pop3 particles
 	if args.no_pop3:
-		# Exclude Pop3 particles
-		visitor2 = getProp("[Fe/H]")
-		data.applyLimits(visitor2, -5, 100, enums.T_star)
-
+		metallicity_visitor = getProp("[Fe/H]")
+		n_star = len(data.getDataArray(enums.T_star, getProp('[Fe/H]'), True))
+		print("Number of star particles with POP3:    {}".format(n_star))
+		
+		# Cut out POP3 stars
+		data.applyLimits(metallicity_visitor, -5, 100, enums.T_star)
+		
+		n_star_without_pop3 = len(data.getDataArray(enums.T_star, getProp('[Fe/H]'), True))
+		print("Number of star particles without POP3: {}".format(n_star_without_pop3))
+	
 	visitor = getProp("dist_to_z")
 
 	print 'sim: {}'.format(simulation)
@@ -108,7 +116,10 @@ for simulation in args.simulations:
 
 
 		# get the cumulative star formation history
-		SFRcum = np.cumsum(SFR)
+		if args.sfr:
+			SFRcum = SFR
+		else:
+			SFRcum = np.cumsum(SFR)
 		SFRcum = [s*(timebinslength*10**3)/Mstar for s in SFRcum]
 
 
@@ -161,5 +172,3 @@ name = 'figureSFH_test.pdf'
 plt.show()
 # plt.savefig(name=directory+name, dpi=300, show=False)
 # finalize(name=directory+name, dpi=300, show=False)
-
-
