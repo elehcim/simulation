@@ -1,16 +1,18 @@
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-import scipy as sp
-import math
+import argparse
 import matplotlib
 from hyplot.plot import PFigure
 from hyplot.visual.PRunData import PRunData, PFileData
 import chyplot
 import enums
+from util import first_last_snap
 
 matplotlib.rc('font', size=13)
 
+OBSDIR = "/home/michele/sim/analysis/observationalData/"
+DAT_OUTFILE = "results/RGBsRe.dat"
 #Tables for the number of RGB stars per 1000 Msol for a particle with a certain age, both for normal stars and Pop 3 stars in billion years
 
 agesPop2 = [0.00316227766017, 0.00344454795152, 0.00375201416997, 0.00408692534689, 0.00445173126604, 0.00484910038303, 0.00528193934437, 0.00575341424882, 0.00626697380646, 0.00682637456514, 0.00743570838856, 0.00809943238715, 0.0088224015206, 0.0096099041106, 0.0104677005234, 0.0114020653054, 0.0124198330797, 0.0135284485394, 0.0147360209037, 0.0160513832346, 0.017484157048, 0.0190448226929, 0.0207447960122, 0.022596511846, 0.0246135149899, 0.0268105592707, 0.0292037154669, 0.0318104888623, 0.034649947292, 0.0377428606186, 0.041111852658, 0.0447815666663, 0.048778845599, 0.0531329284591, 0.0578756641732, 0.063041744557, 0.0686689580771, 0.0747984662628, 0.0814751047916, 0.0887477114502, 0.0966694833691, 0.105298366145, 0.114697477699, 0.124935569962, 0.136087531783, 0.148234936716, 0.161466639707, 0.175879427049, 0.191578724344, 0.208679367662, 0.227306443536, 0.247596203936, 0.269697062916, 0.29377068222, 0.319993153797, 0.348556287861, 0.379669015932, 0.413558919117, 0.450473892796, 0.490683959915, 0.53448324613, 0.582192131251, 0.634159592737, 0.690765758369, 0.752424686782, 0.819587396191, 0.892745163463, 0.972433117677, 1.05923415444, 1.15378319963, 1.25677185367, 1.36895345043, 1.49114856763, 1.62425102916, 1.76923444318, 1.92715932373, 2.09918084817, 2.28655730694, 2.49065930764, 2.71297980065, 2.95514499962, 3.21892627681, 3.50625312019, 3.81922724712, 4.16013797782, 4.53147898113, 4.93596651503, 5.37655929531, 5.85648013777, 6.37923953224, 6.94866132087, 7.56891066844, 8.24452452946, 8.98044483473, 9.78205464019, 10.6552175025, 11.6063203696, 12.6423202988, 13.7707953468, 15.0]
@@ -23,7 +25,7 @@ nRGBsPop3 = [0.000259933756365, 0.000254655670083, 0.000249035236802, 0.00024309
 
 #File to where the calculated properties are written to
 
-RGBfile=open("results/RGBsRe.dat", "w")
+RGBfile = open(DAT_OUTFILE, "w")
 
 RGBfile.writelines('#Sim\tnRGBpop2\tnRGBpop3\t[<Fe/H>]\t<[Fe/H]>')
 
@@ -38,15 +40,25 @@ simulations = [60003]
 R30s = [1]
 MVs = [-15]
 
-#Function to plot the observational luminosity-metallicity relation
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--sim", dest="simulations", default=('~/sim/sim60003',), nargs='+')
+parser.add_argument("--R30", default=(1,), nargs='+', help='R30 is the radius where the surface density drops below 30 mag/"^2')
+parser.add_argument("--MV", default=(-15,), nargs='+')
+parser.add_argument('-n','--snap', default=None, type=int)
+
+args = parser.parse_args()
+
+simulations = args.simulations
+R30s = args.R30
+MVs = args.MV
+
+# Function to plot the observational luminosity-metallicity relation
 def plot_LV_FeH(ax, xMin=3, xMax=9, yMax=-0.5, yMin=-2.5):
-	global PFileData, np
 
-	obsdir = "/home/michele/sim/analysis/observationalData/"
-
-	KI13_MWdSph = PFileData(os.path.join(obsdir, "13Kirby_MWdSph.dat"))
-	KI13_M31dSph = PFileData(os.path.join(obsdir, "13Kirby_M31dSph.dat"))
-	KI13_LGdIrr = PFileData(os.path.join(obsdir, "13Kirby_LGdIrr.dat"))
+	KI13_MWdSph = PFileData(os.path.join(OBSDIR, "13Kirby_MWdSph.dat"))
+	KI13_M31dSph = PFileData(os.path.join(OBSDIR, "13Kirby_M31dSph.dat"))
+	KI13_LGdIrr = PFileData(os.path.join(OBSDIR, "13Kirby_LGdIrr.dat"))
 
 	# Observational data from Kirby 2013 (spectroscopic metallicities)
 	ax.plot((KI13_LGdIrr.getData('log(L_V/L_sun)')), KI13_LGdIrr.getData('[Fe/H]'), ".",  markersize=6, zorder=0, color='0.5')
@@ -90,16 +102,26 @@ ax1 = fig.add_my_subplot(111)
 
 plot_LV_FeH(ax1) #Plot the observations
 
-for sim, R30, MV in zip(simulations, R30s, MVs):
+for simulation, R30, MV in zip(simulations, R30s, MVs):
 
-	#Read the data
-	sim = int(sim)
-	dr = chyplot.CDataGadget(sim)
-	fdir = "/home/michele/sim/sim{}".format(sim) #Adjust to your own path with simulations
+	# Read the data
+	dr = chyplot.CDataGadget()
+	fdir = os.path.expanduser(simulation)
+	print("Using snapshots in {}".format(fdir))
 
 	dr.setPrefix( fdir )
+
+	if args.snap is None:
+		first_snap, last_snap = first_last_snap(fdir)
+		print "Found snapshots [{}: {}]".format(first_snap, last_snap)
+		dr.set_file(last_snap)
+	else:
+		dr.set_file(args.snap)
+	
+
 	dr.checkFilesPresent() # set the first and last dump
-	dr.set_file( 100) #) dr.lastDump())
+	# dr.set_file( 100) #) dr.lastDump())
+
 	print dr.lastDump()
 	data = dr.readFile()
 
@@ -107,16 +129,16 @@ for sim, R30, MV in zip(simulations, R30s, MVs):
 	data.vcom(True, enums.T_star)
 	data.convertUnits()
 
-	#Only look at stars within a certain area (R30 is the radius where the surface density drops below 30 mag/"^2
+	# Only look at stars within a certain area (R30 is the radius where the surface density drops below 30 mag/"^2
 	visitorR = chyplot.cglobals.plmap.getSecond("radius")
 	data.applyLimits(visitorR, 0, R30, enums.T_all) 
 
-	#Divide the data into Pop3 and Pop2 stellar particles
+	# Divide the data into Pop3 and Pop2 stellar particles
 	visitor = chyplot.cglobals.plmap.getSecond("[Fe/H]")
 	dataPop3 = data.limitsCopy(visitor, -99, -5, enums.T_star)
 	dataPop2 = data.limitsCopy(visitor, -5, 100, enums.T_star)
 
-	#Get lists of the ages and masses of the stars
+	# Get lists of the ages and masses of the stars
 	agesPop2Data = dataPop2.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('birthtime'), False)
 	agesPop2Data = [data.time() - a for a in agesPop2Data]
 	massesPop2Data = dataPop2.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('initialMass'), False)
@@ -125,14 +147,14 @@ for sim, R30, MV in zip(simulations, R30s, MVs):
 	agesPop3Data = [data.time() - a for a in agesPop3Data]
 	massesPop3Data = dataPop3.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('initialMass'), False)
 
-	#Get the number of RGB stars per stellar particle, using the lists at the beginning of the script
+	# Get the number of RGB stars per stellar particle, using the lists at the beginning of the script
 	RGBsPop2 = np.interp(agesPop2Data, agesPop2, nRGBsPop2)
 	RGBsPop3 = np.interp(agesPop3Data, agesPop3, nRGBsPop3)
 
 	RGBsPop2 = [r*m*1e3 for r, m in zip(RGBsPop2, massesPop2Data)]
 	RGBsPop3 = [r*m*1e3 for r, m in zip(RGBsPop3, massesPop3Data)]
 
-	#Since the number of RGB stars in a Pop3 stellar particle is neglible, we only use the metallicity of the Pop2s.
+	# Since the number of RGB stars in a Pop3 stellar particle is neglible, we only use the metallicity of the Pop2s.
 	metalPop2 = dataPop2.getDataArray(enums.T_star, chyplot.cglobals.plmap.getSecond('[Fe/H]'), False)
 	
 	weightedFeH = w_average(metalPop2, RGBsPop2)
@@ -140,7 +162,7 @@ for sim, R30, MV in zip(simulations, R30s, MVs):
 	galaxy = chyplot.CGalaxy(dataPop2)
 	Z_lum, FeH_lum, MgFe_lum = galaxy.getTotalStellarMetallicityLum()
 
-	RGBfile.writelines('\n{}\t{}\t{}\t{}\t{}'.format(sim, sum(RGBsPop2), sum(RGBsPop3), np.log(weightedFeH), weightedFeH))
+	RGBfile.writelines('\n{}\t{}\t{}\t{}\t{}'.format(simulation, sum(RGBsPop2), sum(RGBsPop3), np.log(weightedFeH), weightedFeH))
 
 	LV = -0.4*(MV-4.8)
 
@@ -149,25 +171,11 @@ for sim, R30, MV in zip(simulations, R30s, MVs):
 	ax1.plot(LV, weightedFeH, 'b', marker='o', markersize=6, markeredgecolor='w', markeredgewidth=0.2)
 
 
-
 directory = '/home/michele/sim/results/metallicity/' #Adjust
 name = 'metallicityRGB.pdf'
 
-	 
 fig.subplots_adjust(left = 0.1, right = 0.975, bottom = 0.15, top = 0.95,wspace = 0.2)
 
-# plt.show()
+plt.show()
 # fig.finalize(name=directory + name, dpi=300, show=False)
-
-
-
-
-
-
-
-
-
-
-
-
 
