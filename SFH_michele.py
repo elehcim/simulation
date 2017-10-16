@@ -8,7 +8,7 @@ import argparse
 
 from hyplot.plot import PFigure
 from hyplot.visual.PRunData import PRunData, PFileData
-from util import first_last_snap
+from util import first_last_snap, get_snapshot_data
 import chyplot
 import enums
 
@@ -27,7 +27,6 @@ timebinslength = 0.05 # Time resolution with which you want the star formation h
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--sim", dest="simulations", default=('~/sim/sim60003',), nargs='+')
-# parser.add_argument('--dir', default='~/sim')
 parser.add_argument('-n','--snap', default=None, type=int)
 parser.add_argument('--max-time', default=None, type=float)
 parser.add_argument('--no-pop3', action='store_true')
@@ -47,25 +46,8 @@ for simulation in args.simulations:
 	# We are getting the SFH of all the stars in the simulation and then only within maxR
 	maxRadiuses = [100000, maxR] 
 
-
 	# Read the data
-	dr = chyplot.CDataGadget()
-	fdir = os.path.expanduser(simulation)
-	print("Using snapshots in {}".format(fdir))
-
-	dr.setPrefix( fdir )
-	# dr.checkFilesPresent() # set the first and last dump # IT DOES NOT WORK!
-
-	if args.snap is None:
-		first_snap, last_snap = first_last_snap(fdir)
-		print "Found snapshots [{}: {}]".format(first_snap, last_snap)
-		# dr.set_file( dr.lastDump())
-		dr.set_file(last_snap)
-	else:
-		dr.set_file(args.snap)
-	
-	print "reading file ", dr.filename()
-	data = dr.readFile()
+	data = get_snapshot_data(simulation, args.snap)
 
 	data.rcom(True, enums.T_star, 0, 0, 0, True)
 	data.vcom(True, enums.T_star)
