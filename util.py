@@ -1,18 +1,27 @@
 import os
 import glob
-import chyplot
+
+def snapshot_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
+	if not os.path.isdir(dirname):
+		raise IOError("{} is not a directory".format(dirname))
+	if include_dir:
+		filelist = glob.glob(os.path.join(dirname, stem) + "*")
+	else:
+		filelist = list(map(os.path.basename, glob.glob(os.path.join(dirname, stem) + "*")))
+	filelist.sort()
+	return filelist
 
 def first_last_snap(dirname, stem="snapshot_", fillwidth=4):
 	if not os.path.isdir(dirname):
-		raise IOError("Cannot use {} as a directoy".format(dirname))
-	filelist = map(os.path.basename, glob.glob(os.path.join(dirname, stem) + "*"))
-	filelist.sort()
+		raise IOError("{} is not a directory".format(dirname))
+	filelist = snapshot_list(dirname=dirname, stem=stem, include_dir=False)
 	first = int(filelist[0][len(stem):])
 	last = int(filelist[-1][len(stem):])
 
 	return first, last
 
 def get_snapshot_data(simulation, snap=None):
+	import chyplot
 	dr = chyplot.CDataGadget()
 	fdir = os.path.expanduser(simulation)
 	print("Using snapshots in {}".format(fdir))
