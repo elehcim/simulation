@@ -352,8 +352,8 @@ except chyplot.IOError as e:
     print e.what()
     sys.exit(12)
 
-print "Simulation time: {:.2f} Gyr".format(data.time())
-print "Estimated siulation length: ", 13.5 - data.time(), "Gyr"
+print "Simulation time: {:.2f} s kpc km**-1".format(data.time())
+print "Estimated simulation length: ", 13.5 - data.time(), "s kpc km**-1"
 print "got file ", args.input_file
 data.rcom(True, enums.T_star, 0, 0, 0, True)
 data.vcom(True, enums.T_star)
