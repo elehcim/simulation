@@ -33,7 +33,6 @@ def compute_cog(snapshots, directory, save_cache=True):
 		snapshots = [snapshots]
 
 	cog = np.zeros((3, len(snapshots)), dtype=float)
-	fdir = os.path.expanduser(args.dir)
 	i = 0
 	for snap in snapshots:
 		sim = pynbody.load(os.path.join(directory, snap))
