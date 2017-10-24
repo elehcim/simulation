@@ -106,7 +106,7 @@ for simulation in args.simulations:
 
 
 		lookbacktime = [timeMax - t for t in time]
-		print 'Mstar = {:.4f}  at maxRadius = {}'.format(Mstar, maxRadius)
+		print 'Mstar = {:.4f} 10^6 Msol at maxRadius = {}'.format(Mstar, maxRadius)
 
 		ax.plot(lookbacktime, SFRcum, 'b-')
 
