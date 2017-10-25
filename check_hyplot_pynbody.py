@@ -157,11 +157,10 @@ class Test_hyplot_pynbody(object):
 		assert_array_equal(np.array(self.data.getDataArray(enums.T_gas, getProp('Mg'), True)),
 							self.s.g['mgsp'])
 
-	# def test_smoothing_length(self):
-	# 	assert_array_equal(np.array(self.data.getDataArray(enums.T_gas, getProp('smoothingLength'), True)),
-	# 						self.s.g['smooth'])
-		# assert_array_equal(np.array(self.data.getDataArray(enums.T_star, getProp('smoothingLength'), True)),
-		# 					self.s.s['smooth'])
+	def test_smoothing_length(self):
+		# NOTE: it seems pynbody is taking the diameter, not the radius
+		assert_array_equal(np.array(self.data.getDataArray(enums.T_gas, getProp('smoothingLength'), True)),
+							self.s.g['smooth']/2.0)
 
 class Test_hyplot_pynbody_unit_converted(object):
 	""" hyplot pynbody comparison"""
@@ -238,6 +237,11 @@ class Test_hyplot_pynbody_unit_converted(object):
 	def test_star_initialMass(self):
 		assert_array_equal(np.array(self.data.getDataArray(enums.T_star, getProp('initialMass'), True)),
 						   self.s.s['massform'].in_units("1e6 Msol"))
+
+	def test_smoothing_length(self):
+		# NOTE: it seems pynbody is taking the diameter, not the radius
+		assert_array_equal(np.array(self.data.getDataArray(enums.T_gas, getProp('smoothingLength'), True)),
+							self.s.g['smooth']/2.0)
 
 	@pytest.mark.skip(reason="Here the problem seems that we have different times")
 	def test_star_age(self):
