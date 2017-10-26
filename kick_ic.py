@@ -133,7 +133,7 @@ def halo_scaled_density(c, rho_c=rho_c, overdensity_factor=200.0):
     return rho_s  # Msol/km^3
 
 def halo_scaled_radius(M, c, rho_c=rho_c, overdensity_factor=200.0):
-    R_s = ((M / (4/3 * np.pi * overdensity_factor * rho_c)) ** (1. / 3)) / c
+    R_s = ((M / (4.0/3.0 * np.pi * overdensity_factor * rho_c)) ** (1.0 / 3.0)) / c
     return R_s  # km
 
 # G = 6.674e-11 m^3/(kg s^2)
