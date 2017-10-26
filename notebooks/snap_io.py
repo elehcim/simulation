@@ -17,7 +17,7 @@ def snapshot_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
 
 def load_sim(path_to_snapshots):
     snaplist = snapshot_list(path_to_snapshots, include_dir=True)
-    simlist = [pynbody.load(snap) for snap in snaplist]
+    simlist = tuple(pynbody.load(snap) for snap in snaplist)
     return simlist
 
 def load_moria_sim_and_kicked(sim_number, kicked=True, moria_path=moria_path, kicked_path=kicked_path):
