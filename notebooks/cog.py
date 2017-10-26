@@ -17,7 +17,7 @@ def compute_cog(snapshots, directory='', save_cache=True, cache_file="cog.npz"):
         else:
             sim = snap
 
-        print("{:03d} Analysing {} (time {:.2f} Gyr)".format(i, sim.filename, sim.properties['time'].in_units('Gyr')))
+        print("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, sim.filename, sim.properties['time'].in_units('Gyr')))
         times[i] = sim.properties['time'].in_units('Gyr')
         mass = sim['mass']
         pos = sim['pos']
