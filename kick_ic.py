@@ -41,8 +41,7 @@ parser.add_argument('input_file', help='Input file')
 parser.add_argument('-o', '--output_file', '--out', help='Output file')
 
 parser.add_argument('-m', '--halo-mass', dest='M_h', default=1e14, help='Mass of the analytical halo (Msol)')
-parser.add_argument('-c', '--conc', dest='c', help='NFW halo concentration factor', type=float)
-
+parser.add_argument('-c', '--conc', dest='c', default=0, help='NFW halo concentration factor. Use 0 to compute c automatically using Wechsler2002 or Strigari2007 models', type=float)
 parser.add_argument('-p', '--peri', dest='rp', default=200, help='Pericenter distance in kpc', type=float)
 parser.add_argument('-a', '--apo', dest='ra', default=1000, help='Apocenter distance', type=float)
 parser.add_argument('-r', '--radius', dest='r', default=800, help='Distance in kpc', type=float)
@@ -59,7 +58,6 @@ import chyplot
 rp = args.rp #* u.kpc # 15 # kpc. Pericenter distance
 ra = args.ra #* u.kpc
 r = args.r   #* u.kpc
-c = args.c
 M_h = args.M_h #* u.solMass
 # prograde = not args.retrograde
 
@@ -109,9 +107,9 @@ def critical_density(z, h=0.67, omega_m=0.24):
 
 rho_c = critical_density(0)
 print("Critical density {:.4g} Msol/km^3".format(rho_c))
-# print("Critical density {:.4g} g/cm^3".format(rho_c/( Msol * 10**3 * 10**15)))
-print("Critical density {:.4g} kg/m^3".format(rho_c * Msol/10**9))
-print("Critical density {:.4g} 10^10 Msol/kpc^3".format(rho_c * kpc_in_km**3 /10**10))
+# print("Critical density {:.4g} g/cm^3".format(rho_c/( Msol * 1e3 * 1e15)))
+print("Critical density {:.4g} kg/m^3".format(rho_c * Msol/1e9))
+print("Critical density {:.4g} 10^10 Msol/kpc^3".format(rho_c * kpc_in_km**3 /1e10))
 
 
 def halo_Wechsler2002(M):
@@ -136,6 +134,18 @@ def halo_scaled_radius(M, c, rho_c=rho_c, overdensity_factor=200.0):
     R_s = ((M / (4.0/3.0 * np.pi * overdensity_factor * rho_c)) ** (1.0 / 3.0)) / c
     return R_s  # km
 
+def compute_c(M):
+    if M < 1e8:
+        c = halo_Strigari2007(M)
+    else:
+        c = halo_Wechsler2002(M)
+    return c
+
+if args.c == 0:
+    c = compute_c(M_h)
+else:
+    c = args.c
+
 # G = 6.674e-11 m^3/(kg s^2)
 # Msol=1.9891e30 kg
 # G m^3/(kg s^2) * 10^10 * Msol kg * (1e9 (km^3/m^3))
@@ -153,7 +163,7 @@ rho_s = halo_scaled_density(M_h, c)   # Msol/km^3
 R_s = halo_scaled_radius(M_h, c)      # km 
 print "Halo parameters:"
 print "  Concentration factor    c =", c
-print "  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3) ({:.2e} 10^10 Msol/kpc^3)".format(rho_s * Msol/10**9, rho_s, rho_s * kpc_in_km**3 /10**10)
+print "  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3) ({:.2e} 10^10 Msol/kpc^3)".format(rho_s * Msol/1e9, rho_s, rho_s * kpc_in_km**3 / 1e10)
 print "  Halo scaled radius    R_s = {:.2f} kpc".format(R_s/kpc_in_km)
 # def V0(r):
 #     return - 4 * np.pi * G * rho_s * R_s**3 * np.log(1 + r/R_s) / r
@@ -323,7 +333,7 @@ print "We are using file {}".format(args.input_file)
 
 apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))  # in kpc
 if args.output_file is None:
-    gic_file = "{}.kicked_p{}_a{}_r{}_c{}.gic".format(os.path.basename(args.input_file), *(apsis + [c]))
+    gic_file = "{}.kicked_p{}_a{}_r{}_c{:.2f}.gic".format(os.path.basename(args.input_file), *(apsis + [c]))
 else:
     gic_file = "{}".format(args.output_file)
 
