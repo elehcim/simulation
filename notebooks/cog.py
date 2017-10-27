@@ -3,7 +3,7 @@ import pynbody
 import collections
 import tqdm
 
-def compute_cog(snapshots, directory='', save_cache=True, cache_file="cog.npz"):
+def compute_cog(snapshots, directory='', save_cache=True, cache_file="cog.npz", verbose=True):
     if not isinstance(snapshots, collections.Iterable):
         snapshots = [snapshots]
 #     print("Processing {} files".format(len(snapshots)))
@@ -17,7 +17,8 @@ def compute_cog(snapshots, directory='', save_cache=True, cache_file="cog.npz"):
         else:
             sim = snap
 
-        print("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, sim.filename, sim.properties['time'].in_units('Gyr')))
+        if verbose:
+            print("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, sim.filename, sim.properties['time'].in_units('Gyr')))
         times[i] = sim.properties['time'].in_units('Gyr')
         mass = sim['mass']
         pos = sim['pos']
