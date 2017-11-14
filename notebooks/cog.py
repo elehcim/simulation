@@ -1,9 +1,10 @@
+import os
 import numpy as np
 import pynbody
 import collections
 import tqdm
 
-def compute_cog(snapshots, directory='', save_cache=True, cache_file="cog.npz", verbose=True):
+def compute_cog(snapshots, directory='', save_cache=True, cache_file="cog.npz", verbose=True, family=None):
     if not isinstance(snapshots, collections.Iterable):
         snapshots = [snapshots]
 #     print("Processing {} files".format(len(snapshots)))
@@ -12,10 +13,13 @@ def compute_cog(snapshots, directory='', save_cache=True, cache_file="cog.npz", 
     times = np.zeros(len(snapshots), dtype=float)
     for i, snap in enumerate(snapshots):
         # duck-typing in case the snapshots are strings
-        if not isinstance(snap, pynbody.gadget.GadgetSnap):
+        if not isinstance(snap, (pynbody.gadget.GadgetSnap, pynbody.snapshot.FamilySubSnap)):
             sim = pynbody.load(os.path.join(directory, snap))
         else:
             sim = snap
+
+        if family is not None:
+            sim = sim.__getattr__(family)
 
         if verbose:
             print("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, sim.filename, sim.properties['time'].in_units('Gyr')))
