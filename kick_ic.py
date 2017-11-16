@@ -144,6 +144,7 @@ def compute_c(M):
 
 if args.c == 0:
     c = compute_c(M_h)
+    print("Concentration factor 'c' computed automatically from halo mass ({:.1e} Msol)".format(M_h))
 else:
     c = args.c
 
@@ -163,6 +164,7 @@ print("r  = {:.4e} km   ({:.1f} kpc)".format(r , r  / kpc_in_km))
 rho_s = halo_scaled_density(M_h, c)   # Msol/km^3
 R_s = halo_scaled_radius(M_h, c)      # km 
 print("Halo parameters:")
+print("  Mass                  M_h = {:.1e} Msol".format(M_h))
 print("  Concentration factor    c =", c)
 print("  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3) ({:.2e} 10^10 Msol/kpc^3)".format(rho_s * Msol/1e9, rho_s, rho_s * kpc_in_km**3 / 1e10))
 print("  Halo scaled radius    R_s = {:.2f} kpc".format(R_s/kpc_in_km))
@@ -308,6 +310,19 @@ def plot_integrand(r1, r2, energy, V0, L):
     ax.plot(x_,y_)
     # plt.show()
 
+print("\n-- Input Output")
+print("We are using file {}".format(args.input_file))
+
+apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))  # in kpc
+if args.output_file is None:
+    gic_file = "{}.kicked_p{}_a{}_r{}_c{:.2f}.gic".format(os.path.basename(args.input_file), *(apsis + [c]))
+    if args.prefix:
+        gic_file = args.prefix + "_" + gic_file
+else:
+    gic_file = "{}".format(args.output_file)
+
+print("The ICs file to be created {}".format(gic_file))
+
 
 print("\n-- Computing Energy and momentum")
 
@@ -316,8 +331,7 @@ print("Binding energy = {:.2e} km^2/s^2".format(E))
 print("J = {:.2e} km^2/s".format(J))
 
 
-T_r, quad_error = radial_period(rp, ra, E, V0, J)
-# print("Estimated integration error", quad_error, "Gyr")
+print("\n-- Kick characteristics")
 
 v_r, v_theta = get_velocity(rp, ra, r)
 # print(v_r, v_theta, "km/s")
@@ -332,25 +346,15 @@ vz = 0
 
 position = np.array([x, y, z]) / kpc_in_km # to kpc
 
-print("\n-- Input Output")
-
-print("We are using file {}".format(args.input_file))
-
-apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))  # in kpc
-if args.output_file is None:
-    gic_file = "{}.kicked_p{}_a{}_r{}_c{:.2f}.gic".format(os.path.basename(args.input_file), *(apsis + [c]))
-    if args.prefix:
-        gic_file = args.prefix + "_" + gic_file
-else:
-    gic_file = "{}".format(args.output_file)
-
-print("The ICs file to be created {}".format(gic_file))
-
-print("\n-- Kick characteristics")
+T_r, quad_error = radial_period(rp, ra, E, V0, J)
+# print("Estimated integration error", quad_error, "Gyr")
 
 print("Position offset: ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position))
 print("Kick velocity:   ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz))
 print("Radial period:    {} Gyr".format(T_r))#/gyr_in_s)
+
+
+print("\n-- Initializing hyplot")
 
 reader = chyplot.CDataGadget()
 writer = chyplot.CWriteGadget()
