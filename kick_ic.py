@@ -15,7 +15,7 @@
 # - A snapshot file with the particles kicked with the desired velocity
 #   in order to be in orbit (2 body orbit) around the attractor
 
-# from __future__ import print_function
+from __future__ import print_function
 import argparse
 import enums
 import os
@@ -154,17 +154,17 @@ else:
 rp *= kpc_in_km  # convert to km
 ra *= kpc_in_km  # convert to km
 r *= kpc_in_km  # convert to km
-print "rp = {} km".format(rp)
-print "ra = {} km".format(ra)
-print "r = {} km".format(r)
+print("rp = {:.4e} km   ({:.1f} kpc)".format(rp, rp / kpc_in_km))
+print("ra = {:.4e} km   ({:.1f} kpc)".format(ra, ra / kpc_in_km))
+print("r  = {:.4e} km   ({:.1f} kpc)".format(r , r  / kpc_in_km))
 
 # TODO: to be put in a NFW class maybe
 rho_s = halo_scaled_density(M_h, c)   # Msol/km^3
 R_s = halo_scaled_radius(M_h, c)      # km 
-print "Halo parameters:"
-print "  Concentration factor    c =", c
-print "  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3) ({:.2e} 10^10 Msol/kpc^3)".format(rho_s * Msol/1e9, rho_s, rho_s * kpc_in_km**3 / 1e10)
-print "  Halo scaled radius    R_s = {:.2f} kpc".format(R_s/kpc_in_km)
+print("Halo parameters:")
+print("  Concentration factor    c =", c)
+print("  Halo scaled density rho_s = {:.2e} kg/m^3 ({:.2e} Msol/km^3) ({:.2e} 10^10 Msol/kpc^3)".format(rho_s * Msol/1e9, rho_s, rho_s * kpc_in_km**3 / 1e10))
+print("  Halo scaled radius    R_s = {:.2f} kpc".format(R_s/kpc_in_km))
 # def V0(r):
 #     return - 4 * np.pi * G * rho_s * R_s**3 * np.log(1 + r/R_s) / r
 
@@ -235,7 +235,7 @@ def get_velocity(rp, ra, r):
     # E = V0 - v^2/2
     v = np.sqrt(2 * (V0(r) - E))
 
-    print "Kick velocity modulus", v, "km/s"
+    print("Kick velocity modulus", v, "km/s")
     
     v_theta = J / r
     v_r = np.sqrt(v**2 - v_theta**2)
@@ -256,7 +256,7 @@ def get_particle_velocities(data):
 
 def print_average_particle_velocities(data):
     part_vx, part_vy, part_vz = get_particle_velocities(data)
-    print "Mean velocity vx={:.2f} vy={:.2f} vz={:.2f}".format(part_vx.mean(), part_vy.mean(), part_vz.mean())
+    print("Mean velocity vx={:.2f} vy={:.2f} vz={:.2f}".format(part_vx.mean(), part_vy.mean(), part_vz.mean()))
 
 def velocity_dispersion(v):
     return np.sqrt((v**2 - v.mean()**2).mean())
@@ -302,22 +302,24 @@ def plot_integrand(r1, r2, energy, V0, L):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     x_ = np.linspace(rp, ra, 100)[1:-1]
-    print len(x_)
+    print(len(x_))
     y_ = radial_period_integrand(x_, E, V0, J)
     ax.plot(x_,y_)
     # plt.show()
 
 
+print("\n-- Computing Energy and momentum")
+
 E, J = turnp2mom(rp, ra, V0, dV0dr)
-print "Binding energy = {:.2e} km^2/s^2".format(E)
-print "J = {:.2e} km^2/s".format(J)
+print("Binding energy = {:.2e} km^2/s^2".format(E))
+print("J = {:.2e} km^2/s".format(J))
 
 
 T_r, quad_error = radial_period(rp, ra, E, V0, J)
-print "Estimated integration error", quad_error, "Gyr"
+# print("Estimated integration error", quad_error, "Gyr")
 
 v_r, v_theta = get_velocity(rp, ra, r)
-# print v_r, v_theta, "km/s"
+# print(v_r, v_theta, "km/s")
 
 # The galaxy is on the y axis
 x = 0
@@ -329,7 +331,9 @@ vz = 0
 
 position = np.array([x, y, z]) / kpc_in_km # to kpc
 
-print "We are using file {}".format(args.input_file)
+print("\n-- Input Output")
+
+print("We are using file {}".format(args.input_file))
 
 apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))  # in kpc
 if args.output_file is None:
@@ -337,10 +341,13 @@ if args.output_file is None:
 else:
     gic_file = "{}".format(args.output_file)
 
-print "The ICs file to be created {}".format(gic_file)
-print "Position offset: ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position)
-print "Kick velocity:   ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
-print "Radial period:    {} Gyr".format(T_r)#/gyr_in_s)
+print("The ICs file to be created {}".format(gic_file))
+
+print("\n-- Kick characteristics")
+
+print("Position offset: ({:.2f}, {:.2f}, {:.2f}) kpc".format(*position))
+print("Kick velocity:   ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz))
+print("Radial period:    {} Gyr".format(T_r))#/gyr_in_s)
 
 reader = chyplot.CDataGadget()
 writer = chyplot.CWriteGadget()
@@ -354,17 +361,17 @@ reader.setFilename(args.input_file)
 try:
     data = reader.readFile()
 except chyplot.IOError as e:
-    print
-    print "****Error reading file****"
-    print args.input_file
-    # print "simulation number:", simulation
-    print e
-    print e.what()
+    print()
+    print( "****Error reading file****")
+    print( args.input_file)
+    # print( "simulation number:", simulation)
+    print( e)
+    print( e.what())
     sys.exit(12)
 
-print "Simulation time: {:.2f} s kpc km**-1".format(data.time())
-print "Estimated simulation length: ", 13.5 - data.time(), "s kpc km**-1"
-print "got file ", args.input_file
+print("Simulation time: {:.2f} s kpc km**-1".format(data.time()))
+print("Estimated simulation length: ", 13.5 - data.time(), "s kpc km**-1")
+
 data.rcom(True, enums.T_star, 0, 0, 0, True)
 data.vcom(True, enums.T_star)
 
@@ -372,49 +379,49 @@ print_average_particle_velocities(data)
 
 v_disp = data_velocity_dispersion(data)
 
-print "Velocity dispersion sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}".format(*v_disp)
+print("\n-- Performing Kick")
+print("Velocity dispersion sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}".format(*v_disp))
 
-print "Velocity kick in z direction: vz =", vz, "(It should be zero!)"
+print("Velocity kick in z direction: vz =", vz, "(It should be zero!)")
 
 # debug
 if args.debug:
-    print "Print properties of particle {} for debug purposes:".format(DEBUG_PARTICLE)
-    print "  Speed before kick    ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s"
-    print "  Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
+    print("Print properties of particle {} for debug purposes:".format(DEBUG_PARTICLE))
+    print("  Speed before kick    ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s")
+    print("  Position before kick ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc")
 
 
 move = -position
-print "Translating particles of ({:.2f}, {:.2f}, {:.2f}) kpc".format(*move)
+print("Translating particles of ({:.2f}, {:.2f}, {:.2f}) kpc".format(*move))
 data.translate(enums.T_all, *move)  # Move the center of the galaxy to the calculated position
 
-print "Kicking particles of ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz)
+print("Kicking particles of ({:.2f}, {:.2f}, {:.2f}) km/s".format(vx, vy, vz))
 data.kick(enums.T_all, vx, vy, vz)      # Change the velocity of the galaxy
 
 print_average_particle_velocities(data)
 v_disp_after = data_velocity_dispersion(data)
-print "Velocity dispersion after kick sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}  (should be the same as before) ".format(*v_disp_after)
+print("Velocity dispersion after kick sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}  (should be the same as before) ".format(*v_disp_after))
 
 if args.debug:
-    print "  Speed after kick     ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s" 
-    print "  Position after kick  ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc"
+    print("  Speed after kick     ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).velocity()), "km/s" )
+    print("  Position after kick  ({:.2f}, {:.2f}, {:.2f})".format(*data.findParticle(DEBUG_PARTICLE).position()), "kpc")
 
 outpath = os.path.join(os.getcwd(), gic_file)
 
 try:
     # output_dir =  os.path.join(args.outdir, "ICs")
     # os.makedirs = output_dir
-    print "Going to write: ", outpath
+    print("Going to write: ", outpath)
     writer.writeFile(data, outpath, enums.T_all)
 except chyplot.IOError as e:
-    print
-    print "****Error writing file****"
-    print outpath
-    # print "simulation number:", newsim
-    print e
-    print e.what()
+    print("****Error writing file****")
+    print(outpath)
+    # print( "simulation number:", newsim)
+    print(e)
+    print(e.what())
     sys.exit(13)
 
-print "timeNewSimulation: {:.2f} Gyr".format(data.time())
+print("timeNewSimulation: {:.2f} Gyr".format(data.time()))
 
 if args.plot_integrand:
     plot_integrand(rp, ra, E, V0, J)
