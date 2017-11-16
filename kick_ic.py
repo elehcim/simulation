@@ -226,8 +226,8 @@ def turnp2mom(periapsis, apoapsis, V0, dV0dr=None):
 def get_velocity(rp, ra, r):
     """Return the radial and azimuthal speed of an object orbiting a (rp,ra) orbit
     when it is at radius r"""
-    if not rp < r < ra:
-        raise ValueError("The following should be true: rperi < r < rapo ({} < {} < {})".format(rp, r, ra))
+    if not rp <= r <= ra:
+        raise ValueError("The following should be true: rperi <= r <= rapo ({} <= {} <= {})".format(rp, r, ra))
 
     E, J = turnp2mom(rp, ra, V0, dV0dr)
     # print "Binding energy =", E, "km**2/s**2"
@@ -279,7 +279,7 @@ def radial_period(r1, r2, E, V0, L):
     Source: GD sec: 3.1 eq. 3.17"""
     # print r1
     # print r2
-    if not r1 < r2:
+    if not r1 <= r2:
         raise ValueError("The lower integral limit r1 should be less than the upper one r2")
 
     def integrand(r):
