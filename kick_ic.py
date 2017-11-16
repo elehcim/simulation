@@ -39,6 +39,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('input_file', help='Input file')
 
 parser.add_argument('-o', '--output_file', '--out', help='Output file')
+parser.add_argument('--prefix', default=None, help='Prefix of output file')
 
 parser.add_argument('-m', '--halo-mass', dest='M_h', default=1e14, help='Mass of the analytical halo (Msol)')
 parser.add_argument('-c', '--conc', dest='c', default=0, help='NFW halo concentration factor. Use 0 to compute c automatically using Wechsler2002 or Strigari2007 models', type=float)
@@ -338,6 +339,8 @@ print("We are using file {}".format(args.input_file))
 apsis = list(np.round(np.array([rp, ra, r])/kpc_in_km))  # in kpc
 if args.output_file is None:
     gic_file = "{}.kicked_p{}_a{}_r{}_c{:.2f}.gic".format(os.path.basename(args.input_file), *(apsis + [c]))
+    if args.prefix:
+        gic_file = args.prefix + "_" + gic_file
 else:
     gic_file = "{}".format(args.output_file)
 
