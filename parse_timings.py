@@ -30,8 +30,10 @@ patterns = [r'Step= (?P<step>{})  t= (?P<t>{})  dt= (?P<dt>{})'.format(i, g, g),
 def parse_timings(fname="timings.txt"):
     with open("timings.txt") as f:
         content = f.read().splitlines()
-    df = pd.DataFrame()
+    frames = list()
+    counter = 0
     for lines in grouper(content, 7):
+        counter += 1
         line_dict = {}
         # print(lines)
         for i, line in enumerate(lines[:-1]):
@@ -39,9 +41,11 @@ def parse_timings(fname="timings.txt"):
             d = re.match(patterns[i], line).groupdict()
             # print(d)
             line_dict.update(d)
-        print(line_dict)
-        df.append([line_dict])
-    return df
+        if counter % 1000 == 0:
+            print(line_dict)
+        frames.append(pd.DataFrame([line_dict]))
+
+    return pd.concat(frames, ignore_index=True)
 
 # Line0
 # m = re.match(r'Step= (\d+)  t= (\d+(\.\d*)?|\.\d+)', "Step= 0  t= 0.9")
