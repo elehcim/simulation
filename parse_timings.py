@@ -18,6 +18,12 @@ regex_float = r'(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 regex_int = r'\d+'
 g = regex_float
 i = regex_int
+ordered_columns = ["step", "t", "dt", 
+                   "Nf", "tot_Nf", "ex", "iter",
+                   "wl", "max", "avg", "PE0",
+                   "plb",
+                   "max_nodes", "filled",
+                   "part_sec", "boh", "ia_part"]
 
 patterns = [r'Step= (?P<step>{})  t= (?P<t>{})  dt= (?P<dt>{})'.format(i, g, g),
             r'Nf= (?P<Nf>{})  total-Nf= (?P<tot_Nf>{})  ex-frac= (?P<ex>{})  iter= (?P<iter>{})'.format(i, i, g, i),
@@ -28,21 +34,19 @@ patterns = [r'Step= (?P<step>{})  t= (?P<t>{})  dt= (?P<dt>{})'.format(i, g, g),
 ]
 
 def parse_timings(fname="timings.txt"):
-    with open("timings.txt") as f:
+    with open(fname) as f:
         content = f.read().splitlines()
     frames = list()
-    counter = 0
     for lines in grouper(content, 7):
-        counter += 1
         line_dict = {}
         for i, line in enumerate(lines[:-1]):
             d = re.match(patterns[i], line).groupdict()
             line_dict.update(d)
-        if counter % 1000 == 0:
-            print(line_dict)
         frames.append(line_dict)
-
     df = pd.DataFrame(frames)
+    # reorder columns
+    df = df[ordered_columns]
+    # Convert to numerics
     for col in df.columns:
         df[col] = pd.to_numeric(df[col])
     return df
