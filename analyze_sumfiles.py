@@ -21,7 +21,7 @@ units = {"time":u.kpc/u.km*u.s,"redshift":_dl,"ngas":_dl,"nstar":_dl,"ndark":_dl
          "metall_star":_dl,"FeH_star":_dl,"MgFe_star":_dl,"metall_lum":_dl,"FeH_lum":_dl,"age_lum":_dl,
          "Mgas_re":10**6*u.Msun,"Mstar_re":10**6*u.Msun,"Mdark_re":10**6*u.Msun,
          "rcom_x":u.km,"rcom_y":u.km,"rcom_z":u.km,"vcom_x":u.km/u.s,"vcom_y":u.km/u.s,"vcom_z":u.km/u.s,
-         "L_x":u.km**2/u.s,"L_y":u.km**2/u.s,"L_z":u.km**2/u.s,
+         "L_x":10**6*u.Msun*u.kpc*u.km/u.s,"L_y":10**6*u.Msun*u.kpc*u.km/u.s,"L_z":10**6*u.Msun*u.kpc*u.km/u.s,
          "r0":u.kpc,"sig(r0)":u.kpc,"n":_dl,"sig(n)":_dl,"mu0":u.mag*u.arcsec**2,"sig(mu0)":u.mag*u.arcsec**2}
 
 meta = {"metall_star":"Metallicity weighted with star mass",
