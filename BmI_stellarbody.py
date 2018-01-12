@@ -22,7 +22,7 @@ import chyplot
 from scipy.ndimage.filters import convolve, gaussian_filter
 import numpy
 
-matplotlib.rc('font', size=7)
+matplotlib.rc('font', size=10)
 
 solLumB = 5.441
 solLumV = 4.820
@@ -92,7 +92,6 @@ size = [7]#[5,7]#,15]
 
 
 
-
 # get analysis data from simulation
 
 sumdata = PRunData(sumrun)
@@ -141,8 +140,8 @@ for snap in range(snap_first, snap_last+1):
     
     # set up plotargs 
     plotArgs['fileNum'] = snap
-    # plotArgs['filename'] = glob.globals.dataManager.activePData().filename
-    # plotArgs['dataNumber'] = pdata.number
+    plotArgs['filename'] = glob.globals.dataManager.activePData().filename
+    plotArgs['dataNumber'] = pdata.number
 
     # set up axes
     if renderPlot:
@@ -237,7 +236,7 @@ for snap in range(snap_first, snap_last+1):
 
     BmI_string = '$ (B-I)_\mathrm{tot}={%5.2f}\ \mathrm{mag}$'%BmI_tot
     #VmI_string = '$ (V-I)_{tot}={%5.2f}$'%VmI_tot
-    axes.text(0.05, 0.9, BmI_string, fontsize=6, transform=axes.transAxes, color='w')
+    axes.text(0.05, 0.9, BmI_string, fontsize=10, transform=axes.transAxes, color='w')
     #axes.text(0.6, 0.9, VmI_string, fontsize=4, transform=axes.transAxes, color='w')
 
 
@@ -316,6 +315,8 @@ for snap in range(snap_first, snap_last+1):
         SFRAverage[i+1] = sum(SFR[averageOver*(i+1)-averageOver+1:averageOver*(i+1)+1])/averageOver
     timeAverage = time[::averageOver]
     
+    fontsize = 10
+
     if renderPlot :
         axes2 = canvas.figure.add_axes([0.127,0.05,0.825,0.15])
         axes2.plot(timeAverage,SFRAverage, color='k',zorder=0, linewidth=1)
@@ -324,11 +325,11 @@ for snap in range(snap_first, snap_last+1):
         axes2.axvline(time_now,color='g')
         axes2.tick_params(axis='both', which='major', labelsize=5)
         #axes2.scatter(time_now, SFR_now, color=[0,1,0], s=10,zorder=10)
-        axes2.text(0.05, 0.5, "$SFR =$ " + str(round(SFR_now,3)) + " $M_\odot$/yr", fontsize=5, transform=axes2.transAxes, color='k')
+        axes2.text(0.05, 0.5, "$SFR =$ " + str(round(SFR_now,3)) + " $M_\odot$/yr", fontsize=fontsize, transform=axes2.transAxes, color='k')
         axes2.set_ylim(0,SFRmax*10**3)
         axes2.set_xlim(0,sumdata.getData('time')[-1])
-        axes2.set_xlabel('$t\ \mathrm{[Gyr]}$', fontsize=5)
-        axes2.set_ylabel('$\mathrm{SFR}\ [10^{-3}\mathrm{M}_\odot\mathrm{/yr]}$', fontsize=5)
+        axes2.set_xlabel('$t\ \mathrm{[Gyr]}$', fontsize=fontsize)
+        axes2.set_ylabel('$\mathrm{SFR}\ [10^{-3}\mathrm{M}_\odot\mathrm{/yr]}$', fontsize=fontsize)
         axes2.yaxis.set_major_locator(MaxNLocator(1))
         #for ticklabel in axes2.get_yticklabels():
             #ticklabel.set_visible(False)
@@ -340,7 +341,7 @@ for snap in range(snap_first, snap_last+1):
 
         axes2.axvline(time_now,color='g')
         axes2.scatter(time_now, SFR_now, color=[0,1,0], s=10,zorder=10)
-        axes2.text(0.05, 0.75, "$SFR =$ " + str(round(SFR_now,3)) + " $M_\odot$/yr", fontsize=5, transform=axes2.transAxes, color='k')
+        axes2.text(0.05, 0.75, "$SFR =$ " + str(round(SFR_now,3)) + " $M_\odot$/yr", fontsize=fontsize, transform=axes2.transAxes, color='k')
         axes2.set_ylim(0,SFRmax)
         axes2.set_xlim(sumdata.getData('time')[0],sumdata.getData('time')[-1])
         axes2.yaxis.set_major_locator(MaxNLocator(1))
