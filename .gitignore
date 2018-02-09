@@ -1,5 +1,14 @@
 *.pyc
 .ipynb_checkpoints/
+*.png
+*.bak
+*.gic
+.cache/
+
+# python datafile
+*.npz
+*.npy
+*.pickle
 
 # IDEs and editors
 .project
