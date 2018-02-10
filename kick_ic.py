@@ -429,6 +429,8 @@ except chyplot.IOError as e:
     sys.exit(13)
 
 print("timeNewSimulation: {:.2f} Gyr".format(data.time()))
+print("Redshift:          {}".format(data.redshift()))
+print("!! Remember to put the redshift in the parameter file")
 
 if args.plot_integrand:
     plot_integrand(rp, ra, E, V0, J)
