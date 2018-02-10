@@ -1,5 +1,16 @@
 import os
 import glob
+import contextlib
+import numpy as np
+
+@contextlib.contextmanager
+def np_printoptions(*args, **kwargs):
+    original = np.get_printoptions()
+    np.set_printoptions(*args, **kwargs)
+    try:
+        yield
+    finally: 
+        np.set_printoptions(**original)
 
 def snapshot_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
 	if not os.path.isdir(dirname):
