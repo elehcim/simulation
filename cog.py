@@ -19,11 +19,10 @@ def compute_cog(snapshots, directory='', save_cache=False, cache_file="cog.npz",
     Returns:
         Tuple of numpy arrays (t, cog) where:
             `t` is the array of the times of the snapshots in Gyr
-             `cog` is a 3 column array with the coordinates of the center of gravity positions for each snapshot
+            `cog` is a 3 column array with the coordinates of the center of gravity positions for each snapshot
     """
     if not isinstance(snapshots, collections.Iterable):
         snapshots = [snapshots]
-#     print("Processing {} files".format(len(snapshots)))
 
     cog = np.zeros((3, len(snapshots)), dtype=float)
     times = np.zeros(len(snapshots), dtype=float)
