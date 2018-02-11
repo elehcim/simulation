@@ -4,6 +4,7 @@ import logging
 import pynbody
 from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 from util import np_printoptions
+import ipywidgets
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -23,6 +24,9 @@ class Simulation(object):
     """docstring for Simulation"""
     times = None
     cog = None
+    _rho_max=2e-1
+    _rho_min=5e-4;
+    
     def __init__(self, sim_id):
         self.sim_id = sim_id
         self.snap_list = load_sim(sim_id)
@@ -67,12 +71,12 @@ class Simulation(object):
 
             if verbose:
                 print("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, snap.filename, snap.properties['time'].in_units('Gyr')))
-            
+
             mass = snap['mass']
             pos = snap['pos']
             tot_mass = mass.sum()
             self.cog[:,i] = np.sum(mass * pos.transpose(), axis=1) / tot_mass
-            
+
             if save_cache:
                 if cache_file is not None:
                     cache_file = self.sim_id + ".cog.npz"
@@ -96,7 +100,8 @@ class MoriaSim(Simulation):
             if i==0:
                 self.boxsize = snap.properties.pop('boxsize', None).copy()
             snap.properties.pop('boxsize', None)
-    
+        self._widgets_initialized = False
+
     def clear_cache(self):
         pass
 
@@ -108,7 +113,7 @@ class MoriaSim(Simulation):
 
     def plot_star(self, snap):
         """Wrapper around pynbody.plot.stars.render using correct smoothing length"""
-        pass    
+        pass
 
     def plot_gas(self, i, faceon=False, **kwargs):
         snap = self.snap_list[i]
@@ -138,8 +143,8 @@ class MoriaSim(Simulation):
             the snaphot and the vertical axis is the z axis rotated by the elevation angle
             of the velocity"""
             alpha, theta = velocity_projection(snap)
-            r1=snap.rotate_z(alpha)
-            r2=snap.rotate_y(theta)
+            r1 = snap.rotate_z(alpha)
+            r2 = snap.rotate_y(theta)
 
         fig, (ax_g, ax_s) = plt.subplots(nrows=1, ncols=2, figsize=(16,8))
         # If not provided use a default value for width
@@ -194,15 +199,42 @@ class MoriaSim(Simulation):
                 # r1.revert()
                 snap['pos'] = backup
                 snap['vel'] = backup_v
-        return
+        return fig
 
 
-    def interact_plot_gas_star():
-        pass
+    def _setup_widgets_interact_plot_gas_star(self):
+        self._vminmax = ipywidgets.FloatRangeSlider(
+            value=[self._rho_min, self._rho_max],
+            min=1e-6,
+            max=1e-2,
+            step=1e-5,
+            description='Rho:',
+            disabled=False,
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='1.0e',
+        )
+        self._snap_slider = ipywidgets.IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
+        self._width_slider = ipywidgets.IntSlider(min=5,max=1000,step=10,value=20, continuous_update=False, description='Width (kpc):')
+        self._res_slider = ipywidgets.IntSlider(min=100,max=1000,step=100,value=200, continuous_update=False, description='Resol. (pix):')
+        self._proj = ipywidgets.Checkbox(value=False,  description='Velocity projection')
+        self._sfh = ipywidgets.Checkbox(value=True,  description='SFH')
+        self._widgets_initialized = True
 
+    def _k(self, i, velocity_proj, sfh, vrange, width, resolution):
+        self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, width=width, vmin=vrange[0], vmax=vrange[1], resolution=resolution)
 
-
-
+    def interact(self):
+        if not self._widgets_initialized:
+            self._setup_widgets_interact_plot_gas_star()
+        ipywidgets.interact(self._k,
+                            i=self._snap_slider,
+                            velocity_proj=self._proj,
+                            sfh=self._sfh,
+                            vrange=self._vminmax,
+                            width=self._width_slider,
+                            resolution=self._res_slider);
 
 def time_range_kicked_moria():
     trange = (min(np.min(times_moria), np.min(times_kicked)), max(np.max(times_moria), np.max(times_kicked)))
