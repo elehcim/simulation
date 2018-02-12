@@ -5,6 +5,7 @@ import pynbody
 from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 from util import np_printoptions
 import ipywidgets
+from multiprocessing import Pool, Process, Queue
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -16,9 +17,21 @@ def velocity_projection(sim):
     v_x, v_y, v_z = sim['vel'].mean(axis=0)
     v_xy = np.linalg.norm([v_x, v_y])
     alpha = np.sign(v_y) * np.arccos(v_x/v_xy) * 180.0/np.pi
-    theta = np.arctan(v_z/v_xy) * 180.0/np.pi            
+    theta = np.arctan(v_z/v_xy) * 180.0/np.pi
     return alpha, theta
 
+def _cog_queue(snap, q):
+    mass = snap['mass']
+    pos = snap['pos']
+    tot_mass = mass.sum()
+    q.put(np.sum(mass * pos.transpose(), axis=1) / tot_mass)
+
+# def _cog(sim, i):
+#     snap = sim.snap_list[i]
+#     mass = snap['mass']
+#     pos = snap['pos']
+#     tot_mass = mass.sum()
+#     return np.sum(mass * pos.transpose(), axis=1) / tot_mass
 
 class Simulation(object):
     """docstring for Simulation"""
@@ -26,10 +39,22 @@ class Simulation(object):
     cog = None
     _rho_max=2e-1
     _rho_min=5e-4;
-    
+    _computed_cog = False
+
     def __init__(self, sim_id):
         self.sim_id = sim_id
-        self.snap_list = load_sim(sim_id)
+        self.snap_list = self._load(sim_id)
+
+    def _load(self, sim_id):
+        logger.info("loading simulation: {}".format(sim_id))
+        return load_sim(sim_id)
+
+    def _cog(self, i):
+        snap = self.snap_list[i]
+        mass = snap['mass']
+        pos = snap['pos']
+        tot_mass = mass.sum()
+        return np.sum(mass * pos.transpose(), axis=1) / tot_mass
 
     def snap(self, idx):
         return self.snap_list[idx]
@@ -50,8 +75,8 @@ class Simulation(object):
 
     def __repr__(self):
         return "{}: ({}) {}".format(self.sim_id, len(self), self.snap(0).__repr__())
-    
-    def compute_cog(self, save_cache=False, cache_file=None, verbose=True, family=None):
+
+    def compute_cog(self, use_process=False, save_cache=False, cache_file=None, verbose=True, family=None):
         """
         Compute the center of gravity of a simulation
 
@@ -64,25 +89,49 @@ class Simulation(object):
         Returns:
             cog: is a 3 column array with the coordinates of the center of gravity positions for each snapshot
         """
+        if self._computed_cog:
+            logger.info("Center of gravity already computed")
+            return
+
+        logger.info("Computing center of gravity for all the snapshots")
+
         self.cog = np.zeros((3, len(self)), dtype=float)
-        for i, snap in enumerate(snapshots):
+
+        # if use_multiprocess:
+        #     pool = Pool(processes=8)
+        #     multiple_results = pool.map(self._cog, (self, range(len(self))))
+        #     return multiple_results
+        #     #  [res.get(timeout=1) for res in multiple_results]
+        #     # print [res.get(timeout=1) for res in multiple_results]
+        # else:
+        for i, snap in enumerate(self.snap_list):
             if family is not None:
                 snap = snap.__getattr__(family)
 
             if verbose:
-                print("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, snap.filename, snap.properties['time'].in_units('Gyr')))
+                logger.info("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, snap.filename, snap.properties['time'].in_units('Gyr')))
 
-            mass = snap['mass']
-            pos = snap['pos']
-            tot_mass = mass.sum()
-            self.cog[:,i] = np.sum(mass * pos.transpose(), axis=1) / tot_mass
 
-            if save_cache:
-                if cache_file is not None:
-                    cache_file = self.sim_id + ".cog.npz"
-                np.savez(cache_file, cog=cog)
-        self.cog = cog
-        return cog
+            if use_process:
+                q = Queue()
+                p = Process(target=_cog_queue, args=(snap, q))
+                p.start()
+                this_cog = q.get()
+                p.join()
+            else:
+                mass = snap['mass']
+                pos = snap['pos']
+                tot_mass = mass.sum()
+                this_cog = np.sum(mass * pos.transpose(), axis=1) / tot_mass
+
+            self.cog[:,i] = this_cog
+
+        if save_cache:
+            if cache_file is not None:
+                cache_file = self.sim_id + ".cog.npz"
+            np.savez(cache_file, cog=self.cog)
+
+        self._computed_cog = True
 
     def _center_all(self):
         for snap in self.snap_list:
@@ -93,18 +142,33 @@ class MoriaSim(Simulation):
     """docstring for MoriaSim"""
     def __init__(self, sim_id, kicked=False):
         self.sim_id = sim_id
+        self.kicked = kicked
+        # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
+        # super(MoriaSim, self).__init__(sim_id)
+        self._load(sim_id, kicked)
+        self._widgets_initialized = False
+
+    def _load(self, sim_id, kicked=False):
         logger.info("loading simulation: {}".format(sim_id))
         self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
-        self.kicked = kicked
         # Remove boxsize which complicates the plotting
         for i, snap in enumerate(self.snap_list):
             if i==0:
                 self.boxsize = snap.properties.pop('boxsize', None).copy()
             snap.properties.pop('boxsize', None)
-        self._widgets_initialized = False
 
-    def clear_cache(self):
-        pass
+    def clear_snap_list(self):
+        import gc
+        # import resource
+        # mem_1 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        # print(mem_1)
+        del self.snap_list
+        nobs = gc.collect()
+        # mem_2 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss  
+        # print(mem_2)
+        # logger.info("freed {} objects - {:.2f} MB".format(nobs, round((mem_1-mem_2)/1024.0,1)))
+        logger.info("freed {} objects".format(nobs))
+        self._load(self.sim_id, self.kicked)
 
     @property
     def t_range(self):
@@ -143,7 +207,7 @@ class MoriaSim(Simulation):
     #         # print(bins)
     #         sfh_hist, sfh_bins = pynbody.plot.stars.sfh(self.snap_list[-1]) #, trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
 
-    def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, **kwargs):
+    def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, **kwargs):
         """Create figure with gas and star rendering from pynbody"""
         snap = self.snap_list[i]
         snap.g['smooth'] /= 2
@@ -162,6 +226,7 @@ class MoriaSim(Simulation):
             r2 = snap.rotate_y(theta)
 
         fig, (ax_g, ax_s) = plt.subplots(nrows=1, ncols=2, figsize=(16,8))
+
         # If not provided use a default value for width
         width = kwargs.get("width", 20)
         kwargs.pop("width", None)
@@ -196,6 +261,17 @@ class MoriaSim(Simulation):
                 ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
                 ax_sfh.set_xlabel("Time [Gyr]")
                 ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
+
+            if cog:
+                ax_cog = fig.add_axes([0.6,  -0.3, 0.26, 0.26])
+                ax_cog.set_xlabel("x (kpc)")
+                ax_cog.set_ylabel("y (kpc)")
+                ax_cog.scatter(*self.cog[:2])
+                # Plot current position and center
+                ax_cog.scatter(*self.cog[:2, i], color="red")
+                ax_cog.scatter(0, 0, marker='+', color="b")
+                ax_cog.axis('equal')
+
             title = '$t={:5.2f}$ Gyr, snap={}'.format(snap_time_gyr, snap_num)
             if velocity_proj:
                 with np_printoptions(precision=2):
@@ -235,10 +311,11 @@ class MoriaSim(Simulation):
         self._res_slider = ipywidgets.IntSlider(min=100,max=1000,step=100,value=200, continuous_update=False, description='Resol. (pix):')
         self._proj = ipywidgets.Checkbox(value=False,  description='Velocity projection')
         self._sfh = ipywidgets.Checkbox(value=True,  description='SFH')
+        self._traj = ipywidgets.Checkbox(value=True,  description='COG traj.')
         self._widgets_initialized = True
 
-    def _k(self, i, velocity_proj, sfh, vrange, width, resolution):
-        self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, width=width, vmin=vrange[0], vmax=vrange[1], resolution=resolution)
+    def _k(self, i, velocity_proj, sfh, cog, vrange, width, resolution):
+        self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog, width=width, vmin=vrange[0], vmax=vrange[1], resolution=resolution)
 
     def interact(self):
         if not self._widgets_initialized:
@@ -247,6 +324,7 @@ class MoriaSim(Simulation):
                             i=self._snap_slider,
                             velocity_proj=self._proj,
                             sfh=self._sfh,
+                            cog=self._traj,
                             vrange=self._vminmax,
                             width=self._width_slider,
                             resolution=self._res_slider);
@@ -260,7 +338,6 @@ def time_range_kicked_moria():
 if __name__ == '__main__':
     SIMNUMBER = "69002_p200.0_a600.0_r600.0_c8.15"
     kicked=True
-    snap_list = load_kicked(SIMNUMBER) if kicked else load_moria(SIMNUMBER)
     sim = MoriaSim(SIMNUMBER, kicked)
-    s = snap_list[0]
+    s = sim.snap_list[0]
     s
