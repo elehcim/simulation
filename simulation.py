@@ -14,7 +14,7 @@ def mass_resolution(snap):
 
 def velocity_projection(sim):
     v_x, v_y, v_z = sim['vel'].mean(axis=0)
-    v_xy = np.linalg.norm(velocity[0:2])
+    v_xy = np.linalg.norm([v_x, v_y])
     alpha = np.sign(v_y) * np.arccos(v_x/v_xy) * 180.0/np.pi
     theta = np.arctan(v_z/v_xy) * 180.0/np.pi            
     return alpha, theta
@@ -88,6 +88,7 @@ class Simulation(object):
         for snap in self.snap_list:
             pynbody.analysis.halo.center(snap)
 
+
 class MoriaSim(Simulation):
     """docstring for MoriaSim"""
     def __init__(self, sim_id, kicked=False):
@@ -129,6 +130,18 @@ class MoriaSim(Simulation):
             snap.g['smooth'] *= 2
         return img
 
+    # def sfh(self):
+    #     # ignore AccuracyWarning that is issued when an integral is zero
+    #     import warnings
+    #     from scipy.integrate.quadrature import AccuracyWarning
+    #     with warnings.catch_warnings():
+    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
+    #         # my_range = (0, 13.7)
+
+    #         # bins_sfr = 100
+    #         # bins = np.linspace(*self.t_range, bins_sfr)
+    #         # print(bins)
+    #         sfh_hist, sfh_bins = pynbody.plot.stars.sfh(self.snap_list[-1]) #, trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
 
     def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, **kwargs):
         """Create figure with gas and star rendering from pynbody"""
@@ -142,6 +155,8 @@ class MoriaSim(Simulation):
             """x-axis is aligned with the overall mean velocity of
             the snaphot and the vertical axis is the z axis rotated by the elevation angle
             of the velocity"""
+            backup = snap['pos'].copy()
+            backup_v = snap['vel'].copy()
             alpha, theta = velocity_projection(snap)
             r1 = snap.rotate_z(alpha)
             r2 = snap.rotate_y(theta)
@@ -161,14 +176,15 @@ class MoriaSim(Simulation):
             ax_s.imshow(rgbim[::-1, :], extent=(-width / 2, width / 2, -width / 2, width / 2))
             ax_s.set_xlabel('x [' + str(snap.s['x'].units) + ']')
             ax_s.set_ylabel('y [' + str(snap.s['y'].units) + ']')
-            ax_g.set_xlabel('x [' + str(snap.s['x'].units) + ']')
-            ax_g.set_ylabel('y [' + str(snap.s['y'].units) + ']')
-            
+            ax_g.set_xlabel('x [' + str(snap.g['x'].units) + ']')
+            ax_g.set_ylabel('y [' + str(snap.g['y'].units) + ']')
+
             fig.tight_layout() # only plots above are affected
             fig.subplots_adjust(top=0.92, bottom=0.15)
             cbar_ax = fig.add_axes([0.2,  0.06, 0.6, 0.02])
             fig.colorbar(im, cax=cbar_ax, orientation='horizontal').set_label("rho [g cm^-2]")
             if sfh:
+                # TODO fix negative position of axes
                 #  [left, bottom, width, height]
                 ax_sfh = fig.add_axes([0.1,  -0.3, 0.35, 0.26])
                 # ignore AccuracyWarning that is issued when an integral is zero
@@ -176,8 +192,7 @@ class MoriaSim(Simulation):
                 from scipy.integrate.quadrature import AccuracyWarning
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore", category=AccuracyWarning)
-                    my_range = (0, 13.7)
-                    pynbody.plot.stars.sfh(snap, trange=my_range, range=my_range, subplot=ax_sfh)
+                    pynbody.plot.stars.sfh(self.snap_list[-1], subplot=ax_sfh) # trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
                 ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
                 ax_sfh.set_xlabel("Time [Gyr]")
                 ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
