@@ -6,6 +6,7 @@ import pynbody
 from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 from util import np_printoptions
 import ipywidgets
+from ipywidgets import HBox, VBox, Layout
 from multiprocessing import Pool, Process, Queue
 import multiprocess
 
@@ -312,12 +313,16 @@ class MoriaSim(Simulation):
         return fig
 
 
-    def _setup_widgets_interact_plot_gas_star(self):
+    def _setup_widgets_interact_plot_gas_star(self, rho_min=None, rho_max=None, step=1e-5):
+        if rho_min is None:
+            rho_min = self._rho_min
+        if rho_max is None:
+            rho_max = self._rho_max
         self._vminmax = ipywidgets.FloatRangeSlider(
-            value=[self._rho_min, self._rho_max],
-            min=1e-6,
-            max=1e-2,
-            step=1e-5,
+            value=[rho_min, rho_max],
+            min=rho_min,
+            max=rho_max,
+            step=step,
             description='Rho:',
             disabled=False,
             continuous_update=False,
@@ -336,10 +341,14 @@ class MoriaSim(Simulation):
     def _k(self, i, velocity_proj, sfh, cog, vrange, width, resolution):
         self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog, width=width, vmin=vrange[0], vmax=vrange[1], resolution=resolution)
 
-    def interact(self):
-        if not self._widgets_initialized:
-            self._setup_widgets_interact_plot_gas_star()
-        ipywidgets.interact(self._k,
+    def interact(self, rho_min=None, rho_max=None, step=1e-5):
+        if rho_min is None:
+            rho_min = self._rho_min
+        if rho_max is None:
+            rho_max = self._rho_max
+        # if not self._widgets_initialized:
+        self._setup_widgets_interact_plot_gas_star(rho_min, rho_max, step)
+        w = ipywidgets.interactive(self._k,
                             i=self._snap_slider,
                             velocity_proj=self._proj,
                             sfh=self._sfh,
@@ -347,6 +356,9 @@ class MoriaSim(Simulation):
                             vrange=self._vminmax,
                             width=self._width_slider,
                             resolution=self._res_slider);
+        b = VBox([HBox([VBox(w.children[0:4]), VBox(w.children[4:7])],
+                 layout=Layout(display='flex', width='150%')), w.children[-1]])
+        return b
 
 def time_range_kicked_moria():
     trange = (min(np.min(times_moria), np.min(times_kicked)), max(np.max(times_moria), np.max(times_kicked)))
