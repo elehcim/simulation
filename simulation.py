@@ -266,7 +266,7 @@ class MoriaSim(Simulation):
 
             fig.tight_layout() # only plots above are affected
             fig.subplots_adjust(top=0.92, bottom=0.15)
-            cbar_ax = fig.add_axes([0.2,  0.06, 0.6, 0.02])
+            cbar_ax = fig.add_axes([0.1, 0.06, 0.32, 0.02])
             fig.colorbar(im, cax=cbar_ax, orientation='horizontal').set_label("rho [g cm^-2]")
             if sfh:
                 # TODO fix negative position of axes
