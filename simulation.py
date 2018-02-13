@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pylab as plt
 import logging
@@ -6,6 +7,8 @@ from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 from util import np_printoptions
 import ipywidgets
 from multiprocessing import Pool, Process, Queue
+import multiprocess
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -25,6 +28,14 @@ def _cog_queue(snap, q):
     pos = snap['pos']
     tot_mass = mass.sum()
     q.put(np.sum(mass * pos.transpose(), axis=1) / tot_mass)
+
+
+def my_cog(snap):
+    # snap = self.snap_list[i]
+    mass = snap['mass']
+    pos = snap['pos']
+    tot_mass = mass.sum()
+    return np.sum(mass * pos.transpose(), axis=1) / tot_mass
 
 # def _cog(sim, i):
 #     snap = sim.snap_list[i]
@@ -76,7 +87,8 @@ class Simulation(object):
     def __repr__(self):
         return "{}: ({}) {}".format(self.sim_id, len(self), self.snap(0).__repr__())
 
-    def compute_cog(self, use_process=False, save_cache=False, cache_file=None, verbose=True, family=None):
+    def compute_cog(self, use_process=False, use_multiprocess=False,
+                    save_cache=False, cache_file=None, cache_dir=".cog", force=False, verbose=True, family=None):
         """
         Compute the center of gravity of a simulation
 
@@ -93,16 +105,24 @@ class Simulation(object):
             logger.info("Center of gravity already computed")
             return
 
+        if cache_file is None:
+            cache_file = os.path.join(cache_dir, self.sim_id + ".cog.npz")
+            os.makedirs(cache_dir, exist_ok=True)
+
+        if not force and os.path.isfile(cache_file):
+            logger.info("Loading precomputed center of gravity for all the snapshots")
+            self.cog = np.load(cache_file)['cog']
+            self._computed_cog = True
+            return
+
         logger.info("Computing center of gravity for all the snapshots")
 
         self.cog = np.zeros((3, len(self)), dtype=float)
 
-        # if use_multiprocess:
-        #     pool = Pool(processes=8)
-        #     multiple_results = pool.map(self._cog, (self, range(len(self))))
+        # if use_multiprocess:  # Not working for now, it is stuck it seems because of a thread lock in SimSnap. 
+        #     pool = multiprocess.Pool(processes=8)
+        #     multiple_results = pool.map(my_cog, self.snap_list)
         #     return multiple_results
-        #     #  [res.get(timeout=1) for res in multiple_results]
-        #     # print [res.get(timeout=1) for res in multiple_results]
         # else:
         for i, snap in enumerate(self.snap_list):
             if family is not None:
@@ -127,8 +147,7 @@ class Simulation(object):
             self.cog[:,i] = this_cog
 
         if save_cache:
-            if cache_file is not None:
-                cache_file = self.sim_id + ".cog.npz"
+            logger.info("Saving cog file: {}".format(cache_file))
             np.savez(cache_file, cog=self.cog)
 
         self._computed_cog = True
