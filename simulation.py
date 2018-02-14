@@ -6,9 +6,8 @@ import pynbody
 from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 from util import np_printoptions
 import ipywidgets
-from ipywidgets import HBox, VBox, Layout
+
 from multiprocessing import Pool, Process, Queue
-import multiprocess
 from analyze_sumfiles import get_sumfile
 
 
@@ -145,6 +144,7 @@ class Simulation(object):
         self.cog = np.zeros((3, len(self)), dtype=float)
 
         # if use_multiprocess:  # Not working for now, it is stuck it seems because of a thread lock in SimSnap. 
+        #     import multiprocess
         #     pool = multiprocess.Pool(processes=8)
         #     multiple_results = pool.map(my_cog, self.snap_list)
         #     return multiple_results
@@ -266,7 +266,6 @@ class Simulation(object):
                 snap['vel'] = backup_v
         return fig
 
-
     def _setup_widgets_interact_plot_gas_star(self, rho_min=None, rho_max=None, step=1e-5):
         if rho_min is None:
             rho_min = self._rho_min
@@ -278,7 +277,6 @@ class Simulation(object):
             max=rho_max,
             step=step,
             description='Rho:',
-            disabled=False,
             continuous_update=False,
             orientation='horizontal',
             readout=True,
@@ -290,19 +288,22 @@ class Simulation(object):
         self._proj = ipywidgets.Checkbox(value=False,  description='Velocity projection')
         self._sfh = ipywidgets.Checkbox(value=True,  description='SFH')
         self._traj = ipywidgets.Checkbox(value=True,  description='COG traj.')
-        self._widgets_initialized = True
-
-    def _k(self, i, velocity_proj, sfh, cog, vrange, width, resolution):
-        self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog, width=width, vmin=vrange[0], vmax=vrange[1], resolution=resolution)
 
     def interact(self, rho_min=None, rho_max=None, step=1e-5):
         if rho_min is None:
             rho_min = self._rho_min
         if rho_max is None:
             rho_max = self._rho_max
-        # if not self._widgets_initialized:
+
+        def k(i, velocity_proj, sfh, cog, vrange, width, resolution):
+            self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog,
+                                    vmin=vrange[0], vmax=vrange[1],
+                                    width=width, resolution=resolution)
+        import ipywidgets
+        from ipywidgets import HBox, VBox, Layout
+
         self._setup_widgets_interact_plot_gas_star(rho_min, rho_max, step)
-        w = ipywidgets.interactive(self._k,
+        w = ipywidgets.interactive(k,
                             i=self._snap_slider,
                             velocity_proj=self._proj,
                             sfh=self._sfh,
@@ -314,6 +315,38 @@ class Simulation(object):
                  layout=Layout(display='flex', width='150%')), w.children[-1]])
         return b
 
+    def plot_stars(self, snap):
+        """Wrapper around pynbody.plot.stars.render using correct smoothing length"""
+        pass
+
+    def plot_gas(self, i, faceon=False, **kwargs):
+        snap = self.snap_list[i]
+        snap.g['smooth'] /= 2
+        pynbody.analysis.halo.center(snap)
+        if faceon:
+            pynbody.analysis.angmom.faceon(snap)
+        try:
+            img = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", **kwargs)
+        except Exception as e:
+            raise(e)
+        finally:
+            snap.g['smooth'] *= 2
+        return img
+
+    # def sfh(self):
+    #     # ignore AccuracyWarning that is issued when an integral is zero
+    #     import warnings
+    #     from scipy.integrate.quadrature import AccuracyWarning
+    #     with warnings.catch_warnings():
+    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
+    #         # my_range = (0, 13.7)
+
+    #         # bins_sfr = 100
+    #         # bins = np.linspace(*self.t_range, bins_sfr)
+    #         # print(bins)
+    #         sfh_hist, sfh_bins = pynbody.plot.stars.sfh(self.snap_list[-1]) #, trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
+
+    
 
 class MoriaSim(Simulation):
     """docstring for MoriaSim"""
@@ -326,7 +359,6 @@ class MoriaSim(Simulation):
         # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
         # super(MoriaSim, self).__init__(sim_id)
         self._load(sim_id, kicked)
-        self._widgets_initialized = False
         sumfile_path = os.path.join(self._sf_moria, sim_id + ".dat")
         if os.path.isfile(sumfile_path):
             logger.info("Getting sumfile: ", sumfile_path)
@@ -362,38 +394,7 @@ class MoriaSim(Simulation):
         ax.set_aspect('equal')
         plt.legend(loc=0)
 
-    def plot_star(self, snap):
-        """Wrapper around pynbody.plot.stars.render using correct smoothing length"""
-        pass
 
-    def plot_gas(self, i, faceon=False, **kwargs):
-        snap = self.snap_list[i]
-        snap.g['smooth'] /= 2
-        pynbody.analysis.halo.center(snap)
-        if faceon:
-            pynbody.analysis.angmom.faceon(snap)
-        try:
-            img = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", **kwargs)
-        except Exception as e:
-            raise(e)
-        finally:
-            snap.g['smooth'] *= 2
-        return img
-
-    # def sfh(self):
-    #     # ignore AccuracyWarning that is issued when an integral is zero
-    #     import warnings
-    #     from scipy.integrate.quadrature import AccuracyWarning
-    #     with warnings.catch_warnings():
-    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
-    #         # my_range = (0, 13.7)
-
-    #         # bins_sfr = 100
-    #         # bins = np.linspace(*self.t_range, bins_sfr)
-    #         # print(bins)
-    #         sfh_hist, sfh_bins = pynbody.plot.stars.sfh(self.snap_list[-1]) #, trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
-
-    
 class BhSim(Simulation):
     """docstring for MoriaSim"""
     _sim_dir = "/home/michele/sim/MySimulations/bh"
