@@ -5,10 +5,8 @@ import logging
 import pynbody
 from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 from util import np_printoptions
-import ipywidgets
-
-from multiprocessing import Pool, Process, Queue
 from analyze_sumfiles import get_sumfile
+from multiprocessing import Pool, Process, Queue
 
 
 logger = logging.getLogger(__name__)
