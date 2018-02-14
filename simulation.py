@@ -10,7 +10,7 @@ from multiprocessing import Pool, Process, Queue
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 def mass_resolution(snap):
     return (snap['mass'].sum()/len(snap)).in_units("Msol")
