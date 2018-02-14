@@ -51,9 +51,12 @@ class Simulation(object):
     _rho_min=5e-4;
     _computed_cog = False
 
-    def __init__(self, sim_id):
+    def __init__(self, sim_dir, sim_id=None):
+        if sim_id is None:
+            sim_id = sim_dir
         self.sim_id = sim_id
-        self.snap_list = self._load(sim_id)
+        self._sim_dir = sim_dir
+        self.snap_list = self._load(sim_dir)
 
     def _load(self, sim_id):
         logger.info("loading simulation: {}".format(sim_id))
