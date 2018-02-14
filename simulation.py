@@ -9,6 +9,7 @@ import ipywidgets
 from ipywidgets import HBox, VBox, Layout
 from multiprocessing import Pool, Process, Queue
 import multiprocess
+from analyze_sumfiles import get_sumfile
 
 
 logger = logging.getLogger(__name__)
@@ -17,8 +18,8 @@ logging.basicConfig(level=logging.DEBUG)
 def mass_resolution(snap):
     return (snap['mass'].sum()/len(snap)).in_units("Msol")
 
-def velocity_projection(sim):
-    v_x, v_y, v_z = sim['vel'].mean(axis=0)
+def velocity_projection(snap):
+    v_x, v_y, v_z = snap['vel'].mean(axis=0)
     v_xy = np.linalg.norm([v_x, v_y])
     alpha = np.sign(v_y) * np.arccos(v_x/v_xy) * 180.0/np.pi
     theta = np.arctan(v_z/v_xy) * 180.0/np.pi
@@ -77,10 +78,10 @@ class Simulation(object):
             self.times[i] = snap.properties['time'].in_units('Gyr')
 
     def mass_resolution(self):
-        pass
+        return mass_resolution(self.snap_list[0])
 
     def __getitem__(self, idx):
-        return self.snap_list(idx)
+        return self.snap_list[idx]
 
     def __len__(self):
         return len(self.snap_list)
@@ -88,8 +89,30 @@ class Simulation(object):
     def __repr__(self):
         return "{}: ({}) {}".format(self.sim_id, len(self), self.snap(0).__repr__())
 
+    @property
+    def t_range(self):
+        if self.times is None:
+            self.get_times()
+        return self.times.min(), self.times.max()
+
+    # def plot_property(a, k, prop, unit=None, ax=None):
+    #     if ax is None:
+    #         fig, ax = plt.subplots()
+    #     unit = k[prop].unit if unit is None else unit
+    #     time = a['time'].to(u.Gyr)
+    #     ax.plot(time, a[prop].to(unit), "r", label="MoRIA")
+    # #     ax2 = ax.twinx()
+    # #     ax2.s
+    #     k2 = np.interp(a['time'], k['time'], k[prop].to(unit), left=np.nan)
+    #     ax.plot(time[:-1], k2[:-1], label="Kicked")
+    #     ax.set_xlabel('time (Gyr)')
+    #     ax.set_ylabel("{0} ({1:latex})".format(prop,unit))
+    #     ax.set_title(prop)
+    #     plt.legend(loc=0)
+
+
     def compute_cog(self, use_process=False, use_multiprocess=False,
-                    save_cache=False, cache_file=None, cache_dir=".cog", force=False, verbose=True, family=None):
+                    save_cache=False, cache_file=None, cache_dir=".cog/", force=False, verbose=True, family=None):
         """
         Compute the center of gravity of a simulation
 
@@ -107,7 +130,8 @@ class Simulation(object):
             return
 
         if cache_file is None:
-            cache_file = os.path.join(cache_dir, self.sim_id + ".cog.npz")
+            cache_file = os.path.join(cache_dir, 
+                self.sim_id + ".cog.npz" if family is None else ".{}.cog.npz".format(family))
             os.makedirs(cache_dir, exist_ok=True)
 
         if not force and os.path.isfile(cache_file):
@@ -156,76 +180,6 @@ class Simulation(object):
     def _center_all(self):
         for snap in self.snap_list:
             pynbody.analysis.halo.center(snap)
-
-
-class MoriaSim(Simulation):
-    """docstring for MoriaSim"""
-    def __init__(self, sim_id, kicked=False):
-        self.sim_id = sim_id
-        self.kicked = kicked
-        # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
-        # super(MoriaSim, self).__init__(sim_id)
-        self._load(sim_id, kicked)
-        self._widgets_initialized = False
-
-    def _load(self, sim_id, kicked=False):
-        logger.info("loading simulation: {}".format(sim_id))
-        self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
-        # Remove boxsize which complicates the plotting
-        for i, snap in enumerate(self.snap_list):
-            if i==0:
-                self.boxsize = snap.properties.pop('boxsize', None).copy()
-            snap.properties.pop('boxsize', None)
-
-    def clear_snap_list(self):
-        import gc
-        # import resource
-        # mem_1 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        # print(mem_1)
-        del self.snap_list
-        nobs = gc.collect()
-        # mem_2 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss  
-        # print(mem_2)
-        # logger.info("freed {} objects - {:.2f} MB".format(nobs, round((mem_1-mem_2)/1024.0,1)))
-        logger.info("freed {} objects".format(nobs))
-        self._load(self.sim_id, self.kicked)
-
-    @property
-    def t_range(self):
-        if self.times is None:
-            self.get_times()
-        return self.times.min(), self.times.max()
-
-    def plot_star(self, snap):
-        """Wrapper around pynbody.plot.stars.render using correct smoothing length"""
-        pass
-
-    def plot_gas(self, i, faceon=False, **kwargs):
-        snap = self.snap_list[i]
-        snap.g['smooth'] /= 2
-        pynbody.analysis.halo.center(snap)
-        if faceon:
-            pynbody.analysis.angmom.faceon(snap)
-        try:
-            img = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", **kwargs)
-        except Exception as e:
-            raise(e)
-        finally:
-            snap.g['smooth'] *= 2
-        return img
-
-    # def sfh(self):
-    #     # ignore AccuracyWarning that is issued when an integral is zero
-    #     import warnings
-    #     from scipy.integrate.quadrature import AccuracyWarning
-    #     with warnings.catch_warnings():
-    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
-    #         # my_range = (0, 13.7)
-
-    #         # bins_sfr = 100
-    #         # bins = np.linspace(*self.t_range, bins_sfr)
-    #         # print(bins)
-    #         sfh_hist, sfh_bins = pynbody.plot.stars.sfh(self.snap_list[-1]) #, trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
 
     def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, **kwargs):
         """Create figure with gas and star rendering from pynbody"""
@@ -359,6 +313,106 @@ class MoriaSim(Simulation):
         b = VBox([HBox([VBox(w.children[0:4]), VBox(w.children[4:7])],
                  layout=Layout(display='flex', width='150%')), w.children[-1]])
         return b
+
+
+class MoriaSim(Simulation):
+    """docstring for MoriaSim"""
+    _sf_tidal_folder = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/results/sumfiles/"
+    _sf_moria = "/home/michele/sim/MoRIA/results/sumfiles/"
+    
+    def __init__(self, sim_id, kicked=False):
+        self.sim_id = sim_id
+        self.kicked = kicked
+        # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
+        # super(MoriaSim, self).__init__(sim_id)
+        self._load(sim_id, kicked)
+        self._widgets_initialized = False
+        sumfile_path = os.path.join(self._sf_moria, sim_id + ".dat")
+        if os.path.isfile(sumfile_path):
+            logger.info("Getting sumfile: ", sumfile_path)
+            self.sumfile = get_sumfile(os.path.join(self._sf_moria, sim_id + ".dat"))
+        else:
+            logger.info("No sumfile found")
+
+    def _load(self, sim_id, kicked=False):
+        logger.info("loading simulation: {}".format(sim_id))
+        self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
+        # Remove boxsize which complicates the plotting
+        for i, snap in enumerate(self.snap_list):
+            if i==0:
+                self.boxsize = snap.properties.pop('boxsize', None).copy()
+            snap.properties.pop('boxsize', None)
+
+    def clear_snap_list(self):
+        import gc
+        # import resource
+        # mem_1 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        # print(mem_1)
+        del self.snap_list
+        nobs = gc.collect()
+        # mem_2 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss  
+        # print(mem_2)
+        # logger.info("freed {} objects - {:.2f} MB".format(nobs, round((mem_1-mem_2)/1024.0,1)))
+        logger.info("freed {} objects".format(nobs))
+        self._load(self.sim_id, self.kicked)
+
+    def plot_orbit(self):
+        fig, ax = plt.subplots()
+        ax.plot(self.sumfile['rcom_x'], self.sumfile['rcom_y'], label="{}".format(self.sim_id))
+        ax.set_aspect('equal')
+        plt.legend(loc=0)
+
+    def plot_star(self, snap):
+        """Wrapper around pynbody.plot.stars.render using correct smoothing length"""
+        pass
+
+    def plot_gas(self, i, faceon=False, **kwargs):
+        snap = self.snap_list[i]
+        snap.g['smooth'] /= 2
+        pynbody.analysis.halo.center(snap)
+        if faceon:
+            pynbody.analysis.angmom.faceon(snap)
+        try:
+            img = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", **kwargs)
+        except Exception as e:
+            raise(e)
+        finally:
+            snap.g['smooth'] *= 2
+        return img
+
+    # def sfh(self):
+    #     # ignore AccuracyWarning that is issued when an integral is zero
+    #     import warnings
+    #     from scipy.integrate.quadrature import AccuracyWarning
+    #     with warnings.catch_warnings():
+    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
+    #         # my_range = (0, 13.7)
+
+    #         # bins_sfr = 100
+    #         # bins = np.linspace(*self.t_range, bins_sfr)
+    #         # print(bins)
+    #         sfh_hist, sfh_bins = pynbody.plot.stars.sfh(self.snap_list[-1]) #, trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
+
+    
+class BhSim(Simulation):
+    """docstring for MoriaSim"""
+    _sim_dir = "/home/michele/sim/MySimulations/bh"
+    _sf_bh_folder = os.path.join(_sim_dir, "results/sumfiles/")
+
+    def __init__(self, sim_id):
+        self.sim_id = sim_id
+        # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
+        # super(MoriaSim, self).__init__(sim_id)
+        self._load(sim_id)
+
+    def _load(self, sim_id):
+        logger.info("loading simulation: {}".format(sim_id))
+        self.snap_list = load_sim(os.path.join(self._sim_dir, sim_id, "out"))
+        # Remove boxsize which complicates the plotting
+        for i, snap in enumerate(self.snap_list):
+            if i==0:
+                self.boxsize = snap.properties.pop('boxsize', None).copy()
+            snap.properties.pop('boxsize', None)
 
 def time_range_kicked_moria():
     trange = (min(np.min(times_moria), np.min(times_kicked)), max(np.max(times_moria), np.max(times_kicked)))
