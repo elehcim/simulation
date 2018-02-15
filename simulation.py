@@ -130,10 +130,11 @@ class Simulation(object):
             logger.info("Center of gravity already computed")
             return
 
-        if save_cache and cache_file is None:
+        if cache_file is None:
             cache_file = os.path.join(cache_dir, 
                 self.sim_id + ".cog.npz" if family is None else ".{}.cog.npz".format(family))
-            os.makedirs(cache_dir, exist_ok=True)
+            if save_cache:
+                os.makedirs(cache_dir, exist_ok=True)
 
         if not force and os.path.isfile(cache_file):
             logger.info("Loading precomputed center of gravity for all the snapshots")
@@ -222,7 +223,7 @@ class Simulation(object):
 
             fig.tight_layout() # only plots above are affected
             fig.subplots_adjust(top=0.92, bottom=0.15)
-            cbar_ax = fig.add_axes([0.1, 0.06, 0.32, 0.02])
+            cbar_ax = fig.add_axes([0.12, 0.07, 0.3, 0.02])
             fig.colorbar(im, cax=cbar_ax, orientation='horizontal').set_label("rho [g cm^-2]")
             if sfh:
                 # TODO fix negative position of axes
@@ -237,15 +238,15 @@ class Simulation(object):
                 ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
                 ax_sfh.set_xlabel("Time [Gyr]")
                 ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
-
             if cog:
-                ax_cog = fig.add_axes([0.6,  -0.3, 0.26, 0.26])
-                ax_cog.set_xlabel("x (kpc)")
-                ax_cog.set_ylabel("y (kpc)")
+                ax_cog = fig.add_axes([0.63,  -0.3, 0.26, 0.26])
+                ax_cog.set_xlabel("x [kpc]")
+                ax_cog.set_ylabel("y [kpc]")
                 ax_cog.scatter(*self.cog[:2])
                 # Plot current position and center
                 ax_cog.scatter(*self.cog[:2, i], color="red")
                 ax_cog.scatter(0, 0, marker='+', color="b")
+                ax_cog.set_title("COG trajectory")
                 ax_cog.axis('equal')
 
             title = '$t={:5.2f}$ Gyr, snap={}'.format(snap_time_gyr, snap_num)
