@@ -11,6 +11,7 @@ from multiprocessing import Pool, Process, Queue
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 def mass_resolution(snap):
     return (snap['mass'].sum()/len(snap)).in_units("Msol")
@@ -129,7 +130,7 @@ class Simulation(object):
             logger.info("Center of gravity already computed")
             return
 
-        if cache_file is None:
+        if save_cache and cache_file is None:
             cache_file = os.path.join(cache_dir, 
                 self.sim_id + ".cog.npz" if family is None else ".{}.cog.npz".format(family))
             os.makedirs(cache_dir, exist_ok=True)
