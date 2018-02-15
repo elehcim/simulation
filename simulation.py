@@ -201,8 +201,14 @@ class Simulation(object):
             r1 = snap.rotate_z(alpha)
             r2 = snap.rotate_y(theta)
 
-        fig, (ax_g, ax_s) = plt.subplots(nrows=1, ncols=2, figsize=(16,8))
+        if sfh or cog:
+            nrows = 2
+        else:
+            nrows = 1
 
+        # gs = gridspec.GridSpec(3, 3)
+        fig, axes = plt.subplots(nrows=nrows, ncols=2, figsize=(16,8*nrows))
+        print(axes)
         # If not provided use a default value for width
         width = kwargs.get("width", 20)
         kwargs.pop("width", None)
@@ -211,6 +217,7 @@ class Simulation(object):
             snap_num = int(snap.filename[-4:])
     #         with np_printoptions(precision=2):
     #             title = '$t={:5.2f}$ Gyr, snap={}\nv = {}'.format(snap.properties['time'].in_units("Gyr"), snap_num, velocity)
+            ax_g, ax_s = axes.ravel()[0:2]  # take always the first two
             im = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", subplot=ax_g, #title=title,
                            ret_im=True, show_cbar=False, width=width, **kwargs)
             rgbim = pynbody.plot.stars.render(snap, axes=ax_s, width=width, clear=False, plot=False, ret_im=True)
@@ -227,7 +234,9 @@ class Simulation(object):
             if sfh:
                 # TODO fix negative position of axes
                 #  [left, bottom, width, height]
-                ax_sfh = fig.add_axes([0.1,  -0.3, 0.35, 0.26])
+                # ax_sfh = fig.add_axes([0.1,  -0.3, 0.35, 0.26])
+                ax_sfh = axes[1,0]
+
                 # ignore AccuracyWarning that is issued when an integral is zero
                 import warnings
                 from scipy.integrate.quadrature import AccuracyWarning
@@ -237,9 +246,11 @@ class Simulation(object):
                 ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
                 ax_sfh.set_xlabel("Time [Gyr]")
                 ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
-
+                # fig.tight_layout()  #FIXME
             if cog:
-                ax_cog = fig.add_axes([0.6,  -0.3, 0.26, 0.26])
+                # ax_cog = fig.add_axes([0.6,  -0.3, 0.26, 0.26])
+                ax_cog = axes[1,1]
+
                 ax_cog.set_xlabel("x (kpc)")
                 ax_cog.set_ylabel("y (kpc)")
                 ax_cog.scatter(*self.cog[:2])
@@ -247,7 +258,7 @@ class Simulation(object):
                 ax_cog.scatter(*self.cog[:2, i], color="red")
                 ax_cog.scatter(0, 0, marker='+', color="b")
                 ax_cog.axis('equal')
-
+            else: fig.delaxes(axes[1,1])
             title = '$t={:5.2f}$ Gyr, snap={}'.format(snap_time_gyr, snap_num)
             if velocity_proj:
                 with np_printoptions(precision=2):
