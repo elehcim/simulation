@@ -1,15 +1,16 @@
 # hyplot visual script to read in snapshot, recenter, and write recentered snapshot again
+# FIXME remove hardcoded paths and use argparse 
 import sys
 import subprocess
 import os
-import math
 
 import chyplot
 import enums
 
-print sys.argv
+import argparse
 
 args = sys.argv[1:] # getting relevant arguments (first two are 'hyplot', '--visual=thisScript.py')
+
 
 run = int(args[0])
 snapStart = int(args[1])
@@ -35,7 +36,7 @@ for snap in range(snapStart, snapEnd+1):
 
     newDir = "/home/michele/sim/recentered/sim" + str(run) +"/snaps/"
     if not os.path.exists(newDir):
-	os.system('mkdir -p %s' %newDir)
+        os.system('mkdir -p %s' %newDir)
     fileName = newDir + snapName + "%04.d" %snap
     print fileName
     
