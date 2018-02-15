@@ -5,7 +5,7 @@ import pynbody
 MORIA_PATH = '/home/michele/sim/MoRIA/'
 KICKED_PATH = '/home/michele/sim/MySimulations/Moria8Gyr_tidal'
 
-def snapshot_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
+def snapshot_file_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
     """Return a list of the path to all the snapshots in the simulation folder"""
     if not os.path.isdir(dirname):
          raise IOError("{} is not a directory".format(dirname))
@@ -16,23 +16,23 @@ def snapshot_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
     filelist.sort()
     return filelist
 
-def load_sim(sim_dir):
-    """Return a tuple of pynbody.SimSnap contained in the directory `sim_dir`"""
-    snaplist = snapshot_list(sim_dir, include_dir=True)
-    simlist = tuple(pynbody.load(snap) for snap in snaplist)
-    return simlist
+def load_sim(snap_dir):
+    """Return a tuple of pynbody.SimSnap contained in the directory `snap_dir`"""
+    snap_name_list = snapshot_file_list(snap_dir, include_dir=True)
+    snap_list = tuple(pynbody.load(snap) for snap in snap_name_list)
+    return snap_list
 
-def load_snap(sim_dir, snap_number):
+def load_snap(snap_dir, snap_number):
     """Return pynbody.SimSnap
     if `snap_number is negative use it as a list index"""
-    snaplist = snapshot_list(sim_dir, include_dir=True)
+    snaplist = snapshot_file_list(snap_dir, include_dir=True)
     if snap_number < 0:
         return pynbody.load(snaplist[snap_number])
     for snap in snaplist:
         if "{:04d}".format(snap_number) in os.path.basename(snap):
             break
     else:
-        raise RuntimeError("No snap {} in simulation folder {}".format(snap_number, sim_dir))
+        raise RuntimeError("No snap {} in simulation folder {}".format(snap_number, snap_dir))
     return pynbody.load(snap)
 
 def load_moria(sim_number, snap_number=None, path=MORIA_PATH):
