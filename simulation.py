@@ -184,7 +184,7 @@ class Simulation(object):
         for snap in self.snap_list:
             pynbody.analysis.halo.center(snap)
 
-    def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, **kwargs):
+    def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, starsize=None, **kwargs):
         """Create figure with gas and star rendering from pynbody"""
         snap = self.snap_list[i]
         snap.g['smooth'] /= 2
@@ -214,7 +214,7 @@ class Simulation(object):
     #             title = '$t={:5.2f}$ Gyr, snap={}\nv = {}'.format(snap.properties['time'].in_units("Gyr"), snap_num, velocity)
             im = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", subplot=ax_g, #title=title,
                            ret_im=True, show_cbar=False, width=width, **kwargs)
-            rgbim = pynbody.plot.stars.render(snap, axes=ax_s, width=width, clear=False, plot=False, ret_im=True)
+            rgbim = pynbody.plot.stars.render(snap, starsize=starsize, axes=ax_s, width=width, clear=False, plot=False, ret_im=True)
             ax_s.imshow(rgbim[::-1, :], extent=(-width / 2, width / 2, -width / 2, width / 2))
             ax_s.set_xlabel('x [' + str(snap.s['x'].units) + ']')
             ax_s.set_ylabel('y [' + str(snap.s['y'].units) + ']')
@@ -269,12 +269,20 @@ class Simulation(object):
                 snap['vel'] = backup_v
         return fig
 
-    def _setup_widgets_interact_plot_gas_star(self, rho_min=None, rho_max=None, step=1e-5):
+    def interact(self, rho_min=None, rho_max=None, step=1e-5):
         if rho_min is None:
             rho_min = self._rho_min
         if rho_max is None:
             rho_max = self._rho_max
-        self._vminmax = ipywidgets.FloatRangeSlider(
+
+        def k(i, velocity_proj, sfh, cog, vrange, width, starsize, resolution):
+            self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog,
+                                    vmin=vrange[0], vmax=vrange[1], starsize=starsize,
+                                    width=width, resolution=resolution)
+        import ipywidgets
+        from ipywidgets import HBox, VBox, Layout
+
+        _vminmax = ipywidgets.FloatRangeSlider(
             value=[rho_min, rho_max],
             min=rho_min,
             max=rho_max,
@@ -285,36 +293,24 @@ class Simulation(object):
             readout=True,
             readout_format='1.0e',
         )
-        self._snap_slider = ipywidgets.IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
-        self._width_slider = ipywidgets.IntSlider(min=5,max=1000,step=10,value=20, continuous_update=False, description='Width (kpc):')
-        self._res_slider = ipywidgets.IntSlider(min=100,max=1000,step=100,value=200, continuous_update=False, description='Resol. (pix):')
-        self._proj = ipywidgets.Checkbox(value=False,  description='Velocity projection')
-        self._sfh = ipywidgets.Checkbox(value=True,  description='SFH')
-        self._traj = ipywidgets.Checkbox(value=True,  description='COG traj.')
+        _snap_slider = ipywidgets.IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
+        _width_slider = ipywidgets.IntSlider(min=5,max=1000,step=10,value=20, continuous_update=False, description='Width (kpc):')
+        _res_slider = ipywidgets.IntSlider(min=100,max=1000,step=100,value=200, continuous_update=False, description='Resol. (pix):')
+        _proj = ipywidgets.Checkbox(value=False, description='Velocity projection')
+        _sfh = ipywidgets.Checkbox(value=True, description='SFH')
+        _traj = ipywidgets.Checkbox(value=True, description='COG traj.')
+        _starsize = ipywidgets.FloatSlider(min=0.1, max=1000, value=1, continuous_update=False, description='Starsize. (kpc):')
 
-    def interact(self, rho_min=None, rho_max=None, step=1e-5):
-        if rho_min is None:
-            rho_min = self._rho_min
-        if rho_max is None:
-            rho_max = self._rho_max
-
-        def k(i, velocity_proj, sfh, cog, vrange, width, resolution):
-            self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog,
-                                    vmin=vrange[0], vmax=vrange[1],
-                                    width=width, resolution=resolution)
-        import ipywidgets
-        from ipywidgets import HBox, VBox, Layout
-
-        self._setup_widgets_interact_plot_gas_star(rho_min, rho_max, step)
         w = ipywidgets.interactive(k,
-                            i=self._snap_slider,
-                            velocity_proj=self._proj,
-                            sfh=self._sfh,
-                            cog=self._traj,
-                            vrange=self._vminmax,
-                            width=self._width_slider,
-                            resolution=self._res_slider);
-        b = VBox([HBox([VBox(w.children[0:4]), VBox(w.children[4:7])],
+                            i=_snap_slider,
+                            velocity_proj=_proj,
+                            sfh=_sfh,
+                            cog=_traj,
+                            vrange=_vminmax,
+                            width=_width_slider,
+                            starsize=_starsize,
+                            resolution=_res_slider)
+        b = VBox([HBox([VBox(w.children[0:4]), VBox(w.children[4:8])],
                  layout=Layout(display='flex', width='150%')), w.children[-1]])
         return b
 
