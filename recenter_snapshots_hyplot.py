@@ -37,7 +37,7 @@ for snap in range(snapStart, snapEnd+1):
     newDir = "/home/michele/sim/recentered/sim" + str(run) +"/snaps/"
     if not os.path.exists(newDir):
         os.system('mkdir -p %s' %newDir)
-    fileName = newDir + snapName + "%04.d" %snap
+    fileName = os.path.join(newDir, snapName + "%04.d" % snap)
     print fileName
     
     writer = chyplot.CWriteGadget()
