@@ -1,5 +1,4 @@
 # hyplot visual script to read in snapshot, recenter, and write recentered snapshot again
-# FIXME remove hardcoded paths and use argparse 
 import sys
 import subprocess
 import os
@@ -9,19 +8,36 @@ import enums
 
 import argparse
 
-args = sys.argv[1:] # getting relevant arguments (first two are 'hyplot', '--visual=thisScript.py')
+from util import first_last_snap
 
 
-run = int(args[0])
-snapStart = int(args[1])
-snapEnd = int(args[2])
+# args = sys.argv[1:] # getting relevant arguments (first two are 'hyplot', '--visual=thisScript.py')
+# fdir = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/sim69002_p200.0_a600.0_r600.0_c8.15_movie/out"
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('snap_dir', help='Snapshots directory')
+parser.add_argument('-o', '--output_dir', '--out', help='Output directory (create it if it does not exist)')
+parser.add_argument('-s', '--start', default=None, type=int, help='First snaphot to consider')
+parser.add_argument('-e', '--end',   default=None, type=int, help='Last snaphot to consider ')
+args = parser.parse_args()
+
+# run = int(args[0])
+# snapStart = int(args[1])
+# snapEnd = int(args[2])
 snapName = 'snapshot_'
 
-print run, snapStart, snapEnd, snapName
+snapStart, snapEnd = first_last_snap(args.snap_dir)
 
-dr = chyplot.CDataGadget(run)
-fdir = "/home/michele/sim/MoRIA/sim%05.d/"%run
-dr.setPrefix( fdir )
+if args.start is not None:
+    snapStart = args.start
+if args.end is not None:
+    snapEnd = args.end
+
+print snapStart, snapEnd, snapName
+
+dr = chyplot.CDataGadget()
+dr.setPrefix( args.snap_dir )
 dr.checkFilesPresent() # set the first and last dump
 
 for snap in range(snapStart, snapEnd+1):
@@ -34,7 +50,8 @@ for snap in range(snapStart, snapEnd+1):
 
     chyplot.cglobals.plmap.setDataBlock(data)
 
-    newDir = "/home/michele/sim/recentered/sim" + str(run) +"/snaps/"
+    newDir = output_dir
+    # newDir = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/sim69002_p200.0_a600.0_r600.0_c8.15_movie_recentered"
     if not os.path.exists(newDir):
         os.system('mkdir -p %s' %newDir)
     fileName = os.path.join(newDir, snapName + "%04.d" % snap)
