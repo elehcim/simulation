@@ -1,0 +1,40 @@
+
+[gadgethdf-name-mapping]
+FormationTime: tform
+
+[gadget-name-mapping]
+tfor: tform
+zsta: metals
+#fesp: Fe
+#mgsp: Mg
+inma: massform
+
+[gadget-units]
+# Cosmological dependencies (a and h) will be stripped out for non-
+# cosmological runs.
+vel: km s^-1
+pos: kpc
+mass: 1e10 Msol
+
+
+[gadget-type-mapping]
+gas: 0
+dm: 1
+star: 4
+
+[gadget-default-output]
+# Gadget files have no intrinsic set of fields, so this defines a
+# default set and an ordering too (in terms of the pynbody names,
+# not the gadget block names)
+
+# Any arrays not mentioned in the field ordering below will be
+# tacked on the end of the file in an unspecified order
+field-ordering = pos, vel, iord, mass, u, rho, smooth, pot, acc, zsph, metals, fesp, fest, mgsp, mgst, massform, myp, tform, temp, pres 
+
+[general]
+verbose: True
+tracktime: True
+
+[sph]
+; smooth-particles: 32
+approximate-fast-images: True
