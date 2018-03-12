@@ -359,7 +359,7 @@ class Simulation(object):
         #     for _y in y:
 
             ax.plot(p['rbins'], p[y])
-            snap_time_gyr = sim[i].properties['time'].in_units("Gyr")
+            snap_time_gyr = self[i].properties['time'].in_units("Gyr")
             ax.set_xlabel("r ({})".format(p['rbins'].units))
             ax.set_ylabel("{} ({})".format(y, getattr(p[y],'units','')))
             title = '{}   ($t={:5.2f}$ Gyr, snap={})'.format(y, snap_time_gyr, i)
