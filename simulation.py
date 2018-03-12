@@ -154,7 +154,7 @@ class Simulation(object):
         # else:
         for i, snap in enumerate(self.snap_list):
             if family is not None:
-                snap = snap.__getattr__(family)
+                snap = getattr(snap, family)
 
             if verbose:
                 logger.info("{:03d} Analysing {} (time {:.4f} Gyr)".format(i, snap.filename, snap.properties['time'].in_units('Gyr')))
@@ -221,7 +221,7 @@ class Simulation(object):
             ax_g.set_xlabel('x [' + str(snap.g['x'].units) + ']')
             ax_g.set_ylabel('y [' + str(snap.g['y'].units) + ']')
 
-            fig.tight_layout() # only plots above are affected
+            fig.tight_layout()  # only plots above are affected
             fig.subplots_adjust(top=0.92, bottom=0.15)
             cbar_ax = fig.add_axes([0.12, 0.07, 0.3, 0.02])
             fig.colorbar(im, cax=cbar_ax, orientation='horizontal').set_label("rho [g cm^-2]")
@@ -279,10 +279,10 @@ class Simulation(object):
             self.plot_gas_and_stars(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog,
                                     vmin=vrange[0], vmax=vrange[1], starsize=starsize,
                                     width=width, resolution=resolution)
-        import ipywidgets
-        from ipywidgets import HBox, VBox, Layout
 
-        _vminmax = ipywidgets.FloatRangeSlider(
+        from ipywidgets import interactive, HBox, VBox, Layout, FloatRangeSlider, IntSlider, Checkbox, FloatSlider
+
+        _vminmax = FloatRangeSlider(
             value=[rho_min, rho_max],
             min=rho_min,
             max=rho_max,
@@ -293,26 +293,82 @@ class Simulation(object):
             readout=True,
             readout_format='1.0e',
         )
-        _snap_slider = ipywidgets.IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
-        _width_slider = ipywidgets.IntSlider(min=5,max=1000,step=10,value=20, continuous_update=False, description='Width (kpc):')
-        _res_slider = ipywidgets.IntSlider(min=100,max=1000,step=100,value=200, continuous_update=False, description='Resol. (pix):')
-        _proj = ipywidgets.Checkbox(value=False, description='Velocity projection')
-        _sfh = ipywidgets.Checkbox(value=True, description='SFH')
-        _traj = ipywidgets.Checkbox(value=True, description='COG traj.')
-        _starsize = ipywidgets.FloatSlider(min=0.1, max=1000, value=1, continuous_update=False, description='Starsize. (kpc):')
+        _snap_slider = IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
+        _width_slider = IntSlider(min=5,max=1000,step=10,value=20, continuous_update=False, description='Width (kpc):')
+        _res_slider = IntSlider(min=100,max=1000,step=100,value=200, continuous_update=False, description='Resol. (pix):')
+        _proj = Checkbox(value=False, description='Velocity projection')
+        _sfh = Checkbox(value=True, description='SFH')
+        _traj = Checkbox(value=True, description='COG traj.')
+        _starsize = FloatSlider(min=0.1, max=1000, value=1, continuous_update=False, description='Starsize. (kpc):')
 
-        w = ipywidgets.interactive(k,
-                            i=_snap_slider,
-                            velocity_proj=_proj,
-                            sfh=_sfh,
-                            cog=_traj,
-                            vrange=_vminmax,
-                            width=_width_slider,
-                            starsize=_starsize,
-                            resolution=_res_slider)
+        w = interactive(k,
+                        i=_snap_slider,
+                        velocity_proj=_proj,
+                        sfh=_sfh,
+                        cog=_traj,
+                        vrange=_vminmax,
+                        width=_width_slider,
+                        starsize=_starsize,
+                        resolution=_res_slider)
         b = VBox([HBox([VBox(w.children[0:4]), VBox(w.children[4:8])],
                  layout=Layout(display='flex', width='150%')), w.children[-1]])
         return b
+
+    def _available_keys(self):  # FIXME do it in an automamtic way. But seems that self.profiles is not useful and better not use it.
+        # keys = set(self[0].g.loadable_keys()).union(set(sim.profiles[0]['g'].derivable_keys()))
+        # return keys
+        keys = ['E_circ', 'Q', 'X', 'beta', 'density', 'density_enc', 'dyntime', 'fesp', 'fourier', 
+        'g_spherical', 'j_circ', 'j_phi', 'j_theta', 'jtot', 'kappa', 'magnitudes', 'mass', 'mass_enc',
+        'mgsp', 'omega', 'pattern_frequency', 'pot', 'pres', 'rho', 'rotation_curve_spherical', 'sb', 
+        'smooth', 'temp', 'u', 'v_circ', 'vel', 'zsph']
+
+        return keys
+
+    def interact_profiles(self):
+        from ipywidgets import interactive, IntSlider, ToggleButtons, SelectMultiple, FloatRangeSlider, Select
+        _snap_slider = IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
+        _family_choice = ToggleButtons(options=['g','s'], value='g')
+        _vminmax = FloatRangeSlider(
+            value=[0, 1000],
+            min=0,
+            max=1000,
+            step=10,
+            description='radius:',
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='1.0g',
+        )
+
+        def create_varoptions(default='u', selection_type=SelectMultiple):
+            return selection_type(options=self._available_keys(), value=default)
+
+        def k(i, family, y, vrange=None):
+            if vrange is None:
+                kwargs = {}
+            else:
+                kwargs = {'min': vrange[0], 'max':vrange[1]}
+
+            p = pynbody.analysis.profile.Profile(getattr(self[i], family), **kwargs)
+
+        #     print(self.profiles[i])
+        #     print(p)
+            fig, ax = plt.subplots(1, figsize=(6,4))
+        #     if not isinstance(y, (list, tuple)):
+        #         y = tuple(y)
+        #     for _y in y:
+
+            ax.plot(p['rbins'], p[y])
+            snap_time_gyr = sim[i].properties['time'].in_units("Gyr")
+            ax.set_xlabel("r ({})".format(p['rbins'].units))
+            ax.set_ylabel("{} ({})".format(y, getattr(p[y],'units','')))
+            title = '{}   ($t={:5.2f}$ Gyr, snap={})'.format(y, snap_time_gyr, i)
+            ax.set_title(title)
+
+        w = interactive(k,
+                        i=_snap_slider, family=_family_choice, vrange=_vminmax,
+                        y=create_varoptions('u', selection_type=ToggleButtons))
+        return w
 
     def plot_stars(self, snap):
         """Wrapper around pynbody.plot.stars.render using correct smoothing length"""
