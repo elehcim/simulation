@@ -1,9 +1,14 @@
 *.pyc
+*.egg-info/
 .ipynb_checkpoints/
+
+# binary or results
 *.png
 *.bak
 *.gic
 .cache/
+*.log
+results/
 
 # python datafile
 *.npz
