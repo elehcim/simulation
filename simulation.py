@@ -324,30 +324,36 @@ class Simulation(object):
 
         return keys
 
-    def interact_profiles(self):
+    def interact_profiles(self, default='u', **kwargs):
         from ipywidgets import interactive, IntSlider, ToggleButtons, SelectMultiple, FloatRangeSlider, Select
         _snap_slider = IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
         _family_choice = ToggleButtons(options=['g','s'], value='g')
-        _vminmax = FloatRangeSlider(
-            value=[0, 1000],
-            min=0,
-            max=1000,
-            step=10,
-            description='radius:',
-            continuous_update=False,
-            orientation='horizontal',
-            readout=True,
-            readout_format='1.0g',
-        )
 
-        def create_varoptions(default='u', selection_type=SelectMultiple):
+        def create_vminmax(kwargs):
+            min = kwargs['min'] if 'min' in kwargs else 0.0
+            max = kwargs['max'] if 'max' in kwargs else 1000.0
+
+            _vminmax = FloatRangeSlider(
+                value=[min, max],
+                min=min,
+                max=max,
+                step=10,
+                description='radius:',
+                continuous_update=False,
+                orientation='horizontal',
+                readout=True,
+                readout_format='.0f',
+            )
+            return _vminmax
+
+        _vminmax = create_vminmax(kwargs)
+
+        def create_varoptions(default=default, selection_type=SelectMultiple):
             return selection_type(options=self._available_keys(), value=default)
 
         def k(i, family, y, vrange=None):
-            if vrange is None:
-                kwargs = {}
-            else:
-                kwargs = {'min': vrange[0], 'max':vrange[1]}
+            if vrange is not None:
+                kwargs.update({'min': vrange[0], 'max':vrange[1]})
 
             p = pynbody.analysis.profile.Profile(getattr(self[i], family), **kwargs)
 
@@ -367,7 +373,7 @@ class Simulation(object):
 
         w = interactive(k,
                         i=_snap_slider, family=_family_choice, vrange=_vminmax,
-                        y=create_varoptions('u', selection_type=ToggleButtons))
+                        y=create_varoptions(default, selection_type=ToggleButtons))
         return w
 
     def plot_stars(self, snap):
