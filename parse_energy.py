@@ -11,6 +11,8 @@ header = ["time", "totIntEnergy", "totPotEnergy", "totKinEnergy",
 "IntEnergy_bndry", "PotEnergy_bndry", "KinEnergy_bndry", 
 "mass_gas", "mass_dm", "mass_disk", "mass_bulge", "mass_s", "mass_bndry"]
 
-en = pd.read_csv("energy.txt", names=header, sep=' ')
+def parse_energy(fname="energy.txt"):
+    return pd.read_csv(fnames, names=header, sep=' ')
 
-# TODO add a function to parse the energy 
+if __name__ == '__main__':
+    df = parse_energy(sys.argv[-1])

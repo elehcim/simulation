@@ -1,7 +1,6 @@
 import sys
 import re
 import pandas as pd
-from itertools import zip_longest
 
 # Example of a line:
 # Begin Step 35508, Time: 0.202861, Redshift: 9.49992, Systemstep: 1.59878e-06
