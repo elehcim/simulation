@@ -1,7 +1,13 @@
-import math
 import os, sys, time
 import numpy as np
 import argparse
+
+
+"""
+Look at hyplot/src/CDataBlock:216
+The particle Id of the RHS snap is incremented by the maximum id of the LHS
+
+"""
 
 parser = argparse.ArgumentParser()
 
@@ -62,7 +68,7 @@ for snap in args.input_files:
     # vx, vy, vz = velocity
     # data.kick(enums.T_all, vx, vy, vz)
 
-    print "used snapshot ", snap, " which has time ", data.time()
+    print "used snapshot '", snap, "' which has time", data.time()
 
     if totalData == None:
         totalData = data
