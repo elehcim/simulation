@@ -269,6 +269,86 @@ class Simulation(object):
                 snap['vel'] = backup_v
         return fig
 
+    def plot_gas(self, i, velocity_proj=False, sfh=False, cog=False, **kwargs):
+        """Create figure with gas and star rendering from pynbody"""
+        snap = self.snap_list[i]
+        snap.g['smooth'] /= 2
+        snap_time_gyr = snap.properties['time'].in_units("Gyr")
+        pynbody.analysis.halo.center(snap)
+
+        if velocity_proj:
+            """x-axis is aligned with the overall mean velocity of
+            the snaphot and the vertical axis is the z axis rotated by the elevation angle
+            of the velocity"""
+            backup = snap['pos'].copy()
+            backup_v = snap['vel'].copy()
+            alpha, theta = velocity_projection(snap)
+            r1 = snap.rotate_z(alpha)
+            r2 = snap.rotate_y(theta)
+
+        fig, ax_g = plt.subplots(nrows=1, ncols=1, figsize=(16,8))
+
+        # If not provided use a default value for width
+        width = kwargs.get("width", 20)
+        kwargs.pop("width", None)
+
+        try:
+            snap_num = int(snap.filename[-4:])
+    #         with np_printoptions(precision=2):
+    #             title = '$t={:5.2f}$ Gyr, snap={}\nv = {}'.format(snap.properties['time'].in_units("Gyr"), snap_num, velocity)
+            im = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", subplot=ax_g, #title=title,
+                           ret_im=True, show_cbar=False, width=width, **kwargs)
+            ax_g.set_xlabel('x [' + str(snap.g['x'].units) + ']')
+            ax_g.set_ylabel('y [' + str(snap.g['y'].units) + ']')
+
+            fig.tight_layout() # only plots above are affected
+            fig.subplots_adjust(top=0.92, bottom=0.15)
+            cbar_ax = fig.add_axes([0.35, 0.07, 0.3, 0.02])
+            fig.colorbar(im, cax=cbar_ax, orientation='horizontal').set_label("rho [g cm^-2]")
+            if sfh:
+                # TODO fix negative position of axes
+                #  [left, bottom, width, height]
+                ax_sfh = fig.add_axes([0.15,  -0.3, 0.35, 0.26])
+                # ignore AccuracyWarning that is issued when an integral is zero
+                import warnings
+                from scipy.integrate.quadrature import AccuracyWarning
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=AccuracyWarning)
+                    pynbody.plot.stars.sfh(self.snap_list[-1], subplot=ax_sfh) # trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
+                ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
+                ax_sfh.set_xlabel("Time [Gyr]")
+                ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
+            if cog:
+                ax_cog = fig.add_axes([0.63,  -0.3, 0.26, 0.26])
+                ax_cog.set_xlabel("x [kpc]")
+                ax_cog.set_ylabel("y [kpc]")
+                ax_cog.scatter(*self.cog[:2])
+                # Plot current position and center
+                ax_cog.scatter(*self.cog[:2, i], color="red")
+                ax_cog.scatter(0, 0, marker='+', color="b")
+                ax_cog.set_title("COG trajectory")
+                ax_cog.axis('equal')
+
+            title = '$t={:5.2f}$ Gyr, snap={}'.format(snap_time_gyr, snap_num)
+            if velocity_proj:
+                with np_printoptions(precision=2):
+                    mean_velocity = snap['vel'].mean(axis=0)
+                    title+="\nv = {} km/s".format(mean_velocity)
+            fig.suptitle(title)
+        except Exception as e:
+            raise(e)
+        finally:
+            snap.g['smooth'] *= 2
+            if velocity_proj:
+                # revert is costly (7% for each transformation w.r.t. the sph.image function)
+                # and does not work when the transformation has been applied on a particle family
+                # r2.revert()
+                # r1.revert()
+                snap['pos'] = backup
+                snap['vel'] = backup_v
+        return fig
+
+
     def interact(self, rho_min=None, rho_max=None, step=1e-5):
         if rho_min is None:
             rho_min = self._rho_min
@@ -314,17 +394,21 @@ class Simulation(object):
                  layout=Layout(display='flex', width='150%')), w.children[-1]])
         return b
 
-    def _available_keys(self):  # FIXME do it in an automamtic way. But seems that self.profiles is not useful and better not use it.
+    def _available_keys():  # FIXME do it in an automamtic way. But seems that self.profiles is not useful and better not use it.
         # keys = set(self[0].g.loadable_keys()).union(set(sim.profiles[0]['g'].derivable_keys()))
         # return keys
-        keys = ['E_circ', 'Q', 'X', 'beta', 'density', 'density_enc', 'dyntime', 'fesp', 'fourier', 
+        keys = ['E_circ', 'acce_norm', 'vel_norm', 'Q', 'X', 'beta', 'density', 'density_enc', 'dyntime', 'fesp', 'fourier', 
         'g_spherical', 'j_circ', 'j_phi', 'j_theta', 'jtot', 'kappa', 'magnitudes', 'mass', 'mass_enc',
-        'mgsp', 'omega', 'pattern_frequency', 'pot', 'pres', 'rho', 'rotation_curve_spherical', 'sb', 
-        'smooth', 'temp', 'u', 'v_circ', 'vel', 'zsph']
+        'mgsp', 'omega', 'pattern_frequency', 'pot', 'p', 'rho', 'rotation_curve_spherical', 'sb', 
+        'smooth', 'temp', 'u', 'v_circ', 'vel', 'zsph', 'vr', 'vr_disp']
 
         return keys
 
-    def interact_profiles(self, default='u', **kwargs):
+    def interact_profiles(self, default='u', eps=0.03, keys=_available_keys(), add_keys=None, **kwargs):
+        # if keys is None:
+        #     keys = _available_keys()
+        if add_keys is not None:
+            keys += add_keys
         from ipywidgets import interactive, IntSlider, ToggleButtons, SelectMultiple, FloatRangeSlider, Select
         _snap_slider = IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
         _family_choice = ToggleButtons(options=['g','s'], value='g')
@@ -349,13 +433,23 @@ class Simulation(object):
         _vminmax = create_vminmax(kwargs)
 
         def create_varoptions(default=default, selection_type=SelectMultiple):
-            return selection_type(options=self._available_keys(), value=default)
+            return selection_type(options=keys, value=default)
 
         def k(i, family, y, vrange=None):
             if vrange is not None:
                 kwargs.update({'min': vrange[0], 'max':vrange[1]})
+            
+            from pynbody import units
+            self[i]['eps'] = pynbody.array.SimArray(eps*np.ones_like(self[i]['mass']), units.kpc)
+            
+            sim = getattr(self[i], family)
+            # Add norm of vector quantities
+            if 'acce' in sim.loadable_keys():
+                sim['acce_norm'] = np.linalg.norm(sim['acce'], axis=1)
+            if 'vel' in sim.loadable_keys():
+                sim['vel_norm'] = np.linalg.norm(sim['vel'], axis=1)
 
-            p = pynbody.analysis.profile.Profile(getattr(self[i], family), **kwargs)
+            p = pynbody.analysis.profile.Profile(sim, **kwargs)
 
         #     print(self.profiles[i])
         #     print(p)

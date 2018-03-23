@@ -1,12 +1,13 @@
+#!/usr/bin/env python
+
 import os, sys, time
 import numpy as np
 import argparse
 
-
 """
-Look at hyplot/src/CDataBlock:216
+Join together any provided snapshots using hyplot
+To get the order of the output look at hyplot/src/CDataBlock:216
 The particle Id of the RHS snap is incremented by the maximum id of the LHS
-
 """
 
 parser = argparse.ArgumentParser()
