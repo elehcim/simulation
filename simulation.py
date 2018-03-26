@@ -103,6 +103,16 @@ class Simulation(object):
             self.get_times()
         return self._times.min(), self._times.max()
 
+    # def create_profiles(self, **kwargs):
+    #     '''Create profiles objects'''
+    #     self.profiles = list() #[None] * len(self)
+    #     for i, snap in enumerate(self.snap_list):
+    #         self.profiles.append({})
+    #         for f in snap.families():
+    #             self.profiles[i].update({f.aliases[-1]:
+    #                 pynbody.analysis.profile.Profile(getattr(snap, f.name), **kwargs)})
+
+
     # def plot_property(a, k, prop, unit=None, ax=None):
     #     if ax is None:
     #         fig, ax = plt.subplots()
@@ -216,7 +226,7 @@ class Simulation(object):
             pynbody.plot.stars.sfh(self.snap_list[last_snap], subplot=ax_sfh)
         if snap_time_gyr is not None:
             ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
-        ax_cog.set_title("SFH")
+        # ax_sfh.set_title("SFH")
         ax_sfh.set_xlabel("Time [Gyr]")
         ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
         return ax_sfh
@@ -356,6 +366,50 @@ class Simulation(object):
                 snap['vel'] = backup_v
         return fig
 
+    # FIXME I need to find a unified way to interact...
+    def interact_gas(self, rho_min=None, rho_max=None, step=1e-5):
+        if rho_min is None:
+            rho_min = self._rho_min
+        if rho_max is None:
+            rho_max = self._rho_max
+
+        def k(i, velocity_proj, sfh, cog, vrange, width, resolution):
+            self.plot_gas(i, velocity_proj=velocity_proj, sfh=sfh, cog=cog,
+                                    vmin=vrange[0], vmax=vrange[1],
+                                    width=width, resolution=resolution)
+
+        from ipywidgets import interactive, HBox, VBox, Layout, FloatRangeSlider, IntSlider, Checkbox, FloatSlider
+
+        _vminmax = FloatRangeSlider(
+            value=[rho_min, rho_max],
+            min=rho_min,
+            max=rho_max,
+            step=step,
+            description='Rho:',
+            continuous_update=False,
+            orientation='horizontal',
+            readout=True,
+            readout_format='1.0e',
+        )
+        _snap_slider = IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
+        _width_slider = IntSlider(min=5,max=1000,step=10,value=20, continuous_update=False, description='Width (kpc):')
+        _res_slider = IntSlider(min=100,max=1000,step=100,value=200, continuous_update=False, description='Resol. (pix):')
+        _proj = Checkbox(value=False, description='Velocity projection')
+        _sfh = Checkbox(value=True, description='SFH')
+        _traj = Checkbox(value=True, description='COG traj.')
+
+        w = interactive(k,
+                        i=_snap_slider,
+                        velocity_proj=_proj,
+                        sfh=_sfh,
+                        cog=_traj,
+                        vrange=_vminmax,
+                        width=_width_slider,
+                        resolution=_res_slider)
+        control_column_size = 4
+        b = VBox([HBox([VBox(w.children[0:control_column_size]), VBox(w.children[control_column_size:-1])],
+                 layout=Layout(display='flex', width='150%')), w.children[-1]])
+        return b
 
     def interact(self, rho_min=None, rho_max=None, step=1e-5):
         if rho_min is None:
@@ -496,26 +550,12 @@ def plot_gas(sim, i, faceon=False, **kwargs):
         snap.g['smooth'] *= 2
     return img
 
-    # def sfh(self):
-    #     # ignore AccuracyWarning that is issued when an integral is zero
-    #     import warnings
-    #     from scipy.integrate.quadrature import AccuracyWarning
-    #     with warnings.catch_warnings():
-    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
-    #         # my_range = (0, 13.7)
-
-    #         # bins_sfr = 100
-    #         # bins = np.linspace(*self.t_range, bins_sfr)
-    #         # print(bins)
-    #         sfh_hist, sfh_bins = pynbody.plot.stars.sfh(self.snap_list[-1]) #, trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
-
-    
 
 class MoriaSim(Simulation):
     """docstring for MoriaSim"""
     _sf_tidal_folder = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/results/sumfiles/"
     _sf_moria = "/home/michele/sim/MoRIA/results/sumfiles/"
-    
+
     def __init__(self, sim_id, kicked=False):
         self.sim_id = sim_id
         self.kicked = kicked
@@ -524,7 +564,7 @@ class MoriaSim(Simulation):
         self._load(sim_id, kicked)
         sumfile_path = os.path.join(self._sf_moria, sim_id + ".dat")
         if os.path.isfile(sumfile_path):
-            logger.info("Getting sumfile: ", sumfile_path)
+            logger.info("Getting sumfile: {}".format(sumfile_path))
             self.sumfile = get_sumfile(os.path.join(self._sf_moria, sim_id + ".dat"))
         else:
             logger.info("No sumfile found")
