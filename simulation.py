@@ -7,6 +7,7 @@ from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 from util import np_printoptions
 from analyze_sumfiles import get_sumfile
 from multiprocessing import Pool, Process, Queue
+from functools import lru_cache
 
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,7 @@ def my_cog(snap):
 
 class Simulation(object):
     """docstring for Simulation"""
-    times = None
+    _times = None
     cog = None
     _rho_max=2e-1
     _rho_min=5e-4;
@@ -73,10 +74,16 @@ class Simulation(object):
     def snap(self, idx):
         return self.snap_list[idx]
 
+
+    @property
+    @lru_cache(1)
+    def times(self):
+        return np.array([snap.properties['time'].in_units('Gyr') for snap in self.snap_list])
+
     def get_times(self):
-        self.times = np.zeros(len(self), dtype=float)
         for i, snap in enumerate(self.snap_list):
-            self.times[i] = snap.properties['time'].in_units('Gyr')
+            self._times[i] = snap.properties['time'].in_units('Gyr')
+        return self._times
 
     def mass_resolution(self):
         return mass_resolution(self.snap_list[0])
@@ -92,9 +99,9 @@ class Simulation(object):
 
     @property
     def t_range(self):
-        if self.times is None:
+        if self._times is None:
             self.get_times()
-        return self.times.min(), self.times.max()
+        return self._times.min(), self._times.max()
 
     # def plot_property(a, k, prop, unit=None, ax=None):
     #     if ax is None:
@@ -184,6 +191,36 @@ class Simulation(object):
         for snap in self.snap_list:
             pynbody.analysis.halo.center(snap)
 
+    def plot_cog(self, ax_cog, cur_snap=None):
+        if ax_cog is None:
+            fig, ax_cog = plt.subplots(1, figsize=(8,8))
+        ax_cog.set_xlabel("x [kpc]")
+        ax_cog.set_ylabel("y [kpc]")
+        ax_cog.scatter(*self.cog[:2])
+        # Plot current position and center
+        if cur_snap is not None:
+            ax_cog.scatter(*self.cog[:2, cur_snap], color="red")
+        ax_cog.scatter(0, 0, marker='+', color="b")
+        ax_cog.set_title("COG trajectory")
+        ax_cog.axis('equal')
+        return ax_cog
+
+    def plot_sfh(self, ax_sfh, snap_time_gyr=None, last_snap=-1):
+        if ax_sfh is None:
+            fig, ax_sfh = plt.subplots(1, figsize=(8,6))
+        # ignore AccuracyWarning that is issued when an integral is zero
+        import warnings
+        from scipy.integrate.quadrature import AccuracyWarning
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=AccuracyWarning)
+            pynbody.plot.stars.sfh(self.snap_list[last_snap], subplot=ax_sfh)
+        if snap_time_gyr is not None:
+            ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
+        ax_cog.set_title("SFH")
+        ax_sfh.set_xlabel("Time [Gyr]")
+        ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
+        return ax_sfh
+
     def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, starsize=None, **kwargs):
         """Create figure with gas and star rendering from pynbody"""
         snap = self.snap_list[i]
@@ -229,25 +266,11 @@ class Simulation(object):
                 # TODO fix negative position of axes
                 #  [left, bottom, width, height]
                 ax_sfh = fig.add_axes([0.1,  -0.3, 0.35, 0.26])
-                # ignore AccuracyWarning that is issued when an integral is zero
-                import warnings
-                from scipy.integrate.quadrature import AccuracyWarning
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=AccuracyWarning)
-                    pynbody.plot.stars.sfh(self.snap_list[-1], subplot=ax_sfh) # trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
-                ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
-                ax_sfh.set_xlabel("Time [Gyr]")
-                ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
+                self.plot_sfh(ax_sfh, snap_time_gyr)
+
             if cog:
                 ax_cog = fig.add_axes([0.63,  -0.3, 0.26, 0.26])
-                ax_cog.set_xlabel("x [kpc]")
-                ax_cog.set_ylabel("y [kpc]")
-                ax_cog.scatter(*self.cog[:2])
-                # Plot current position and center
-                ax_cog.scatter(*self.cog[:2, i], color="red")
-                ax_cog.scatter(0, 0, marker='+', color="b")
-                ax_cog.set_title("COG trajectory")
-                ax_cog.axis('equal')
+                self.plot_cog(ax_cog, i)
 
             title = '$t={:5.2f}$ Gyr, snap={}'.format(snap_time_gyr, snap_num)
             if velocity_proj:
@@ -309,25 +332,10 @@ class Simulation(object):
                 # TODO fix negative position of axes
                 #  [left, bottom, width, height]
                 ax_sfh = fig.add_axes([0.15,  -0.3, 0.35, 0.26])
-                # ignore AccuracyWarning that is issued when an integral is zero
-                import warnings
-                from scipy.integrate.quadrature import AccuracyWarning
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=AccuracyWarning)
-                    pynbody.plot.stars.sfh(self.snap_list[-1], subplot=ax_sfh) # trange=my_range, range=self.t_range, bins=bins, subplot=ax_sfh)
-                ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
-                ax_sfh.set_xlabel("Time [Gyr]")
-                ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
+                self.plot_sfh(ax_sfh, snap_time_gyr)
             if cog:
                 ax_cog = fig.add_axes([0.63,  -0.3, 0.26, 0.26])
-                ax_cog.set_xlabel("x [kpc]")
-                ax_cog.set_ylabel("y [kpc]")
-                ax_cog.scatter(*self.cog[:2])
-                # Plot current position and center
-                ax_cog.scatter(*self.cog[:2, i], color="red")
-                ax_cog.scatter(0, 0, marker='+', color="b")
-                ax_cog.set_title("COG trajectory")
-                ax_cog.axis('equal')
+                self.plot_cog(ax_cog, i)
 
             title = '$t={:5.2f}$ Gyr, snap={}'.format(snap_time_gyr, snap_num)
             if velocity_proj:
@@ -474,19 +482,19 @@ class Simulation(object):
         """Wrapper around pynbody.plot.stars.render using correct smoothing length"""
         pass
 
-    def plot_gas(self, i, faceon=False, **kwargs):
-        snap = self.snap_list[i]
-        snap.g['smooth'] /= 2
-        pynbody.analysis.halo.center(snap)
-        if faceon:
-            pynbody.analysis.angmom.faceon(snap)
-        try:
-            img = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", **kwargs)
-        except Exception as e:
-            raise(e)
-        finally:
-            snap.g['smooth'] *= 2
-        return img
+def plot_gas(sim, i, faceon=False, **kwargs):
+    snap = sim.snap_list[i]
+    snap.g['smooth'] /= 2
+    pynbody.analysis.halo.center(snap)
+    if faceon:
+        pynbody.analysis.angmom.faceon(snap)
+    try:
+        img = pynbody.plot.sph.image(snap.g, qty="rho", units="g cm^-2", **kwargs)
+    except Exception as e:
+        raise(e)
+    finally:
+        snap.g['smooth'] *= 2
+    return img
 
     # def sfh(self):
     #     # ignore AccuracyWarning that is issued when an integral is zero
