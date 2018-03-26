@@ -38,6 +38,19 @@ def my_cog(snap):
     tot_mass = mass.sum()
     return np.sum(mass * pos.transpose(), axis=1) / tot_mass
 
+def plot_cog(cog, ax_cog, cur_snap=None, **kwargs):
+    if ax_cog is None:
+        fig, ax_cog = plt.subplots(1, figsize=(8,8))
+    ax_cog.set_xlabel("x [kpc]")
+    ax_cog.set_ylabel("y [kpc]")
+    ax_cog.scatter(*cog[:2], **kwargs)
+    # Plot current position and center
+    if cur_snap is not None:
+        ax_cog.scatter(*cog[:2, cur_snap], color="red")
+    ax_cog.scatter(0, 0, marker='+', color="b")
+    ax_cog.set_title("COG trajectory")
+    ax_cog.axis('equal')
+    return ax_cog
 # def _cog(sim, i):
 #     snap = sim.snap_list[i]
 #     mass = snap['mass']
@@ -143,13 +156,13 @@ class Simulation(object):
         Returns:
             cog: is a 3 column array with the coordinates of the center of gravity positions for each snapshot
         """
-        if self._computed_cog:
+        if self._computed_cog and not force:
             logger.info("Center of gravity already computed")
             return
 
         if cache_file is None:
             cache_file = os.path.join(cache_dir, 
-                self.sim_id + ".cog.npz" if family is None else ".{}.cog.npz".format(family))
+                self.sim_id + (".cog.npz" if family is None else ".{}.cog.npz".format(family)))
             if save_cache:
                 os.makedirs(cache_dir, exist_ok=True)
 
@@ -196,24 +209,14 @@ class Simulation(object):
             np.savez(cache_file, cog=self.cog)
 
         self._computed_cog = True
+        return self.cog
 
     def _center_all(self):
         for snap in self.snap_list:
             pynbody.analysis.halo.center(snap)
 
     def plot_cog(self, ax_cog, cur_snap=None):
-        if ax_cog is None:
-            fig, ax_cog = plt.subplots(1, figsize=(8,8))
-        ax_cog.set_xlabel("x [kpc]")
-        ax_cog.set_ylabel("y [kpc]")
-        ax_cog.scatter(*self.cog[:2])
-        # Plot current position and center
-        if cur_snap is not None:
-            ax_cog.scatter(*self.cog[:2, cur_snap], color="red")
-        ax_cog.scatter(0, 0, marker='+', color="b")
-        ax_cog.set_title("COG trajectory")
-        ax_cog.axis('equal')
-        return ax_cog
+        return plot_cog(self.cog, ax_cog, cur_snap)
 
     def plot_sfh(self, ax_sfh, snap_time_gyr=None, last_snap=-1):
         if ax_sfh is None:
@@ -502,16 +505,18 @@ class Simulation(object):
                 kwargs.update({'min': vrange[0], 'max':vrange[1]})
             
             from pynbody import units
-            self[i]['eps'] = pynbody.array.SimArray(eps*np.ones_like(self[i]['mass']), units.kpc)
-            
-            sim = getattr(self[i], family)
-            # Add norm of vector quantities
-            if 'acce' in sim.loadable_keys():
-                sim['acce_norm'] = np.linalg.norm(sim['acce'], axis=1)
-            if 'vel' in sim.loadable_keys():
-                sim['vel_norm'] = np.linalg.norm(sim['vel'], axis=1)
+            snap = self[i]
+            snap['eps'] = pynbody.array.SimArray(eps*np.ones_like(self[i]['mass']), units.kpc)
+            pynbody.analysis.halo.center(snap)
 
-            p = pynbody.analysis.profile.Profile(sim, **kwargs)
+            f = getattr(snap, family)
+            # Add norm of vector quantities
+            if 'acce' in f.loadable_keys():
+                f['acce_norm'] = np.linalg.norm(f['acce'], axis=1)
+            if 'vel' in f.loadable_keys():
+                f['vel_norm'] = np.linalg.norm(f['vel'], axis=1)
+
+            p = pynbody.analysis.profile.Profile(f, **kwargs)
 
         #     print(self.profiles[i])
         #     print(p)
@@ -521,9 +526,12 @@ class Simulation(object):
         #     for _y in y:
 
             ax.plot(p['rbins'], p[y])
-            snap_time_gyr = self[i].properties['time'].in_units("Gyr")
+            snap_time_gyr = snap.properties['time'].in_units("Gyr")
             ax.set_xlabel("r ({})".format(p['rbins'].units))
-            ax.set_ylabel("{} ({})".format(y, getattr(p[y],'units','')))
+            try:
+                ax.set_ylabel("{} ({})".format(y, r"${}$".format(getattr(p[y],'units','').latex())))
+            except AttributeError:
+                ax.set_ylabel("{} ({})".format(y, getattr(p[y],'units','')))
             title = '{}   ($t={:5.2f}$ Gyr, snap={})'.format(y, snap_time_gyr, i)
             ax.set_title(title)
 
