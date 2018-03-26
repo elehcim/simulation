@@ -50,7 +50,7 @@ for snap in range(snapStart, snapEnd+1):
 
     chyplot.cglobals.plmap.setDataBlock(data)
 
-    newDir = output_dir
+    newDir = args.output_dir
     # newDir = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/sim69002_p200.0_a600.0_r600.0_c8.15_movie_recentered"
     if not os.path.exists(newDir):
         os.system('mkdir -p %s' %newDir)
