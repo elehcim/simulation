@@ -10,9 +10,9 @@ def snapshot_file_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False
     if not os.path.isdir(dirname):
          raise IOError("{} is not a directory".format(dirname))
     if include_dir:
-         filelist = glob.glob(os.path.join(dirname, stem) + "*")
+         filelist = glob.glob(os.path.join(dirname, stem) + "????")
     else:
-         filelist = list(map(os.path.basename, glob.glob(os.path.join(dirname, stem) + "*")))
+         filelist = list(map(os.path.basename, glob.glob(os.path.join(dirname, stem) + "????")))
     filelist.sort()
     return filelist
 
