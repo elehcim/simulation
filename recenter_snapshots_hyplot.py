@@ -3,9 +3,6 @@ import sys
 import subprocess
 import os
 
-import chyplot
-import enums
-
 import argparse
 
 from util import first_last_snap
@@ -15,17 +12,23 @@ from util import first_last_snap
 # fdir = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/sim69002_p200.0_a600.0_r600.0_c8.15_movie/out"
 
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('snap_dir', help='Snapshots directory')
 parser.add_argument('-o', '--output_dir', '--out', help='Output directory (create it if it does not exist)')
-parser.add_argument('-s', '--start', default=None, type=int, help='First snaphot to consider')
-parser.add_argument('-e', '--end',   default=None, type=int, help='Last snaphot to consider ')
+parser.add_argument('-s', '--start', default=None, type=int, help='First snapshot to consider')
+parser.add_argument('-e', '--end',   default=None, type=int, help='Last snapshot to consider ')
 args = parser.parse_args()
+args.snap_dir = os.path.expanduser(args.snap_dir)
+
+import chyplot
+import enums
 
 # run = int(args[0])
 # snapStart = int(args[1])
 # snapEnd = int(args[2])
 snapName = 'snapshot_'
+
 
 snapStart, snapEnd = first_last_snap(args.snap_dir)
 
