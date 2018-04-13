@@ -28,15 +28,15 @@ args = parser.parse_args()
 # name of the new simulation
 # newsim = 10001
 # x, y, z => distance where gas cloud should be placed (in kpc)
-positions = [(0,0,0), (10, 10, 10), (10, -10, 10)]
+# positions = [(0,0,0), (10, 10, 10), (10, -10, 10)]
 # vx, vy, vz => velocities of the gas cloud (in km/sec)
-velocities = [(0,0,0), (0, 2.5, 0), (-5, 3, 0)]
+# velocities = [(0,0,0), (0, 2.5, 0), (-5, 3, 0)]
 # *************************************
 
-kpc = 3.08568025e19 # conversion of kpc to m
-vel = 1000 # conversion of km/s to m/s
-gyr = 31556926e9 # conversion of gigayears to sec
-solMass = 1.98892e36 # conversion of 10**6 solar mass to kg
+# kpc = 3.08568025e19 # conversion of kpc to m
+# vel = 1000 # conversion of km/s to m/s
+# gyr = 31556926e9 # conversion of gigayears to sec
+# solMass = 1.98892e36 # conversion of 10**6 solar mass to kg
 
 totalData = None
 reader = chyplot.CDataGadget()
