@@ -7,5 +7,5 @@ setup(name='simulation',
    	  author='Michele Mastropietro',
    	  author_email='michele.mastropietro@ugent.be',
       install_requires=['pynbody', 'astropy'],
-      py_modules=['simulation'],
+      py_modules=['simulation', 'glass_ic'],
       )
