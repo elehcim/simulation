@@ -38,7 +38,7 @@ def my_cog(snap):
     tot_mass = mass.sum()
     return np.sum(mass * pos.transpose(), axis=1) / tot_mass
 
-def plot_cog(cog, ax_cog, cur_snap=None, **kwargs):
+def plot_cog(cog, ax_cog=None, cur_snap=None, **kwargs):
     if ax_cog is None:
         fig, ax_cog = plt.subplots(1, figsize=(8,8))
     ax_cog.set_xlabel("x [kpc]")
@@ -67,11 +67,13 @@ class Simulation(object):
     _computed_cog = False
 
     def __init__(self, sim_dir, sim_id=None):
+        # TODO join this __init__ with the Moria or Kicked class
         if sim_id is None:
             sim_id = sim_dir
         self.sim_id = sim_id
         self._sim_dir = sim_dir
         self.snap_list = self._load(sim_dir)
+        self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
     def _load(self, sim_id):
         logger.info("loading simulation: {}".format(sim_id))
@@ -87,6 +89,22 @@ class Simulation(object):
     def snap(self, idx):
         return self.snap_list[idx]
 
+    @property
+    def mass_resolution_gas(self):
+        return mass_resolution(self[0].g)
+
+    @property
+    def mass_resolution_dm(self):
+        return mass_resolution(self[0].dm)
+
+    @property
+    def mass_resolution(self):
+        return mass_resolution(self[0])
+    
+    @property
+    def mass_resolution_baryons(self):
+        snap = self[0]
+        return ((snap.g['mass'].sum() + snap.s['mass'].sum())/len(snap)).in_units("Msol")
 
     @property
     @lru_cache(1)
@@ -94,6 +112,7 @@ class Simulation(object):
         return np.array([snap.properties['time'].in_units('Gyr') for snap in self.snap_list])
 
     def get_times(self):
+        self._times = np.zeros(len(self))
         for i, snap in enumerate(self.snap_list):
             self._times[i] = snap.properties['time'].in_units('Gyr')
         return self._times
@@ -211,14 +230,19 @@ class Simulation(object):
         self._computed_cog = True
         return self.cog
 
+    def center(self, i):
+        if not self._centered[i]:
+            pynbody.analysis.halo.center(self[i])
+            self._centered[i] = True
+
     def _center_all(self):
         for snap in self.snap_list:
             pynbody.analysis.halo.center(snap)
 
-    def plot_cog(self, ax_cog, cur_snap=None):
+    def plot_cog(self, ax_cog=None, cur_snap=None):
         return plot_cog(self.cog, ax_cog, cur_snap)
 
-    def plot_sfh(self, ax_sfh, snap_time_gyr=None, last_snap=-1):
+    def plot_sfh(self, ax_sfh, snap_time_gyr=None, last_snap=-1, **kwargs):
         if ax_sfh is None:
             fig, ax_sfh = plt.subplots(1, figsize=(8,6))
         # ignore AccuracyWarning that is issued when an integral is zero
@@ -226,7 +250,7 @@ class Simulation(object):
         from scipy.integrate.quadrature import AccuracyWarning
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=AccuracyWarning)
-            pynbody.plot.stars.sfh(self.snap_list[last_snap], subplot=ax_sfh)
+            pynbody.plot.stars.sfh(self.snap_list[last_snap], subplot=ax_sfh, **kwargs)
         if snap_time_gyr is not None:
             ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
         # ax_sfh.set_title("SFH")
@@ -576,6 +600,7 @@ class MoriaSim(Simulation):
             self.sumfile = get_sumfile(os.path.join(self._sf_moria, sim_id + ".dat"))
         else:
             logger.info("No sumfile found")
+        self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
     def _load(self, sim_id, kicked=False):
         logger.info("loading simulation: {}".format(sim_id))
