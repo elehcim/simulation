@@ -73,6 +73,9 @@ class Simulation(object):
         self.sim_id = sim_id
         self._sim_dir = sim_dir
         self.snap_list = self._load(sim_dir)
+        if len(self.snap_list) == 0:
+            raise RuntimeError("No snaphots found in {}".format(sim_dir))
+
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
     def _load(self, sim_id):
@@ -181,12 +184,12 @@ class Simulation(object):
 
         if cache_file is None:
             cache_file = os.path.join(cache_dir, 
-                self.sim_id + (".cog.npz" if family is None else ".{}.cog.npz".format(family)))
+                os.path.basename(self.sim_id) + (".cog.npz" if family is None else ".{}.cog.npz".format(family)))
             if save_cache:
                 os.makedirs(cache_dir, exist_ok=True)
 
         if not force and os.path.isfile(cache_file):
-            logger.info("Loading precomputed center of gravity for all the snapshots")
+            logger.info("Loading precomputed center of gravity for all the snapshots ({})".format(cache_file))
             self.cog = np.load(cache_file)['cog']
             self._computed_cog = True
             return
