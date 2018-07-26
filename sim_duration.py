@@ -19,7 +19,7 @@ class SnapTime(object):
         self.creation = os.path.getmtime(snap.filename)
 
     def __str__(self):
-        return "Snap time: {:.4f} ({:.4f} Gyr)".format(self.time, self.gyr)
+        return "{:.4f} ({:.4f} Gyr)".format(self.time, self.gyr)
 
     def __repr__(self):
         return "Snap time: {:.4f} ({:.4f} Gyr). Created {}".format(self.time, self.gyr, unix2time(self.creation))
@@ -79,3 +79,5 @@ def gyr_day(path):
     gyr = l.properties['time'].in_units('Gyr') - f.properties['time'].in_units('Gyr')
     return gyr/dt_day
 
+if __name__ == '__main__':
+    print(SimDuration(sys.argv[1]))
