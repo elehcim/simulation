@@ -1,0 +1,203 @@
+#!/usr/bin/env python
+
+# Script and functions to easily read a format 2 Gadget2 file. Adapted from pynbody source code.
+
+import numpy as np
+import struct
+import sys
+
+N_TYPE = 6
+
+def read_block_head(fd, endian='='):
+    """Read the Gadget 2 "block header" record, ie, 8 name, length, 8.
+       Takes an open file and returns a (name, length) tuple """
+    head = fd.read(5 * 4)
+    # If we have run out of file, we don't want an exception,
+    # we just want a zero length empty block
+    if len(head) != 5 * 4:
+        return ("    ", 0)
+    head = struct.unpack(endian + 'I4sIII', head)
+    if head[0] != 8 or head[3] != 8 or head[4] != head[2] - 8:
+        raise IOError(
+            "Corrupt header record. Possibly incorrect file format")
+    # Don't include the two "record_size" indicators in the total
+    # length count
+    return (head[1], head[2] - 8)
+
+
+
+class GadgetHeader(object):
+
+    """Describes the header of gadget class files; this is all our metadata, so we are going to store it inline"""
+
+    def __init__(self, npart, mass, time, redshift, BoxSize, Omega0, OmegaLambda, HubbleParam, num_files=1):
+        "Construct a header from values, instead of a datastring."""
+        assert(len(mass) == 6)
+        assert(len(npart) == 6)
+        # Mass of each particle type in this file. If zero,
+        # particle mass stored in snapshot.
+        self.mass = mass
+        # Time of snapshot
+        self.time = time
+        # Redshift of snapshot
+        self.redshift = redshift
+        # Boolean to test the presence of star formation
+        self.flag_sfr = False
+        # Boolean to test the presence of feedback
+        self.flag_feedback = False
+        # Boolean to test the presence of cooling
+        self.flag_cooling = False
+        # Number of files expected in this snapshot
+        self.num_files = num_files
+        # Box size of the simulation
+        self.BoxSize = BoxSize
+        # Omega_Matter. Note this is Omega_DM + Omega_Baryons
+        self.Omega0 = Omega0
+        # Dark energy density
+        self.OmegaLambda = OmegaLambda
+        # Hubble parameter, in units where it is around 70.
+        self.HubbleParam = HubbleParam
+        # Boolean to test whether stars have an age
+        self.flag_stellarage = False
+        # Boolean to test the presence of metals
+        self.flag_metals = False
+        # flags that IC-file contains entropy instead of u
+        self.flag_entropy_instead_u = False
+        # flags that snapshot contains double-precision instead of single
+        # precision
+        self.flag_doubleprecision = False
+        self.flag_ic_info = False
+        # flag to inform whether IC files are generated with Zeldovich approximation,
+        # or whether they contain 2nd order lagrangian perturbation theory ICs.
+        #    FLAG_ZELDOVICH_ICS     (1)   - IC file based on Zeldovich
+        #    FLAG_SECOND_ORDER_ICS  (2)   - Special IC-file containing 2lpt masses
+        #    FLAG_EVOLVED_ZELDOVICH (3)   - snapshot evolved from Zeldovich ICs
+        #    FLAG_EVOLVED_2LPT      (4)   - snapshot evolved from 2lpt ICs
+        #    FLAG_NORMALICS_2LPT    (5)   - standard gadget file format with 2lpt ICs
+        # All other values, including 0 are interpreted as "don't know" for
+        # backwards compatability.
+        self.lpt_scalingfactor = 0.    # scaling factor for 2lpt initial conditions
+        self.endian = ""
+        # Number of particles
+        self.npart = np.array(npart, dtype=np.uint32)
+        if (npart < 2 ** 31).all():
+            # First 32-bits of total number of particles in the simulation
+            self.npartTotal = np.array(npart, dtype=np.int32)
+            # Long word of the total number of particles in the simulation.
+            # At least one version of N-GenICs sets this to something entirely
+            # different.
+            self.NallHW = np.zeros(N_TYPE, dtype=np.int32)
+        else:
+            self.header.NallHW = np.array(npart // 2 ** 32, dtype=np.int32)
+            self.header.npartTotal = np.array(
+                npart - 2 ** 32 * self.header.NallHW, dtype=np.int32)
+
+    def __repr__(self):
+        res = \
+"""
+    time:     {}
+    redshift: {}""".format(self.time, self.redshift)
+        return res
+
+
+    def serialize(self):
+        """This takes the header structure and returns it as a packed string"""
+        fmt = self.endian + "IIIIIIddddddddiiIIIIIIiiddddiiIIIIIIiiif"
+        # Do not attempt to include padding in the serialised data; the most common use of serialise
+        # is to write to a file and we don't want to overwrite extra data that
+        # might be present
+        if struct.calcsize(fmt) != 256 - 48:
+            raise Exception(
+                "There is a bug in gadget.py; the header format string is not 256 bytes")
+        # WARNING: On at least python 2.6.3 and numpy 1.3.0 on windows, castless code fails with:
+        # SystemError: ..\Objects\longobject.c:336: bad argument to internal function
+        # This is because self.npart, etc, has type np.uint32 and not int.
+        # This is I think a problem with python/numpy, but cast things to ints
+        # until I can determine how widespread it is.
+        data = struct.pack(
+            fmt, int(self.npart[0]), int(self.npart[1]), int(self.npart[
+                                                             2]), int(
+                                                                 self.npart[3]), int(
+                                                                     self.npart[4]), int(
+                                                                         self.npart[
+                                                                             5]),
+            self.mass[0], self.mass[1], self.mass[
+                2], self.mass[3], self.mass[4], self.mass[5],
+            self.time, self.redshift,  self.flag_sfr, self.flag_feedback,
+            int(self.npartTotal[0]), int(self.npartTotal[1]), int(self.npartTotal[
+                                                                  2]), int(
+                                                                      self.npartTotal[3]), int(
+                                                                          self.npartTotal[4]), int(
+                                                                              self.npartTotal[
+                                                                                  5]),
+            self.flag_cooling, self.num_files, self.BoxSize, self.Omega0, self.OmegaLambda, self.HubbleParam, self.flag_stellarage, self.flag_metals,
+            int(self.NallHW[0]), int(self.NallHW[1]), int(self.NallHW[
+                                                          2]), int(
+                                                              self.NallHW[3]), int(
+                                                                  self.NallHW[4]), int(
+                                                                      self.NallHW[
+                                                                          5]),
+            self.flag_entropy_instead_u, self.flag_doubleprecision, self.flag_ic_info, self.lpt_scalingfactor)
+        return data
+
+def _construct_gadget_header(data, endian='='):
+    """Create a GadgetHeader from a byte range read from a file."""
+    npart = np.zeros(N_TYPE, dtype=np.uint32)
+    mass = np.zeros(N_TYPE)
+    time = 0.
+    redshift = 0.
+    npartTotal = np.zeros(N_TYPE, dtype=np.int32)
+    num_files = 0
+    BoxSize = 0.
+    Omega0 = 0.
+    OmegaLambda = 0.
+    HubbleParam = 0.
+    NallHW = np.zeros(N_TYPE, dtype=np.int32)
+    if data == '':
+        return
+    fmt = endian + "IIIIIIddddddddiiIIIIIIiiddddiiIIIIIIiiif48s"
+    if struct.calcsize(fmt) != 256:
+        raise Exception(
+            "There is a bug in gadget.py; the header format string is not 256 bytes")
+    (npart[0], npart[1], npart[2], npart[3], npart[4], npart[5],
+     mass[0], mass[1], mass[2], mass[3], mass[4], mass[5],
+     time, redshift,  flag_sfr, flag_feedback,
+     npartTotal[0], npartTotal[1], npartTotal[
+     2], npartTotal[3], npartTotal[4], npartTotal[5],
+     flag_cooling, num_files, BoxSize, Omega0, OmegaLambda, HubbleParam, flag_stellarage, flag_metals,
+     NallHW[0], NallHW[1], NallHW[2], NallHW[3], NallHW[4], NallHW[5],
+     flag_entropy_instead_u, flag_doubleprecision, flag_ic_info, lpt_scalingfactor, fill) = struct.unpack(fmt, data)
+
+    header = GadgetHeader(npart, mass, time, redshift,
+                          BoxSize, Omega0, OmegaLambda, HubbleParam, num_files)
+    header.flag_sfr = flag_sfr
+    header.flag_feedback = flag_feedback
+    header.npartTotal = npartTotal
+    header.flag_cooling = flag_cooling
+    header.flag_stellarage = flag_stellarage
+    header.flag_metals = flag_metals
+    header.NallHW = NallHW
+    header.flag_entropy_instead_u = flag_entropy_instead_u
+    header.flag_doubleprecision = flag_doubleprecision
+    header.flag_ic_info = flag_ic_info
+    header.lpt_scalingfactor = lpt_scalingfactor
+    header.endian = endian
+
+    return header
+
+
+def main(filename=None):
+    if filename is None:
+        filename = sys.argv[1]
+    fd = open(filename, "rb")
+    (name, length) = read_block_head(fd)
+    header_block = fd.read(256)
+    header = _construct_gadget_header(header_block)
+    print(header)
+
+
+if __name__ == '__main__':
+    main()
+    # import pynbody
+    # s = pynbody.load(sys.argv[1])
+    # print(s.properties)

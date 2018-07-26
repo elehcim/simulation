@@ -8,7 +8,7 @@ setup(name='simulation',
    	  author_email='michele.mastropietro@ugent.be',
       install_requires=['pynbody', 'astropy'],
       py_modules=['simulation', 'glass_ic', 'sim_duration'],
-      scripts=['get_maxid'],
+      scripts=['get_maxid', 'read_header'],
       entry_points = {
         	'console_scripts': ['sim_duration=sim_duration:main']
     	}
