@@ -1,6 +1,8 @@
 import os
+import sys
 import numpy as np
 import matplotlib.pylab as plt
+import csv
 import logging
 import pynbody
 from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
@@ -58,6 +60,21 @@ def plot_cog(cog, ax_cog=None, cur_snap=None, **kwargs):
 #     tot_mass = mass.sum()
 #     return np.sum(mass * pos.transpose(), axis=1) / tot_mass
 
+def get_param_used(path):
+    d = {}
+    path = os.path.expanduser(path)
+    if os.path.isdir(path):
+        path = os.path.join(path, 'parameters-usedvalues')
+    with open(path) as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=' ', skipinitialspace=True)
+        for line in spamreader:
+            try:
+                k, v = line
+                d[k] = v
+            except ValueError as e:
+                print("{}. But continuing".format(e), file=sys.stderr)
+    return d
+
 class Simulation(object):
     """docstring for Simulation"""
     _times = None
@@ -77,6 +94,7 @@ class Simulation(object):
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
+        self.params = get_param_used(sim_dir) 
 
     def _load(self, sim_id):
         logger.info("loading simulation: {}".format(sim_id))

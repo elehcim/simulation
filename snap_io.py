@@ -51,3 +51,7 @@ def load_kicked(sim_number, snap_number=None, path=KICKED_PATH):
 
 def load_moria_sim_and_kicked(sim_number, moria_path=MORIA_PATH, kicked_path=KICKED_PATH):
     return load_moria(sim_number, path=moria_path), load_kicked(sim_number, path=kicked_path)
+
+def load_first_last_snap(snap_dir):
+    snaplist = snapshot_file_list(os.path.expanduser(snap_dir), include_dir=True)
+    return pynbody.load(snaplist[0]), pynbody.load(snaplist[-1])
