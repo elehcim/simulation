@@ -514,13 +514,16 @@ class Simulation(object):
 
         return keys
 
-    def interact_profiles(self, default='u', eps=0.03, keys=_available_keys(), add_keys=None, **kwargs):
+    def interact_profiles(self, default='u', eps=0.03, keys=_available_keys(), add_keys=None, selection=True,
+                          _snap_slider=None, offset=0, log=False, **kwargs):
         # if keys is None:
         #     keys = _available_keys()
         if add_keys is not None:
             keys += add_keys
         from ipywidgets import interactive, IntSlider, ToggleButtons, SelectMultiple, FloatRangeSlider, Select
-        _snap_slider = IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
+
+        if _snap_slider is None:
+            _snap_slider = IntSlider(min=0,max=len(self)-1,step=1,value=0, continuous_update=False, description='Snap:')
         _family_choice = ToggleButtons(options=['g','s'], value='g')
 
         def create_vminmax(kwargs):
@@ -549,6 +552,7 @@ class Simulation(object):
             if vrange is not None:
                 kwargs.update({'min': vrange[0], 'max':vrange[1]})
             
+            i = offset + i
             from pynbody import units
             snap = self[i]
             snap['eps'] = pynbody.array.SimArray(eps*np.ones_like(self[i]['mass']), units.kpc)
@@ -563,14 +567,17 @@ class Simulation(object):
 
             p = pynbody.analysis.profile.Profile(f, **kwargs)
 
+            # if ax is None:
+            fig, ax = plt.subplots(1, figsize=(6,4))
         #     print(self.profiles[i])
         #     print(p)
-            fig, ax = plt.subplots(1, figsize=(6,4))
         #     if not isinstance(y, (list, tuple)):
         #         y = tuple(y)
         #     for _y in y:
 
             ax.plot(p['rbins'], p[y])
+            if log:
+                ax.semilogy()
             snap_time_gyr = snap.properties['time'].in_units("Gyr")
             ax.set_xlabel("r ({})".format(p['rbins'].units))
             try:
@@ -582,7 +589,7 @@ class Simulation(object):
 
         w = interactive(k,
                         i=_snap_slider, family=_family_choice, vrange=_vminmax,
-                        y=create_varoptions(default, selection_type=ToggleButtons))
+                        y=default if not selection else create_varoptions(default, selection_type=ToggleButtons))
         return w
 
     def plot_stars(self, snap):
