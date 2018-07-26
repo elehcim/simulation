@@ -9,6 +9,7 @@
 .cache/
 *.log
 results/
+*.mp4
 
 # python datafile
 *.npz
@@ -23,3 +24,4 @@ results/
 *.sublime-project
 *.sublime-workspace
 cmake-build*
+
