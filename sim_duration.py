@@ -79,5 +79,12 @@ def gyr_day(path):
     gyr = l.properties['time'].in_units('Gyr') - f.properties['time'].in_units('Gyr')
     return gyr/dt_day
 
+def main(arg=None):
+    if arg is None:
+        if len(sys.argv) < 2:
+            raise ValueError("Please provide a simulation path")
+        arg = sys.argv[1]
+    print(SimDuration(arg))
+
 if __name__ == '__main__':
-    print(SimDuration(sys.argv[1]))
+    main()
