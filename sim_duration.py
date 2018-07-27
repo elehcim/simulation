@@ -15,6 +15,7 @@ class SnapTime(object):
     def __init__(self, snap):
         self._snap = snap
         self.time = snap.header.time
+        self.number = int(snap.filename[:-4])
         self.gyr = snap.properties['time'].in_units('Gyr')
         self.creation = os.path.getmtime(snap.filename)
 
@@ -42,8 +43,8 @@ class SimDuration(object):
     def __repr__(self):
         s =  "First created: {}\n".format(unix2time(self.f.creation))
         s += "Last created:  {}\n".format(unix2time(self.l.creation))
-        s += "First time:    {}\n".format(self.f)
-        s += "Last time:     {}\n".format(self.l)
+        s += "First time:    {}  ({})\n".format(self.f, self.f.number)
+        s += "Last time:     {}  ({})\n".format(self.l, self.l.number)
         s += "Arrival:       {}\n".format(self.arrival)
         s += "Gyr/day:       {:.4f} ({:.4f} Gyr)\n".format(self._simtime_day, self.gyr_day)
         s += "ETA:           {}".format(self.eta())
