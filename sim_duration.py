@@ -15,7 +15,7 @@ class SnapTime(object):
     def __init__(self, snap):
         self._snap = snap
         self.time = snap.header.time
-        self.number = int(snap.filename[:-4])
+        self.number = int(snap.filename[-4:])
         self.gyr = snap.properties['time'].in_units('Gyr')
         self.creation = os.path.getmtime(snap.filename)
 
