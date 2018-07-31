@@ -3,6 +3,8 @@ import sys
 from simulation import get_param_used
 from snap_io import load_first_last_snap, snapshot_file_list
 from datetime import datetime
+import pynbody
+import argparse
 
 # TODO these times (especially the timestamps) are UTC. We should convert it to local time
 
@@ -13,14 +15,14 @@ def unix2time(t):
 class SnapTime(object):
     """Contains time values of a GadgetSnap"""
     def __init__(self, snap):
-        self._snap = snap
+        # self._snap = snap
         self.time = snap.header.time
         self.number = int(snap.filename[-4:])
         self.gyr = snap.properties['time'].in_units('Gyr')
         self.creation = os.path.getmtime(snap.filename)
 
     def __str__(self):
-        return "{:.4f} ({:.4f} Gyr)".format(self.time, self.gyr)
+        return "{:7.4f} ({:7.4f} Gyr)".format(self.time, self.gyr)
 
     def __repr__(self):
         return "Snap time: {:.4f} ({:.4f} Gyr). Created {}".format(self.time, self.gyr, unix2time(self.creation))
@@ -28,12 +30,13 @@ class SnapTime(object):
 
 class SimDuration(object):
     """Common utilities to compute duration of a Simulation"""
-    def __init__(self, path):
+    def __init__(self, path, first=0, last=-1):
         self.path = path
-        f, l = load_first_last_snap(path)
+        snaplist = snapshot_file_list(os.path.expanduser(self.path), include_dir=True)
+        self.f = SnapTime(pynbody.load(snaplist[first]))
+        self.l = SnapTime(pynbody.load(snaplist[last]))
         self.params = get_param_used(path)
         self.arrival = float(self.params['TimeMax'])
-        self.f, self.l = SnapTime(f), SnapTime(l)
         self.dt = self.l.creation - self.f.creation
         self.dt_day = self.dt/3600/24
         self.gyr = self.l.gyr - self.f.gyr
@@ -58,19 +61,14 @@ class SimDuration(object):
     def gyr_day(self):
         return self._gyr_day
 
-    def eta(self, first=None, last=None):
+    def eta(self):
         """Estimated time of arrival"""
         snaplist = snapshot_file_list(os.path.expanduser(self.path), include_dir=True)
-        first = self.f if first is None else SnapTime(snaplist[first])
-        last = self.l if last is None else SnapTime(snaplist[last])
+        f = self.f
+        l = self.l
 
-        now = datetime.utcnow().timestamp()
-
-        end = last.time
-        begin = first.time
-
-        eta = (self.arrival - begin) * self.dt / end
-        return  unix2time(now + eta)
+        eta = f.creation + (self.arrival - f.time) / (l.time - f.time) * (l.creation - f.creation) 
+        return  unix2time(eta)
 
 
 
@@ -80,12 +78,21 @@ def gyr_day(path):
     gyr = l.properties['time'].in_units('Gyr') - f.properties['time'].in_units('Gyr')
     return gyr/dt_day
 
-def main(arg=None):
-    if arg is None:
-        if len(sys.argv) < 2:
-            raise ValueError("Please provide a simulation path")
-        arg = sys.argv[1]
-    print(SimDuration(arg))
+# def plot_sim_speed(path):
+#     import matplotlib.pyplot as plt
+#     import numpy as np
+#     snaplist = snapshot_file_list(os.path.expanduser(path), include_dir=True)
+#     times_map = map(os.path.getmtime, snaplist)
+#     times = np.array(times_map)
+#     plt.hist()
+
+def main(cli=None):
+    parser = argparse.ArgumentParser("Display some info on the simulation duration")
+    parser.add_argument(help='Path of the snapshots', dest='path')
+    parser.add_argument('-f', '--first', default=0, type=int, help='First file (ordinal)')
+    parser.add_argument('-l', '--last', default=-1, type=int, help='Last file (ordinal)')
+    args = parser.parse_args(cli)
+    print(SimDuration(args.path, args.first, args.last))
 
 if __name__ == '__main__':
     main()
