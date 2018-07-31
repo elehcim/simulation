@@ -5,6 +5,7 @@ from snap_io import load_first_last_snap, snapshot_file_list
 from datetime import datetime
 import pynbody
 import argparse
+import numpy as np
 
 # TODO these times (especially the timestamps) are UTC. We should convert it to local time
 
@@ -37,11 +38,15 @@ class SimDuration(object):
         self.l = SnapTime(pynbody.load(snaplist[last]))
         self.params = get_param_used(path)
         self.arrival = float(self.params['TimeMax'])
+        self.gyr = self.l.gyr - self.f.gyr
         self.dt = self.l.creation - self.f.creation
         self.dt_day = self.dt/3600/24
-        self.gyr = self.l.gyr - self.f.gyr
-        self._gyr_day = self.gyr/self.dt_day
-        self._simtime_day = (self.l.time-self.f.time)/self.dt_day
+        if self.dt_day == 0.0:
+            self._gyr_day = np.inf
+            self._simtime_day = np.inf
+        else:
+            self._gyr_day = self.gyr/self.dt_day
+            self._simtime_day = (self.l.time-self.f.time)/self.dt_day
 
     def __repr__(self):
         s =  "First created: {}\n".format(unix2time(self.f.creation))
@@ -89,8 +94,8 @@ def gyr_day(path):
 def main(cli=None):
     parser = argparse.ArgumentParser("Display some info on the simulation duration")
     parser.add_argument(help='Path of the snapshots', dest='path')
-    parser.add_argument('-f', '--first', default=0, type=int, help='First file (ordinal)')
-    parser.add_argument('-l', '--last', default=-1, type=int, help='Last file (ordinal)')
+    parser.add_argument(default=0, type=int, nargs='?', help='First file (ordinal, default=0)', dest='first')
+    parser.add_argument(default=-1, type=int, nargs='?', help='Last file (ordinal, default=-1)', dest='last')
     args = parser.parse_args(cli)
     print(SimDuration(args.path, args.first, args.last))
 
