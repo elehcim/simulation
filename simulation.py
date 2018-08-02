@@ -65,15 +65,36 @@ def get_param_used(path):
     path = os.path.expanduser(path)
     if os.path.isdir(path):
         path = os.path.join(path, 'parameters-usedvalues')
-    with open(path) as csvfile:
-        spamreader = csv.reader(csvfile, delimiter=' ', skipinitialspace=True)
-        for line in spamreader:
-            try:
-                k, v = line
-                d[k] = v
-            except ValueError as e:
-                print("{}. But continuing".format(e), file=sys.stderr)
+    else:
+        return None
+    try:
+        with open(path) as csvfile:
+            print("Found parameter file")
+            spamreader = csv.reader(csvfile, delimiter=' ', skipinitialspace=True)
+            for line in spamreader:
+                try:
+                    k, v = line
+                    d[k] = v
+                except ValueError as e:
+                    print("{}. But continuing".format(e), file=sys.stderr)
+    except FileNotFoundError as e:
+        print("Parameter file not found: {}. But continuing".format(e), file=sys.stderr)
+        return None
     return d
+
+def get_trace(path):
+    from parse_trace import parse_trace
+    path = os.path.expanduser(path)
+    if os.path.isdir(path):
+        path = os.path.join(path, 'trace.txt')
+    try:
+        df = parse_trace(path)
+        print("Found trace file")
+    except FileNotFoundError as e:
+        return None
+        # print("Parameter file not found: {}. But continuing".format(e), file=sys.stderr)
+    return df
+
 
 class Simulation(object):
     """docstring for Simulation"""
@@ -89,16 +110,27 @@ class Simulation(object):
             sim_id = sim_dir
         self.sim_id = sim_id
         self._sim_dir = sim_dir
+        logger.info("loading simulation: {}".format(sim_id))
+        self.params = get_param_used(sim_dir) 
         self.snap_list = self._load(sim_dir)
         if len(self.snap_list) == 0:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
-        self.params = get_param_used(sim_dir) 
+        self.trace = get_trace(sim_dir) 
 
     def _load(self, sim_id):
-        logger.info("loading simulation: {}".format(sim_id))
-        return load_sim(sim_id)
+        snap_list = load_sim(sim_id)
+        print('Fixing cosmological parameters')
+        for i, snap in enumerate(snap_list):
+            if self.params is not None:
+                snap.properties['h'] = float(self.params['HubbleParam'])
+                snap.properties['omegaL0'] = float(self.params['OmegaLambda'])
+                snap.properties['omegaM0'] = float(self.params['OmegaBaryon'])
+            # Take boxsize from first snap
+            if i==0:
+                self.boxsize = snap.properties['boxsize']
+        return snap_list
 
     def _cog(self, i):
         snap = self.snap_list[i]
@@ -109,6 +141,16 @@ class Simulation(object):
 
     def snap(self, idx):
         return self.snap_list[idx]
+
+    @property
+    def properties(self):
+        d = self.snap_list[0].properties.copy()
+        del d['time'], d['a']
+        d['time_begin'] = self.snap_list[0].properties['time'].in_units('Gyr')
+        d['time_end'] = self.snap_list[-1].properties['time'].in_units('Gyr')
+        d['z_begin'] = self.snap_list[0].header.redshift
+        d['z_end'] = self.snap_list[-1].header.redshift
+        return d
 
     @property
     def mass_resolution_gas(self):
@@ -633,8 +675,13 @@ class MoriaSim(Simulation):
     def _load(self, sim_id, kicked=False):
         logger.info("loading simulation: {}".format(sim_id))
         self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
-        # Remove boxsize which complicates the plotting
+        # Overwrite and fix cosmological parameters
+        print('Fixing cosmological parameters of MoRIA simulation')
         for i, snap in enumerate(self.snap_list):
+            snap.properties['h']= 0.7
+            snap.properties['omegaL0']= 0.72
+            snap.properties['omegaM0']= 0.28
+            # Remove boxsize which complicates the plotting
             if i==0:
                 self.boxsize = snap.properties.pop('boxsize', None).copy()
             snap.properties.pop('boxsize', None)
