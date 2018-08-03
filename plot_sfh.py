@@ -45,7 +45,7 @@ def main(cli=None):
     dpi=200
     fig, ax_sfh = plt.subplots(1, figsize=figsize, dpi=dpi)
     if args.labels is None:
-        args.labels = ['SFR'] * len(args.sim_dir)
+        args.labels = ['SFR{}'.format(i) for i in range(len(args.sim_dir))]
     sims = []
     for sim_dir in args.sim_dir:
         force_cosmo = True if 'MoRIA' in sim_dir else False
