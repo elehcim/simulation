@@ -119,7 +119,7 @@ class Simulation(object):
     _rho_min=5e-4;
     _computed_cog = False
 
-    def __init__(self, sim_dir, sim_id=None):
+    def __init__(self, sim_dir, sim_id=None, force_cosmo=False):
         # TODO join this __init__ with the Moria or Kicked class
         if sim_id is None:
             sim_id = sim_dir
@@ -128,16 +128,16 @@ class Simulation(object):
         logger.info("loading simulation: {}".format(sim_id))
         self.params = get_param_used(sim_dir) 
         self.compiler_opts = get_compiler_options(sim_dir) 
-        self.snap_list = self._load(sim_dir)
+        self.snap_list = self._load(sim_dir, force_cosmo)
         if len(self.snap_list) == 0:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
         self.trace = get_trace(sim_dir) 
 
-    def _load(self, sim_id):
+    def _load(self, sim_id, force_cosmo=False):
         snap_list = load_sim(sim_id)
-        print('Fixing cosmological parameters')
+        logger.info('Loading cosmological parameters')
         for i, snap in enumerate(snap_list):
             if self.params is not None:
                 snap.properties['h'] = float(self.params['HubbleParam'])
@@ -146,6 +146,11 @@ class Simulation(object):
             # Take boxsize from first snap
             if i==0:
                 self.boxsize = snap.properties['boxsize']
+            if force_cosmo:
+                logger.info('Forcing cosmological parameters (h=0.7, omegaL0=0.72, omegaM0=0.28')
+                snap.properties['h']= 0.7
+                snap.properties['omegaL0']= 0.72
+                snap.properties['omegaM0']= 0.28
         return snap_list
 
     def _cog(self, i):
