@@ -69,16 +69,16 @@ def get_param_used(path):
         return None
     try:
         with open(path) as csvfile:
-            print("Found parameter file")
+            logger.info("Found parameter file")
             spamreader = csv.reader(csvfile, delimiter=' ', skipinitialspace=True)
             for line in spamreader:
                 try:
                     k, v = line
                     d[k] = v
                 except ValueError as e:
-                    print("{}. But continuing".format(e), file=sys.stderr)
+                    logger.warn("{}. But continuing".format(e))
     except FileNotFoundError as e:
-        print("Parameter file not found: {}. But continuing".format(e), file=sys.stderr)
+        logger.warn("Parameter file not found: {}. But continuing".format(e))
         return None
     return d
 
@@ -87,14 +87,29 @@ def get_trace(path):
     path = os.path.expanduser(path)
     if os.path.isdir(path):
         path = os.path.join(path, 'trace.txt')
+    else:
+        return None
     try:
         df = parse_trace(path)
-        print("Found trace file")
+        logger.info("Found trace file")
     except FileNotFoundError as e:
         return None
-        # print("Parameter file not found: {}. But continuing".format(e), file=sys.stderr)
     return df
 
+def get_compiler_options(path):
+    path = os.path.expanduser(path)
+    l = []
+    if os.path.isdir(path):
+        path = os.path.join(path, 'compiler.txt')
+    else:
+        return None  
+    try:
+        with open(path) as f:
+            logger.info("Found compiler file")
+            l = [s.strip() for s in f.readlines()]
+    except FileNotFoundError as e:
+        return None
+    return l
 
 class Simulation(object):
     """docstring for Simulation"""
@@ -112,6 +127,7 @@ class Simulation(object):
         self._sim_dir = sim_dir
         logger.info("loading simulation: {}".format(sim_id))
         self.params = get_param_used(sim_dir) 
+        self.compiler_opts = get_compiler_options(sim_dir) 
         self.snap_list = self._load(sim_dir)
         if len(self.snap_list) == 0:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
@@ -141,6 +157,16 @@ class Simulation(object):
 
     def snap(self, idx):
         return self.snap_list[idx]
+
+    @property
+    def is_moving_box(self):
+        return self.trace is not None
+        # This should be the correct way but it is not consistent at the moment
+        # given that up to now the simulations do not save the HOT_HALO flag on file
+        # if self.compiler_opts is not None:
+        #     return 'HOT_HALO' in self.compiler_opts
+        # else:
+        #     return False
 
     @property
     def properties(self):
@@ -230,7 +256,7 @@ class Simulation(object):
         Compute the center of gravity of a simulation
 
         Args:
-            save_cache: Save the resultsin a npz file
+            save_cache: Save results in a npz file
             cache_file: Name of the cache npz file
             verbose: Print which file is currently read
             family: The subfamily attribute to take into account, if `None` consider the whole snapshot.
@@ -243,10 +269,10 @@ class Simulation(object):
             return
 
         if cache_file is None:
-            cache_file = os.path.join(cache_dir, 
+            cache_file = os.path.join(self._sim_dir, cache_dir,
                 os.path.basename(self.sim_id) + (".cog.npz" if family is None else ".{}.cog.npz".format(family)))
             if save_cache:
-                os.makedirs(cache_dir, exist_ok=True)
+                os.makedirs(os.path.dirname(cache_file), exist_ok=True)
 
         if not force and os.path.isfile(cache_file):
             logger.info("Loading precomputed center of gravity for all the snapshots ({})".format(cache_file))
