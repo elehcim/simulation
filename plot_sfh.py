@@ -8,7 +8,7 @@ from pprint import pprint
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
-def plot_sfh(sim, ax_sfh, label='SFR', plot_traj=False, force=False, color=None, **kwargs):
+def plot_sfh(sim, ax_sfh, label='SFR', plot_traj=False, color=None, r_range=None, **kwargs):
     pprint(sim.properties)
     # fig, ax_sfh = plt.subplots(1, figsize=figsize, dpi=dpi)
     # fig.canvas.set_window_title(sim.sim_id)
@@ -16,13 +16,15 @@ def plot_sfh(sim, ax_sfh, label='SFR', plot_traj=False, force=False, color=None,
     sim.plot_sfh(ax_sfh, label=label, **kwargs)
 
     if plot_traj:
-        sim.compute_cog(save_cache=True, force=force)
         ax_r1 = ax_sfh.twinx()
         if sim.is_moving_box:
             ax_r1.plot(sim.trace.t, sim.trace.r, '--', color=color, alpha=0.5, label='$d$')
         else:
-            ax_r1.plot(sim.times, np.linalg.norm(sim.cog, axis=0), '--', color=color, alpha=0.5, label='$d$')
+            ax_r1.plot(sim.times, sim.r, '--', color=color, alpha=0.5, label='$d$')
         ax_r1.set_ylabel("r [kpc]")
+        if r_range is not None:
+            ax_r1.set_ylim(r_range)
+
         lines2, labels2 = ax_r1.get_legend_handles_labels()
     else:
         lines2, labels2 = [], []
@@ -47,16 +49,26 @@ def main(cli=None):
     sims = []
     for sim_dir in args.sim_dir:
         force_cosmo = True if 'MoRIA' in sim_dir else False
-        sims.append(simulation.Simulation(sim_dir, force_cosmo=force_cosmo))
-    # compute t_max
+        sim = simulation.Simulation(sim_dir, force_cosmo=force_cosmo)
+        sims.append(sim)
     t_max = 0
+    r_min, r_max = np.inf, 0
+    # compute t_max
     for sim in sims:
         if sim.times.max() > t_max:
             t_max = sim.times.max()
+        if args.traj:
+            sim.compute_cog(save_cache=True)
+            if sim.r.max() > r_max:
+                r_max = sim.r.max()
+            if sim.r.min() < r_min:
+                r_min = sim.r.min()
+
     for sim, label, color in zip(sims, args.labels, colors):
         print(sim, label, color)
         fig.canvas.set_window_title(sim.sim_id)
-        plot_sfh(sim, ax_sfh, label, args.traj, range=[0, t_max], color=color) #, bins=30)
+        plot_sfh(sim, ax_sfh, label, args.traj, 
+                 range=[0, t_max], color=color, r_range=[r_min, r_max]) #, bins=30)
     plt.show()
 
 if __name__ == '__main__':

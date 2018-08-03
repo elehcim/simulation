@@ -147,7 +147,8 @@ class Simulation(object):
             if i==0:
                 self.boxsize = snap.properties['boxsize']
             if force_cosmo:
-                logger.info('Forcing cosmological parameters (h=0.7, omegaL0=0.72, omegaM0=0.28')
+                if i==0:
+                    logger.info('Forcing cosmological parameters (h=0.7, omegaL0=0.72, omegaM0=0.28')
                 snap.properties['h']= 0.7
                 snap.properties['omegaL0']= 0.72
                 snap.properties['omegaM0']= 0.28
@@ -204,6 +205,11 @@ class Simulation(object):
     @lru_cache(1)
     def times(self):
         return np.array([snap.properties['time'].in_units('Gyr') for snap in self.snap_list])
+
+    @property
+    def r(self):
+        if self.cog is not None:
+            return np.linalg.norm(self.cog, axis=0)
 
     def get_times(self):
         self._times = np.zeros(len(self))
