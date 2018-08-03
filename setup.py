@@ -10,6 +10,7 @@ setup(name='simulation',
       py_modules=['simulation', 'glass_ic', 'sim_duration'],
       scripts=['scripts/get_maxid', 'scripts/read_header'],
       entry_points = {
-        	'console_scripts': ['sim_duration=sim_duration:main']
+        	'console_scripts': ['sim_duration=sim_duration:main',
+                               'plot_sfh=plot_sfh:main']
     	}
       )
