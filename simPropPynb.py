@@ -10,7 +10,7 @@ import pynbody
 import pandas as pd
 
 def get_sims( direc ):
-    dir_names = list(glob.glob(direc+'/sim?????'))
+    dir_names = list(glob.glob(direc+'/M??sim?????'))
     dir_names.sort()
     print(dir_names)
     sims = []
@@ -39,15 +39,19 @@ def getSimProps( snap_path ):
 
     return m_star, r_eff, r200, M200
 
-direc = sys.argv[1]
-dir_names, sims = get_sims( direc )
+if __name__ == '__main__':
 
-simProps = {}
+    direc = '/home/michele/sim/MoRIA/M1-10_Verbeke2017/'
+    # direc = sys.argv[1]
 
-for sim_dir, sim_name in zip(dir_names, sims):
-    snap_path = list(glob.glob(sim_dir+'/snapshot_????'))
-    snap_path.sort()
-    simProps[sim_name] = getSimProps( snap_path[-1] )
+    dir_names, sims = get_sims( direc )
+
+    simProps = {}
+
+    for sim_dir, sim_name in zip(dir_names, sims):
+        snap_path = list(glob.glob(sim_dir+'/snapshot_????'))
+        snap_path.sort()
+        simProps[sim_name] = getSimProps( snap_path[-1] )
 
 # simProps = np.zeros([len(files), 4])
 # for i, sim_num in enumerate(sims):
@@ -64,9 +68,9 @@ for sim_dir, sim_name in zip(dir_names, sims):
 #     # print sims[i], snap
 #     simProps[i, :] = getSimProps( snap_path )
 
-df = pd.DataFrame.from_dict(data=simProps, orient='index')
-columns = ['Mstar_tot', 'r_eff', 'r200', 'M200']
-df.columns = columns
+    df = pd.DataFrame.from_dict(data=simProps, orient='index')
+    columns = ['Mstar_tot', 'r_eff', 'r200', 'M200']
+    df.columns = columns
 
 # simPropArr = np.array( simProps )
 
@@ -75,10 +79,10 @@ df.columns = columns
 
 # header = '{}	{}	{}	{}	{} \n{}	{}	{}	{}	{}'.format('sim_no', 'Mstar_tot', 'r_eff', 'r200', 'M200', 'no_unit', 'Msol', 'kpc', 'kpc', 'Msol')
 
-out_file = 'simProp1.dat'
+    out_file = 'simProp_IAU.dat'
 # if os.path.exists( out_file ):
 # 	os.system('rm -p {}'.format( out_file ) )
-header = ['Mstar_tot (Msol)', 'r_eff (kpc)', 'r200 (kpc)', 'M200 (Msol)']
+    header = ['Mstar_tot (Msol)', 'r_eff (kpc)', 'r200 (kpc)', 'M200 (Msol)']
 # df.to_csv(out_file, header=header, sep='\t')
-df.to_latex(out_file, header=header)
+    df.to_latex(out_file, header=header)
 # np.savetxt(out_file, simPropArr, delimiter = '	', header = header )

@@ -10,14 +10,17 @@ from util import np_printoptions
 from analyze_sumfiles import get_sumfile
 from multiprocessing import Pool, Process, Queue
 from functools import lru_cache
+from parse_trace import parse_trace, parse_dens_trace
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+
 def mass_resolution(snap):
     return (snap['mass'].sum()/len(snap)).in_units("Msol")
+
 
 def velocity_projection(snap):
     v_x, v_y, v_z = snap['vel'].mean(axis=0)
@@ -25,6 +28,7 @@ def velocity_projection(snap):
     alpha = np.sign(v_y) * np.arccos(v_x/v_xy) * 180.0/np.pi
     theta = np.arctan(v_z/v_xy) * 180.0/np.pi
     return alpha, theta
+
 
 def _cog_queue(snap, q):
     mass = snap['mass']
@@ -34,11 +38,11 @@ def _cog_queue(snap, q):
 
 
 def my_cog(snap):
-    # snap = self.snap_list[i]
     mass = snap['mass']
     pos = snap['pos']
     tot_mass = mass.sum()
     return np.sum(mass * pos.transpose(), axis=1) / tot_mass
+
 
 def plot_cog(cog, ax_cog=None, cur_snap=None, **kwargs):
     if ax_cog is None:
@@ -53,12 +57,7 @@ def plot_cog(cog, ax_cog=None, cur_snap=None, **kwargs):
     ax_cog.set_title("COG trajectory")
     ax_cog.axis('equal')
     return ax_cog
-# def _cog(sim, i):
-#     snap = sim.snap_list[i]
-#     mass = snap['mass']
-#     pos = snap['pos']
-#     tot_mass = mass.sum()
-#     return np.sum(mass * pos.transpose(), axis=1) / tot_mass
+
 
 def get_param_used(path):
     d = {}
@@ -83,7 +82,6 @@ def get_param_used(path):
     return d
 
 def get_trace(path):
-    from parse_trace import parse_trace
     path = os.path.expanduser(path)
     if os.path.isdir(path):
         path = os.path.join(path, 'trace.txt')
@@ -92,7 +90,7 @@ def get_trace(path):
     try:
         df = parse_trace(path)
         logger.info("Found trace file")
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         return None
     return df
 
@@ -107,7 +105,7 @@ def get_compiler_options(path):
         with open(path) as f:
             logger.info("Found compiler file")
             l = [s.strip() for s in f.readlines()]
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         return None
     return l
 
@@ -204,7 +202,17 @@ class Simulation(object):
     @property
     @lru_cache(1)
     def times(self):
-        return np.array([snap.properties['time'].in_units('Gyr') for snap in self.snap_list])
+        return pynbody.array.SimArray([snap.properties['time'].in_units('Gyr') for snap in self.snap_list], units=pynbody.units.Gyr)
+
+    @property
+    @lru_cache(1)
+    def dens_trace(self):
+        return parse_dens_trace(os.path.join(self._sim_dir, 'dens_temp_trace.txt'))
+
+    @property
+    @lru_cache(1)
+    def ram_pressure(self):
+        return self.dens_trace.vel**2 * self.dens_trace.rho
 
     @property
     def r(self):
@@ -357,6 +365,25 @@ class Simulation(object):
         ax_sfh.set_xlabel("Time [Gyr]")
         ax_sfh.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
         return ax_sfh
+
+    #TODO
+    # def m_star(self, ax_m_star, snap_time_gyr=None, last_snap=-1, **kwargs):
+    #     if ax_m_star is None:
+    #         fig, ax_m_star = plt.subplots(1, figsize=(8,6))
+    #     # ignore AccuracyWarning that is issued when an integral is zero
+    #     import warnings
+    #     from scipy.integrate.quadrature import AccuracyWarning
+    #     np.zeros(len(self.snap_list), dtype=float) 
+    #     self.snap_list[last_snap]
+    #     with warnings.catch_warnings():
+    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
+    #         pynbody.plot.stars.m_star(self.snap_list[last_snap], subplot=ax_m_star, **kwargs)
+    #     if snap_time_gyr is not None:
+    #         ax_m_star.axvline(x=snap_time_gyr, linestyle="--")
+    #     # ax_m_star.set_title("m_star")
+    #     ax_m_star.set_xlabel("Time [Gyr]")
+    #     ax_m_star.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
+    #     return ax_m_star
 
     def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, starsize=None, **kwargs):
         """Create figure with gas and star rendering from pynbody"""
@@ -696,7 +723,7 @@ class MoriaSim(Simulation):
     _sf_moria = "/home/michele/sim/MoRIA/results/sumfiles/"
 
     def __init__(self, sim_id, kicked=False):
-        self.sim_id = sim_id
+        self.sim_id = str(sim_id)
         self.kicked = kicked
         # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
         # super(MoriaSim, self).__init__(sim_id)

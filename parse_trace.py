@@ -13,6 +13,8 @@ def parse_trace(fname='trace.txt'):
           # All.AdhocAcc[0],All.AdhocAcc[1],All.AdhocAcc[2]);
     df = pd.read_csv(fname, delim_whitespace=True, header=4, names=['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az'])
     df['r'] = np.sqrt(df.x**2 + df.y**2 + df.z**2)
+    df['v'] = np.sqrt(df.vx**2 + df.vy**2 + df.vz**2)
+    df['a'] = np.sqrt(df.ax**2 + df.ay**2 + df.az**2)
     return df
 
 

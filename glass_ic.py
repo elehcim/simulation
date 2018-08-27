@@ -64,7 +64,9 @@ def create_gas_box(N, box_size, tot_gas_mass, filename):
     s.g['pos'] = pynbody.array.SimArray(pos, units.kpc).astype(np.float32)
     s.g['vel'] = pynbody.array.SimArray(np.zeros_like(s.g['pos']), units.km/units.s).astype(np.float32)
     s.g['mass'] = pynbody.array.SimArray(np.ones(N) * tot_gas_mass / N, 10**10*units.Msol)
-    print("You'll have a mass resolution of: {:.2f} Msol".format(tot_gas_mass/N))
+    print("You'll have a mass resolution of: {:.2g} Msol".format(tot_gas_mass/N))
+    # in gCosmoOrb, the mass is not important since it is put to -1 and n Gadget
+    # this is substituted with the typical (max particle mass of the snapshot) mass of the galaxy particle.
 
     # print(s.g['mass'])
     # gadget_time_unit = u.kpc/u.km*u.s
