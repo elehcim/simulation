@@ -17,6 +17,18 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+def find_sfh(snap, bins=100):
+    trange = [snap.star['tform'].in_units("Gyr").min(), snap.star['tform'].in_units("Gyr").max()]
+    binnorm = 1e-9*bins / (trange[1] - trange[0])
+    tforms = snap.star['tform'].in_units('Gyr')
+    try:
+        weight = snap.star['massform'].in_units('Msol') * binnorm
+    except:
+        weight = snap.star['mass'].in_units('Msol') * binnorm
+    sfh, sfhbines = np.histogram(tforms, weights=weight, bins=bins)
+    sfhtimes = 0.5*(sfhbines[1:] + sfhbines[:-1])
+    return sfh, sfhtimes  # sfh in Msol/yr, sfhtimes in Gyr
+
 
 def mass_resolution(snap):
     return (snap['mass'].sum()/len(snap)).in_units("Msol")
