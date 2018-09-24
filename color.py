@@ -64,6 +64,7 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, s
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
     cbar.set_label('{} [mag/arcsec$^2$]'.format(color_name.upper()));
+    # cont = ax.contour(img, cmap='flag', extent=(-width/2, width/2, -width/2, width/2))
     if title is not None:
         ax.set_title(title)
     plt.draw()
