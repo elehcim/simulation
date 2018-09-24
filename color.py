@@ -31,9 +31,9 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, s
     assert len(bands) == 2
 
     if subplot:
-        ax = subplot
+        fig, ax = subplot.figure, subplot
     else:
-        ax = plt
+        fig, ax = plt.gcf(), plt.gca()
 
     if center:
         pynbody.analysis.halo.center(snap.s, vel=False);
@@ -44,7 +44,8 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, s
     snap.s['{}_lum_den'.format(color_name)] = lum_den_template(color_name, snap.s)
 
     # plot color in 10^(-0.4) mag per unit surface
-    color_pc2 = pynbody.plot.sph.image(snap.s, qty=color_name + '_lum_den', units='pc^-2', noplot=True, width=width, log=False, resolution=resolution, **kwargs)
+    color_pc2 = pynbody.plot.sph.image(snap.s, qty=color_name + '_lum_den', units='pc^-2',
+                                       noplot=True, width=width, log=False, resolution=resolution, **kwargs)
 
     # convert to mag/arcsec**2
     color_mag_arcsec2 = my_convert_to_mag_arcsec2(color_pc2)
@@ -59,16 +60,11 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, s
     cmap = plt.get_cmap(cmap_name)
     cmap.set_bad('black')
     img = ax.imshow(color_mag_arcsec2, cmap=cmap, extent=(-width/2, width/2, -width/2, width/2), origin='lower')
-    if subplot:
-        cbar = ax.figure.colorbar(img);
-        ax.set_xlabel('x/kpc')
-        ax.set_ylabel('y/kpc')
-    else:
-        cbar = ax.colorbar(img);
-        ax.xlabel('x/kpc')
-        ax.ylabel('y/kpc')
+    cbar = ax.figure.colorbar(img);
+    ax.set_xlabel('x/kpc')
+    ax.set_ylabel('y/kpc')
     cbar.set_label('{} [mag/arcsec$^2$]'.format(color_name.upper()));
     if title is not None:
-        ax.set_title(title) if subplot else ax.title(title)
-    plt.show()
+        ax.set_title(title)
+    plt.draw()
     return color_mag_arcsec2
