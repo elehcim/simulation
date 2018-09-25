@@ -8,6 +8,7 @@ KICKED_PATH = '/home/michele/sim/MySimulations/Moria8Gyr_tidal'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 def snapshot_file_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
     """Return a list of the path to all the snapshots in the simulation folder"""
