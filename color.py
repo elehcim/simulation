@@ -1,6 +1,7 @@
 import pynbody
 import numpy as np
 import matplotlib.pyplot as plt
+from astropy.convolution import Gaussian2DKernel, convolve
 from pynbody.derived import lum_den_template
 from scipy.ndimage.filters import gaussian_filter
 
@@ -61,11 +62,16 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, s
 
     if gaussian_sigma is not None:
         sigma_pix = kpc2pix(gaussian_sigma, width, resolution)
+        print("Smoothing with gaussian kernel with sigma = {} pixel".format(sigma_pix))
         color_mag_arcsec2 = gaussian_filter(color_mag_arcsec2, sigma_pix)
+
+        # gaussian_2D_kernel = Gaussian2DKernel(sigma_pix)
+        # color_mag_arcsec2 = convolve(color_mag_arcsec2, gaussian_2D_kernel)
 
     cmap = plt.get_cmap(cmap_name)
     cmap.set_bad('black')
-    img = ax.imshow(color_mag_arcsec2, cmap=cmap, extent=(-width/2, width/2, -width/2, width/2), origin='lower')
+    extent = (-width/2, width/2, -width/2, width/2)
+    img = ax.imshow(color_mag_arcsec2, cmap=cmap, extent=extent, origin='lower')
     cbar = ax.figure.colorbar(img);
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
