@@ -6,10 +6,10 @@ from pynbody.derived import lum_den_template
 from scipy.ndimage.filters import gaussian_filter
 from color import kpc2pix, my_convert_to_mag_arcsec2
 
-def luminosity_plot(snap, band='v', width=10, resolution=500, mag_filter=29, subplot=None,
+def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, subplot=None, show_cbar=True,
                center=False, title=None, gaussian_sigma=None, cmap_name='viridis', **kwargs):
     """
-    Plot the luminosity in mag/arcsec^2 as defined by the band
+    Plot the surface brightness in mag/arcsec^2 as defined by the band
 
     Parameters
     ----------
@@ -44,10 +44,11 @@ def luminosity_plot(snap, band='v', width=10, resolution=500, mag_filter=29, sub
     cmap = plt.get_cmap(cmap_name)
     cmap.set_bad('black')
     img = ax.imshow(mag_arcsec2, cmap=cmap, extent=(-width/2, width/2, -width/2, width/2), origin='lower')
-    cbar = ax.figure.colorbar(img);
+    if show_cbar:
+        cbar = ax.figure.colorbar(img);
+        cbar.set_label('{} [mag/arcsec$^2$]'.format(band.upper()));
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
-    cbar.set_label('{} [mag/arcsec$^2$]'.format(band.upper()));
     # cont = ax.contour(img, cmap='flag', extent=(-width/2, width/2, -width/2, width/2))
     if title is not None:
         ax.set_title(title)
