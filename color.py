@@ -21,7 +21,8 @@ def my_convert_to_mag_arcsec2(image):
     return img_mag_arcsec2
 
 def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, subplot=None,
-               center=False, title=None, gaussian_sigma=None, cmap_name='seismic', **kwargs):
+               center=False, title=None, gaussian_sigma=None, cmap_name='seismic',
+               vmin=None, vmax=None, **kwargs):
     """
     Plot the color as defined by the tuple `bands`
 
@@ -71,7 +72,7 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, s
     cmap = plt.get_cmap(cmap_name)
     cmap.set_bad('black')
     extent = (-width/2, width/2, -width/2, width/2)
-    img = ax.imshow(color_mag_arcsec2, cmap=cmap, extent=extent, origin='lower')
+    img = ax.imshow(color_mag_arcsec2, cmap=cmap, interpolation='none', extent=extent, origin='lower', vmin=vmin, vmax=vmax)
     cbar = ax.figure.colorbar(img);
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
