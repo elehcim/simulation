@@ -15,7 +15,12 @@ def pix2kpc(qty_pix, width, resolution):
 
 def my_convert_to_mag_arcsec2(image):
     assert image.units=="pc^-2"
-    pc2_to_sqarcsec = 2.3504430539466191e-09  # == 25-5log10(5)
+    # At 10 pc (distance for absolute magnitudes), 1 arcsec is 10 AU=1/2.06e4 pc
+    # In [5]: (np.tan(np.pi/180/3600)*10.0)**2
+    # Out[5]: 2.3504430539466191e-09
+    # 1 square arcsecond is thus 2.35e-9 pc^2
+    # 25-5log10(5)...
+    pc2_to_sqarcsec = 2.3504430539466191e-09
     img_mag_arcsec2 = -2.5 * np.log10(image * pc2_to_sqarcsec)
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
