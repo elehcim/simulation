@@ -18,7 +18,6 @@ def convert_to_mag_arcsec2(image):
     In [5]: (np.tan(np.pi/180/3600)*10.0)**2
     Out[5]: 2.3504430539466191e-09
     1 square arcsecond is thus 2.35e-9 pc^2
-    25-5log10(5)...
     """
     pc2_to_sqarcsec = 2.3504430539466191e-09
     img_mag_arcsec2 = -2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
@@ -40,7 +39,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
     band : str
         one the available bands: ['u', 'b', 'v', 'r', 'i', 'j', 'h', 'k']
     width : float or pynbody.Unit or str
-        if float, the size in kpc of the map. Otherwise the distance given.
+        if float, the size in kpc of the map. Otherwise use the distance in the given unit
     resolution : int
         number of pixels per side of the image
     center : bool
@@ -66,23 +65,29 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
         pynbody.analysis.halo.center(snap.s, vel=False);
 
 
-    # plot color in 10^(-0.4) mag per unit surface
+    # *_lum_den property is in 10**(-0.4 mag) per unit volume.
+    # do a SPH map in 10^(-0.4) mag per unit surface
     pc2 = pynbody.plot.sph.image(snap.s, qty=band + '_lum_den', units='pc^-2',
                                  noplot=True, width=width, log=False, resolution=resolution, **kwargs)
 
     # convert to mag/arcsec**2
     sb_mag_arcsec2 = convert_to_mag_arcsec2(pc2)
 
+    # Apply the gaussian smoothing
     if gaussian_sigma is not None:
         sigma_pix = kpc2pix(gaussian_sigma, width, resolution)
-        sb_mag_arcsec2 = gaussian_filter(arcsec2, sigma_pix)
+        sb_mag_arcsec2 = gaussian_filter(sb_mag_arcsec2, sigma_pix)
 
-    # Filter below a certain magnitude
+    # Filter above a certain magnitude
     if mag_filter is not None:
         sb_mag_arcsec2[sb_mag_arcsec2 > mag_filter] = np.nan
+
     cmap = plt.get_cmap(cmap_name)
     cmap.set_bad('black')
+
+    # Do the plot
     img = ax.imshow(sb_mag_arcsec2, cmap=cmap, extent=(-width/2, width/2, -width/2, width/2), origin='lower')
+
     if show_cbar:
         cbar = ax.figure.colorbar(img);
         cbar.set_label('{} [mag/arcsec$^2$]'.format(band.upper()));
