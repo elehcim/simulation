@@ -27,7 +27,7 @@ def convert_to_mag_arcsec2(image, band):
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
-def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, gaussian_sigma=None, lum_pc2=False,
+def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, gaussian_sigma=None, lum_pc2=False, gridspec=None, cax=None,
                        subplot=None, show_cbar=True, center=False, title=None, cmap_name='viridis', contour=0, **kwargs):
     """
     Plot and returns the surface brightness in mag/arcsec^2 as defined by `band`.
@@ -81,8 +81,10 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
                                  noplot=True, width=width, resolution=resolution, **kwargs)
     if lum_pc2:
         sb = pc2
+        cbar_label = '${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper())
     else:
         sb = convert_to_mag_arcsec2(pc2, band)
+        cbar_label = '$\mu_{}$ [mag/arcsec$^2$]'.format(band.upper())
 
     # Apply the gaussian smoothing
     if gaussian_sigma is not None:
@@ -105,11 +107,16 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
     img = ax.imshow(sb, cmap=cmap, extent=extent, origin='lower')
 
     if show_cbar:
-        cbar = ax.figure.colorbar(img);
-        if lum_pc2:
-            cbar.set_label('${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper()));
+        if gridspec:
+            cbar = gridspec.colorbar(img)
+            cbar.set_label_text(cbar_label)
+        elif cax:
+            cbar = ax.figure.colorbar(img, cax=cax)
+            cbar.set_label(cbar_label)
         else:
-            cbar.set_label('$\mu_{}$ [mag/arcsec$^2$]'.format(band.upper()));
+            cbar = ax.figure.colorbar(img)
+            cbar.set_label(cbar_label)
+        
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
     if not lum_pc2 and contour:
