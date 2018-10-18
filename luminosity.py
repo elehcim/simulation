@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
 
+
+sun_abs_magnitudes = {'u':5.56, 'b':5.45, 'v':4.8, 'r':4.46, 'i':4.1, 'j':3.66, 'h':3.32, 'k':3.28}
+
 def kpc2pix(qty_kpc, width, resolution):
     kpc_per_pixel = width/resolution
     return int(np.floor(qty_kpc/kpc_per_pixel))
@@ -11,7 +14,7 @@ def pix2kpc(qty_pix, width, resolution):
     kpc_per_pixel = width/resolution
     return qty_pix*kpc_per_pixel
 
-def convert_to_mag_arcsec2(image):
+def convert_to_mag_arcsec2(image, band):
     """Convert a pynbody.SimArray of luminosity density to one in mag/arcsec^2
     
     At 10 pc (distance for absolute magnitudes), 1 arcsec is 10 AU=1/2.06e4 pc
@@ -20,7 +23,7 @@ def convert_to_mag_arcsec2(image):
     1 square arcsecond is thus 2.35e-9 pc^2
     """
     pc2_to_sqarcsec = 2.3504430539466191e-09
-    img_mag_arcsec2 = -2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
+    img_mag_arcsec2 = sun_abs_magnitudes[band] - 2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
@@ -69,7 +72,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
         pynbody.analysis.halo.center(snap.s, vel=False);
 
     lum_density_name = band + '_lum_density'
-    sun_abs_mag = {'u':5.56,'b':5.45,'v':4.8,'r':4.46,'i':4.1,'j':3.66,'h':3.32,'k':3.28}[band]
+    sun_abs_mag = sun_abs_magnitudes[band]
     snap.s[lum_density_name] = (10 ** (-0.4 * (snap.s[band + "_mag"] - sun_abs_mag))) * snap.s['rho'] / snap.s['mass']
 
     snap.s[lum_density_name].units = snap.s['rho'].units/snap.s['mass'].units
@@ -79,7 +82,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
     if lum_pc2:
         sb = pc2
     else:
-        sb = convert_to_mag_arcsec2(pc2)
+        sb = convert_to_mag_arcsec2(pc2, band)
 
     # Apply the gaussian smoothing
     if gaussian_sigma is not None:
