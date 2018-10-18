@@ -24,8 +24,8 @@ def convert_to_mag_arcsec2(image):
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
-def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, gaussian_sigma=None,
-                       subplot=None, show_cbar=True, center=False, title=None,  cmap_name='viridis', **kwargs):
+def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, gaussian_sigma=None, lum_pc2=False,
+                       subplot=None, show_cbar=True, center=False, title=None, cmap_name='viridis', contour=0, **kwargs):
     """
     Plot and returns the surface brightness in mag/arcsec^2 as defined by `band`.
 
@@ -46,15 +46,19 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
         if True centers the snap on the star family
     gaussian_sigma : float or None
         in kpc is the sigma of the gaussian to convolve with the image, to make it more realistic
+    lum_pc2 : bool
+        If true return the image in solar luminosity in the given band per pc**2. The default is False
     mag_filter : float or None
         all region with magnitude/arcsec^2 higher will be set to NaN
+    contour : int
+        Number of contour levels. It is active only if lum_pc2=False. Default to 0 (no isophotes plot)
     kwargs : dict
         optional keyword arguments to be passed to the `pynbody.plot.sph.image` function
 
     Returns
     -------
-    sb_mag_arcsec2 : pynbody.SimArray
-        The map of surface brightness in mag/arcsec^2
+    sb : pynbody.SimArray
+        The map of surface brightness in mag/arcsec^2 or in Lsol/pc**2
     """
     if subplot:
         fig, ax = subplot.figure, subplot
@@ -64,41 +68,56 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
     if center:
         pynbody.analysis.halo.center(snap.s, vel=False);
 
+    lum_density_name = band + '_lum_density'
+    sun_abs_mag = {'u':5.56,'b':5.45,'v':4.8,'r':4.46,'i':4.1,'j':3.66,'h':3.32,'k':3.28}[band]
+    snap.s[lum_density_name] = (10 ** (-0.4 * (snap.s[band + "_mag"] - sun_abs_mag))) * snap.s['rho'] / snap.s['mass']
 
-    # *_lum_den property is in 10**(-0.4 mag) per unit volume.
-    # do a SPH map in 10^(-0.4) mag per unit surface
-    pc2 = pynbody.plot.sph.image(snap.s, qty=band + '_lum_den', units='pc^-2',
-                                 noplot=True, width=width, log=False, resolution=resolution, **kwargs)
+    snap.s[lum_density_name].units = snap.s['rho'].units/snap.s['mass'].units
 
-    # convert to mag/arcsec**2
-    sb_mag_arcsec2 = convert_to_mag_arcsec2(pc2)
+    pc2 = pynbody.plot.sph.image(snap.s, qty=lum_density_name, units='pc^-2',
+                                 noplot=True, width=width, resolution=resolution, **kwargs)
+    if lum_pc2:
+        sb = pc2
+    else:
+        sb = convert_to_mag_arcsec2(pc2)
 
     # Apply the gaussian smoothing
     if gaussian_sigma is not None:
         sigma_pix = kpc2pix(gaussian_sigma, width, resolution)
-        sb_mag_arcsec2 = gaussian_filter(sb_mag_arcsec2, sigma_pix)
+        sb = gaussian_filter(sb, sigma_pix)
 
     # Filter above a certain magnitude
-    if mag_filter is not None:
-        sb_mag_arcsec2[sb_mag_arcsec2 > mag_filter] = np.nan
+    if not lum_pc2 and mag_filter is not None:
+        sb[sb > mag_filter] = np.nan
 
     cmap = plt.get_cmap(cmap_name)
     cmap.set_bad('black')
 
     # Do the plot
-    img = ax.imshow(sb_mag_arcsec2, cmap=cmap, extent=(-width/2, width/2, -width/2, width/2), origin='lower')
+    log = kwargs.get('log', False)
+    if log and lum_pc2:
+        sb = np.log10(sb)
+
+    extent = (-width/2, width/2, -width/2, width/2)
+    img = ax.imshow(sb, cmap=cmap, extent=extent, origin='lower')
 
     if show_cbar:
         cbar = ax.figure.colorbar(img);
-        cbar.set_label('{} [mag/arcsec$^2$]'.format(band.upper()));
+        if lum_pc2:
+            cbar.set_label('${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper()));
+        else:
+            cbar.set_label('$\mu_{}$ [mag/arcsec$^2$]'.format(band.upper()));
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
-    # TODO include contour (isophotes), maybe with a paramenter
-    # cont = ax.contour(img, cmap='flag', extent=(-width/2, width/2, -width/2, width/2))
+    if not lum_pc2 and contour:
+        nisophotes = contour
+        levels = np.linspace(sb.min(), sb.max(), nisophotes, dtype=np.int)
+        cont = ax.contour(sb, levels=levels, extent=extent) #  cmap='flag' # very visible countours 
+        ax.clabel(cont, inline=1, fmt='%1.0f');
     if title is not None:
         ax.set_title(title)
     plt.draw()
-    return sb_mag_arcsec2
+    return sb
 
 
 def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29,  gaussian_sigma=None,
