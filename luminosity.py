@@ -27,7 +27,7 @@ def convert_to_mag_arcsec2(image, band):
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
-def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, gaussian_sigma=None, lum_pc2=False, gridspec=None, cax=None,
+def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, gaussian_sigma=None, lum_pc2=False, cax=None,
                        subplot=None, show_cbar=True, center=False, title=None, cmap_name='viridis', contour=0, **kwargs):
     """
     Plot and returns the surface brightness in mag/arcsec^2 as defined by `band`.
@@ -107,8 +107,9 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
     img = ax.imshow(sb, cmap=cmap, extent=extent, origin='lower')
 
     if show_cbar:
-        if gridspec:
-            cbar = gridspec.colorbar(img)
+        from mpl_toolkits.axes_grid1.axes_grid import CbarAxes  
+        if isinstance(cax, CbarAxes):
+            cbar = cax.colorbar(img)
             cbar.set_label_text(cbar_label)
         elif cax:
             cbar = ax.figure.colorbar(img, cax=cax)
@@ -116,7 +117,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
         else:
             cbar = ax.figure.colorbar(img)
             cbar.set_label(cbar_label)
-        
+
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
     if not lum_pc2 and contour:
