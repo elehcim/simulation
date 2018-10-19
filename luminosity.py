@@ -27,8 +27,8 @@ def convert_to_mag_arcsec2(image, band):
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
-def surface_brightness(snap, band='v', width=10, resolution=500, center=False, lum_pc2=False,
-                       mag_filter=29, gaussian_sigma=None, subplot=None, show_cbar=True, cax=None, 
+def surface_brightness(snap, band='v', width=10, resolution=500, center=False, lum_pc2=False, noplot=False,
+                       mag_filter=None, gaussian_sigma=None, subplot=None, show_cbar=True, cax=None, 
                        cmap_name='viridis', title=None, isophotes=0, label_contour=True, **kwargs):
     """
     Plot and returns the surface brightness in mag/arcsec^2 as defined by `band`.
@@ -48,13 +48,13 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
         number of pixels per side of the image
     center : bool
         if True centers the snap on the star family
-    gaussian_sigma : float or None
-        in kpc is the sigma of the gaussian to convolve with the image, to make it more realistic
     lum_pc2 : bool
         If true return the image in solar luminosity in the given band per pc**2. The default is False
+    gaussian_sigma : float or None
+        in kpc is the sigma of the gaussian to convolve with the image, to make it more realistic
     mag_filter : float or None
         all region with magnitude/arcsec^2 higher will be set to NaN
-    contour : int, iterable
+    isophotes : int, iterable
         Number of contour levels. It is active only if lum_pc2=False. Default to 0 (no isophotes plot)
     kwargs : dict
         optional keyword arguments to be passed to the `imshow` function
@@ -64,11 +64,6 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
     sb : pynbody.SimArray
         The map of surface brightness in mag/arcsec^2 or in Lsol/pc**2
     """
-    if subplot:
-        fig, ax = subplot.figure, subplot
-    else:
-        fig, ax = plt.gcf(), plt.gca()
-
     if center:
         pynbody.analysis.halo.center(snap.s, vel=False);
 
@@ -82,10 +77,8 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
                                  noplot=True, width=width, resolution=resolution)
     if lum_pc2:
         sb = pc2
-        cbar_label = '${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper())
     else:
         sb = convert_to_mag_arcsec2(pc2, band)
-        cbar_label = '$\mu_{}$ [mag/arcsec$^2$]'.format(band.upper())
 
     # Apply the gaussian smoothing
     if gaussian_sigma is not None:
@@ -96,19 +89,34 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
     if not lum_pc2 and mag_filter is not None:
         sb[sb > mag_filter] = np.nan
 
-    cmap = plt.get_cmap(cmap_name)
-    cmap.set_bad('black')
-
-    # Do the plot
     log = kwargs.get('log', False)
     if log and lum_pc2:
         sb = np.log10(sb)
 
+    if noplot:
+        return sb
+
+    # Do the plot
+    if subplot:
+        fig, ax = subplot.figure, subplot
+    else:
+        fig, ax = plt.gcf(), plt.gca()
+
+    cmap = plt.get_cmap(cmap_name)
+    cmap.set_bad('black')
+
     extent = (-width/2, width/2, -width/2, width/2)
     img = ax.imshow(sb, cmap=cmap, extent=extent, origin='lower', **kwargs)
 
+
     if show_cbar:
+        if lum_pc2:
+            cbar_label = '${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper())
+        else:
+            cbar_label = '$\mu_{}$ [mag/arcsec$^2$]'.format(band.upper())
+
         from mpl_toolkits.axes_grid1.axes_grid import CbarAxes  
+
         if isinstance(cax, CbarAxes):
             cbar = cax.colorbar(img)
             cbar.set_label_text(cbar_label)
@@ -122,8 +130,8 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
     if not lum_pc2 and isophotes:
-        if isinstance(isophotes, (int, float)):
-            levels = np.linspace(sb.min(), sb.max(), nisophotes, dtype=np.int)
+        if isinstance(isophotes, int):
+            levels = np.linspace(sb.min(), sb.max(), isophotes, dtype=np.int)
         else:
             levels = isophotes
         cont = ax.contour(sb, levels=levels, extent=extent) #  cmap='flag' # very visible countours 
@@ -135,8 +143,8 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
     return sb
 
 
-def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29,  gaussian_sigma=None,
-               subplot=None, center=False, title=None, cmap_name='seismic',
+def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, gaussian_sigma=None,
+               subplot=None, center=False, title=None, cmap_name='seismic', noplot=False,
                vmin=None, vmax=None, **kwargs):
     """
     Plot the color as defined by the tuple `bands`
