@@ -155,7 +155,7 @@ class Simulation(object):
                 snap.properties['omegaM0'] = float(self.params['OmegaBaryon'])
             # Take boxsize from first snap
             if i==0:
-                self.boxsize = snap.properties['boxsize']
+                self.boxsize = snap.properties.get('boxsize', None)
             if force_cosmo:
                 if i==0:
                     logger.info('Forcing cosmological parameters (h=0.7, omegaL0=0.72, omegaM0=0.28')
