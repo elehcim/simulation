@@ -27,8 +27,9 @@ def convert_to_mag_arcsec2(image, band):
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
-def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, gaussian_sigma=None, lum_pc2=False, cax=None,
-                       subplot=None, show_cbar=True, center=False, title=None, cmap_name='viridis', contour=0, **kwargs):
+def surface_brightness(snap, band='v', width=10, resolution=500, center=False, lum_pc2=False,
+                       mag_filter=29, gaussian_sigma=None, subplot=None, show_cbar=True, cax=None, 
+                       cmap_name='viridis', title=None, isophotes=0, label_contour=True, **kwargs):
     """
     Plot and returns the surface brightness in mag/arcsec^2 as defined by `band`.
 
@@ -53,10 +54,10 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
         If true return the image in solar luminosity in the given band per pc**2. The default is False
     mag_filter : float or None
         all region with magnitude/arcsec^2 higher will be set to NaN
-    contour : int
+    contour : int, iterable
         Number of contour levels. It is active only if lum_pc2=False. Default to 0 (no isophotes plot)
     kwargs : dict
-        optional keyword arguments to be passed to the `pynbody.plot.sph.image` function
+        optional keyword arguments to be passed to the `imshow` function
 
     Returns
     -------
@@ -78,7 +79,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
     snap.s[lum_density_name].units = snap.s['rho'].units/snap.s['mass'].units
 
     pc2 = pynbody.plot.sph.image(snap.s, qty=lum_density_name, units='pc^-2',
-                                 noplot=True, width=width, resolution=resolution, **kwargs)
+                                 noplot=True, width=width, resolution=resolution)
     if lum_pc2:
         sb = pc2
         cbar_label = '${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper())
@@ -104,7 +105,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
         sb = np.log10(sb)
 
     extent = (-width/2, width/2, -width/2, width/2)
-    img = ax.imshow(sb, cmap=cmap, extent=extent, origin='lower')
+    img = ax.imshow(sb, cmap=cmap, extent=extent, origin='lower', **kwargs)
 
     if show_cbar:
         from mpl_toolkits.axes_grid1.axes_grid import CbarAxes  
@@ -120,11 +121,14 @@ def surface_brightness(snap, band='v', width=10, resolution=500, mag_filter=29, 
 
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
-    if not lum_pc2 and contour:
-        nisophotes = contour
-        levels = np.linspace(sb.min(), sb.max(), nisophotes, dtype=np.int)
+    if not lum_pc2 and isophotes:
+        if isinstance(isophotes, (int, float)):
+            levels = np.linspace(sb.min(), sb.max(), nisophotes, dtype=np.int)
+        else:
+            levels = isophotes
         cont = ax.contour(sb, levels=levels, extent=extent) #  cmap='flag' # very visible countours 
-        ax.clabel(cont, inline=1, fmt='%1.0f');
+        if label_contour:
+            ax.clabel(cont, inline=1, fmt='%1.0f');
     if title is not None:
         ax.set_title(title)
     plt.draw()
