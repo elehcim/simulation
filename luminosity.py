@@ -14,7 +14,7 @@ def pix2kpc(qty_pix, width, resolution):
     kpc_per_pixel = width/resolution
     return qty_pix*kpc_per_pixel
 
-def convert_to_mag_arcsec2(image, band):
+def convert_to_mag_arcsec2(image, band=None):
     """Convert a pynbody.SimArray of luminosity density to one in mag/arcsec^2
     
     At 10 pc (distance for absolute magnitudes), 1 arcsec is 10 AU=1/2.06e4 pc
@@ -23,7 +23,10 @@ def convert_to_mag_arcsec2(image, band):
     1 square arcsecond is thus 2.35e-9 pc^2
     """
     pc2_to_sqarcsec = 2.3504430539466191e-09
-    img_mag_arcsec2 = sun_abs_magnitudes[band] - 2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
+    if band is not None:
+        img_mag_arcsec2 = sun_abs_magnitudes[band] - 2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
+    else:
+        img_mag_arcsec2 = -2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
