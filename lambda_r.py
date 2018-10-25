@@ -6,11 +6,11 @@ from astropy.modeling import models, fitting
 from photutils import isophote, aperture_photometry
 from photutils import CircularAperture, EllipticalAperture, EllipticalAnnulus
 from photutils.isophote import EllipseGeometry, Ellipse
-from luminosity import surface_brightness, color_plot, kpc2pix
-
+from luminosity import surface_brightness, color_plot, kpc2pix, pix2kpc
+from copy import deepcopy
 import logging
 logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 consoleHandler = logging.StreamHandler()
@@ -18,18 +18,18 @@ consoleHandler.setFormatter(logFormatter)
 logger.addHandler(consoleHandler)
 
 
-NP_ERRSTATE = {"divide":'ignore', "over":'ignore', "under":'ignore'}
+NP_ERRSTATE = {"divide":'ignore', "over":'ignore', "under":'ignore', 'invalid':'ignore'}
 
 N_0 = 1
 ELLIP_0 = 0
 THETA_0 = 0
 
 FIT_PROFILE = True
+FIT_VERB = 0
 
 SHOW = False
 
-_sun_abs_mag = {'u':5.56,'b':5.45,'v':4.8,'r':4.46,'i':4.1,'j':3.66,
-               'h':3.32,'k':3.28}
+_sun_abs_mag = {'u':5.56,'b':5.45,'v':4.8,'r':4.46,'i':4.1,'j':3.66,'h':3.32,'k':3.28}
 _arcsec2_over_pc2_at_10pc = (np.tan(np.pi/180/3600)*10.0)**2
 
 def bounding_box(snap):
@@ -66,7 +66,7 @@ def plot_angmom(snap, ax):
     normalized it to one. It means that short arrows plotted means L almost
     aligned with line-of-sight-direction."""
     L = pynbody.analysis.angmom.ang_mom_vec(snap)
-    print("L:", L)
+    logger.info("L: {}".format(L))
     norm = np.linalg.norm(L)
     ax.arrow(0, 0, L[0]/norm, L[1]/norm, head_width=0.2, head_length=.2, color='red');
 
@@ -82,10 +82,6 @@ def sb_profile(band):
     r = ps['rbins'].in_units('kpc')
     # sbp = 10**(0.4*(sun_abs_mag - 2.5*np.log10(arcsec2_over_pc2_at_10pc) - ps['sb,' + band] ))
     sbp = 10**(0.4*(sun_mag + 21.572 - ps['sb,' + band] ))
-    plt.plot(r, sbp, linewidth=2);
-    plt.ylabel("I [$L_{{\odot,{}}}/pc^2$]".format(band))
-    plt.xlabel("r/kpc")
-    plt.title('Surface brightness profile')
     return r, sbp
 
 
@@ -94,10 +90,10 @@ def fit_sersic_1D(r_eff_kpc3d, r, sbp, show=SHOW):
     # s1d_init = models.ExponentialCutoffPowerLaw1D(alpha=1, x_cutoff=3)
     fit_s1D = fitting.SLSQPLSQFitter()
     with np.errstate(**NP_ERRSTATE):
-        sersic1D = fit_s1D(s1D_init, r, sbp)#, acc=1e-10)
-    plt.plot(r, sbp, linewidth=2)
-    plt.plot(r, sersic1D(r))
+        sersic1D = fit_s1D(s1D_init, r, sbp, verblevel=FIT_VERB)#, acc=1e-10)
     if show:
+        plt.plot(r, sbp, linewidth=2)
+        plt.plot(r, sersic1D(r))
         plt.show()
     return sersic1D
 
@@ -116,8 +112,7 @@ def fit_sersic_2D(sb, r_eff, n, resolution, ellip, theta, show=SHOW):
     # notnans = np.isfinite(img)
     # sersic = fit_s(s_init, x[notnans], y[notnans], img[notnans])
     with np.errstate(**NP_ERRSTATE):
-        sersic = fit_s(s_init, x, y, sb)#, weights=weights_norm, maxiter=200)
-    print(sersic)
+        sersic = fit_s(s_init, x, y, sb, verblevel=FIT_VERB)#, weights=weights_norm, maxiter=200)
     if show:
         plot_fit(sb, sersic)
         plt.show()
@@ -129,7 +124,7 @@ def plot_aperture_geometry(sb, sersic, resolution, show=SHOW):
         ellip = sersic.ellip.value
         theta = sersic.theta.value
     else:
-        print("ellipticity > 1: swapping minor <-> major axis")
+        logger.warning("ellipticity > 1: swapping minor <-> major axis")
         ellip = 1/sersic.ellip.value
         theta = np.pi/2 + sersic.theta.value
 
@@ -156,7 +151,7 @@ def integrate_annulus(qty, center, smajax, ellip, a_delta, theta):
 
 def create_apertures(center, smajax, ellip, a_delta, theta):
     if ellip > 1:
-        print("ellipticity > 1: swapping minor <-> major axis")
+        logger.warning("ellipticity > 1: swapping minor <-> major axis")
         ellip = 1/ellip
         theta = np.pi/2 + theta
     sminax = smajax * np.sqrt(1 - ellip)
@@ -171,17 +166,70 @@ def plot_annuli(data, apertures):
     plt.show()
 
 
-def compute_stellar_specific_angmom(subsnap, sb_mag, width, resolution, smajax, ellip, a_delta, theta):
-    v_los_sim = pynbody.plot.sph.image(subsnap.s, qty='vz', av_z='rho', width=width, resolution=resolution, log=False)
-    v_disp_sim = pynbody.plot.sph.image(subsnap.s, qty='v_disp', av_z='rho', width=width, resolution=resolution, log=False)
+def compute_stellar_specific_angmom(sb_mag, v_los_map, v_disp_map, smajax, ellip, a_delta, theta):
     lum = to_astropy_quantity(sb_mag, units='mag/arcsec**2')
-    v_los = to_astropy_quantity(v_los_sim)
-    v_disp = to_astropy_quantity(v_disp_sim)
+    v_los = to_astropy_quantity(v_los_map)
+    v_disp = to_astropy_quantity(v_disp_map)
     lum_annuli = integrate_annulus(lum, center, smajax, ellip, a_delta, theta)
     v_los_annuli = integrate_annulus(v_los, center, smajax, ellip, a_delta, theta)
     v_disp_annuli = integrate_annulus(v_disp, center, smajax, ellip, a_delta, theta)
     stellar_specific_angmom = ss_angmom(lum_annuli, smajax, v_los_annuli, v_disp_annuli)
     return stellar_specific_angmom
+
+
+def adjust_cbar_range(cbar_range):
+    if cbar_range is not None:
+        if isinstance(cbar_range, (list, tuple) ) and len(cbar_range) == 2:
+            m, M = cbar_range
+        else:
+            m, M = -cbar_range, cbar_range
+    else:
+        return None, None
+    return m, M
+
+def plot_maps(sb, vlos, sigma, width, resolution, v_los_range=None, sigma_range=None):
+    from mpl_toolkits.axes_grid1 import AxesGrid
+    fig = plt.figure(figsize=(12,4))
+    grid = AxesGrid(fig, 111,  # similar to subplot(142)
+                    nrows_ncols=(1, 3),
+                    axes_pad=0.5,
+    #                 share_x=True,
+    #                 share_all=False,
+                    label_mode="all",
+                    cbar_mode="each",
+                    cbar_location="top",
+                    cbar_size="3%",
+                    cbar_pad="2%"
+                   )
+
+    v_los_min, v_los_max = adjust_cbar_range(v_los_range)
+    sigma_min, sigma_max = adjust_cbar_range(sigma_range)
+
+    extent = (-width/2, width/2, -width/2, width/2)
+    a = grid[0].imshow(sb, extent=extent, origin='lower')
+    b = grid[1].imshow(vlos, extent=extent, origin='lower', vmin=v_los_min, vmax=v_los_max)
+    c = grid[2].imshow(sigma, extent=extent, origin='lower', vmin=sigma_min, vmax=sigma_max)
+
+    grid[0].set_xlabel('x/kpc')
+    grid[1].set_xlabel('x/kpc')
+    grid[2].set_xlabel('x/kpc')
+
+    grid[0].set_ylabel('y/kpc')
+    
+    cb1 = grid.cbar_axes[0].colorbar(a)
+    cb1.set_label_text('$\mu$ [mag/arcsec$^2$]')
+
+    cb2 = grid.cbar_axes[1].colorbar(b)
+    cb2.set_label_text("$v_{LOS}$ [km/s]")
+
+    cb3 = grid.cbar_axes[2].colorbar(c)
+    cb3.set_label_text("$\sigma$ [km/s]")
+    return grid
+
+def print_fit_results(model):
+    logger.info("Fit results:")
+    for name, value in zip(model.param_names, model.parameters):
+        logger.info("  {:10s} = {:.4g}".format(name, value))
 
 logger.info("Opening file")
 snap = "/home/michele/sim/MoRIA/M1-10_Verbeke2017/M10sim41001/snapshot_0036"
@@ -195,20 +243,22 @@ width = 5
 resolution = 500
 
 logger.info("Set width: {:3d} kpc; resolution {:3d}".format(width, resolution) )
-pynbody.analysis.halo.center(s.g)#, vel=False)
+pynbody.analysis.halo.center(s.s)#, vel=False)
 subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-width*1.1))]
 
 logger.info("Computing overall angular momentum")
 
-pynbody.analysis.angmom.faceon(subsnap.s, disk_size=subsnap.s['pos'].max())
+pynbody.analysis.angmom.sideon(subsnap.s, disk_size=subsnap.s['pos'].max())
 
 logger.info("Computing surface brightness")
 
-fig, ax = plt.subplots()
-sb = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=True, subplot=ax, noplot=not(SHOW))
 if SHOW:
+    fig, ax = plt.subplots()
+    sb = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=True, subplot=ax)
     plot_angmom(subsnap.s, ax)
     plt.show()
+else:
+    sb = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=True, noplot=True)
 
 r_eff_kpc3d = pynbody.analysis.luminosity.half_light_r(subsnap, cylindrical=False)
 
@@ -216,23 +266,43 @@ r_eff_kpc = pynbody.analysis.luminosity.half_light_r(subsnap, cylindrical=True)
 
 r_eff_pix = kpc2pix(r_eff_kpc, width=width, resolution=resolution)
 
-logger.info("Computed R_eff:\n 2D: {:.4f} kpc\n 3D: {:.4f} kpc".format(r_eff_kpc, r_eff_kpc3d))
+logger.info("Computed R_eff:")
+logger.info(" 2D: {:.4f} kpc".format(r_eff_kpc))
+logger.info(" 3D: {:.4f} kpc".format(r_eff_kpc3d))
 
 if FIT_PROFILE:
-    logger
-    r_bins, sbp = sb_profile(band='v')
+    band = 'v'
+    r_bins, sbp = sb_profile(band=band)
+    if SHOW:
+        plt.plot(r_bins, sbp, linewidth=2);
+        plt.ylabel("I [$L_{{\odot,{}}}/pc^2$]".format(band))
+        plt.xlabel("r/kpc")
+        plt.title('Surface brightness profile')
     sersic1D = fit_sersic_1D(r_eff_kpc3d, r_bins, sbp, show=SHOW)
 
-    print(sersic1D)
+    print_fit_results(sersic1D)
 
     N_0 = sersic1D.n
 
 logger.info("Fitting Sersic2D")
 
 sersic2D = fit_sersic_2D(sb, r_eff=r_eff_pix, n=N_0, resolution=resolution, ellip=ELLIP_0, theta=THETA_0)
+print_fit_results(sersic2D)
 
-aper = plot_aperture_geometry(sb, sersic=sersic2D, resolution=resolution, show=SHOW)
-print(aper)
+if sersic2D.ellip.value <= 1:
+    ellip = sersic2D.ellip.value
+    theta = sersic2D.theta.value
+else:
+    logger.warning("ellipticity > 1: swapping minor <-> major axis")
+    ellip = 1/sersic2D.ellip.value
+    theta = np.pi/2 + sersic2D.theta.value
+
+
+# aper = plot_aperture_geometry(sb, sersic=sersic2D, resolution=resolution, show=SHOW)
+# logger.info(aper.positions)
+# logger.info(aper.a)
+# logger.info(aper.b)
+# logger.info(aper.theta)
 
 
 # Do the photometry
@@ -242,30 +312,44 @@ sb_mag = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_p
 center = (sersic2D.x_0.value, sersic2D.y_0.value)
 a_delta = 20
 smajax = np.arange(30, 200, a_delta)
-print(smajax)
+# print(smajax)
 
 logger.info("Created apertures")
 
-apertures = create_apertures(center, smajax, sersic2D.ellip.value, a_delta, sersic2D.theta.value)
+apertures = create_apertures(center, smajax, ellip, a_delta, theta)
 if SHOW:
     plot_annuli(sb_mag, apertures)
 
-logger.info("Doing aperture photometry")
+# logger.info("Doing aperture photometry")
 
-sb_ap = to_astropy_quantity(sb_mag)
+# sb_ap = to_astropy_quantity(sb_mag)
 # flux_table = aperture_photometry(sb_ap, apertures)
 # for col in flux_table.colnames:
 #     flux_table[col].info.format = '%.8g'  # for consistent table output
 # print(flux_table)
 
 
-p = integrate_annulus(sb_ap, center, smajax, sersic2D.ellip.value, a_delta, sersic2D.theta.value)
-print(p)
+# p = integrate_annulus(sb_ap, center, smajax, sersic2D.ellip.value, a_delta, sersic2D.theta.value)
+# print(p)
 ### 
 
 logger.info("Computing lambda_R")
+v_los_map = pynbody.plot.sph.image(subsnap.s, qty='vz', av_z=True, width=width, resolution=resolution, noplot=True, log=False)
+v_disp_map = pynbody.plot.sph.image(subsnap.s, qty='v_disp', av_z=True, width=width, resolution=resolution, noplot=True, log=False)
 
-lambda_R = compute_stellar_specific_angmom(subsnap, sb_mag, width, resolution, smajax, sersic2D.ellip.value, a_delta, sersic2D.theta.value)
-print(lambda_R)
+grid = plot_maps(sb_mag, v_los_map, v_disp_map, width, resolution)
 
-###### 
+lambda_R = compute_stellar_specific_angmom(sb_mag, v_los_map, v_disp_map, smajax, ellip, a_delta, theta)
+logger.info(lambda_R)
+
+annuli_to_plot = deepcopy(apertures)
+for aper in annuli_to_plot:
+    for attr in ('a_in', 'a_out', "b_in", "b_out"):
+        qty = getattr(aper, attr)
+        setattr(aper, attr, pix2kpc(qty, width=width, resolution=resolution))
+    aper.positions = np.array([[0,0]])
+    aper.plot(color='white', ax=grid[0], alpha=0.4)
+
+plot_angmom(subsnap.s, grid[0])
+
+plt.show()
