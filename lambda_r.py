@@ -24,7 +24,7 @@ N_0 = 1
 ELLIP_0 = 0
 THETA_0 = 0
 
-FIT_PROFILE = True
+FIT_PROFILE = False
 FIT_VERB = 0
 
 SHOW = False
@@ -348,8 +348,7 @@ for aper in annuli_to_plot:
         qty = getattr(aper, attr)
         setattr(aper, attr, pix2kpc(qty, width=width, resolution=resolution))
     aper.positions = np.array([[0,0]])
-    aper.plot(color='white', ax=grid[0], alpha=0.4)
+    aper.plot(color='white', ax=grid[0], alpha=0.2)
 
 plot_angmom(subsnap.s, grid[0])
-
 plt.show()
