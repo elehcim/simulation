@@ -187,7 +187,7 @@ def adjust_cbar_range(cbar_range):
         return None, None
     return m, M
 
-def plot_maps(sb, vlos, sigma, width, resolution, v_los_range=None, sigma_range=None):
+def plot_maps(sb, vlos, sigma, width, resolution, sb_range=None, v_los_range=None, sigma_range=None):
     from mpl_toolkits.axes_grid1 import AxesGrid
     fig = plt.figure(figsize=(12,4))
     grid = AxesGrid(fig, 111,  # similar to subplot(142)
@@ -204,9 +204,10 @@ def plot_maps(sb, vlos, sigma, width, resolution, v_los_range=None, sigma_range=
 
     v_los_min, v_los_max = adjust_cbar_range(v_los_range)
     sigma_min, sigma_max = adjust_cbar_range(sigma_range)
+    sb_min, sb_max = adjust_cbar_range(sb_range)
 
     extent = (-width/2, width/2, -width/2, width/2)
-    a = grid[0].imshow(sb, extent=extent, origin='lower')
+    a = grid[0].imshow(sb, extent=extent, origin='lower', vmin=sb_min, vmax=sb_max)
     b = grid[1].imshow(vlos, extent=extent, origin='lower', vmin=v_los_min, vmax=v_los_max)
     c = grid[2].imshow(sigma, extent=extent, origin='lower', vmin=sigma_min, vmax=sigma_max)
 
