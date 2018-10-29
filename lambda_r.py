@@ -75,10 +75,10 @@ def ss_angmom(flux, r, v_los, v_disp):
 
 # -2.5*np.log10(arcsec2_over_pc2_at_10pc) == 21.572
 
-def sb_profile(band):
+def sb_profile(snap, band):
     binning='equaln' # contain equal numbers of particles
     sun_mag = _sun_abs_mag[band]
-    ps = pynbody.analysis.profile.Profile(subsnap.s, type=binning, max=4*r_eff_kpc, bin=100)
+    ps = pynbody.analysis.profile.Profile(snap.s, type=binning, max=4*r_eff_kpc, bin=100)
     r = ps['rbins'].in_units('kpc')
     # sbp = 10**(0.4*(sun_abs_mag - 2.5*np.log10(arcsec2_over_pc2_at_10pc) - ps['sb,' + band] ))
     sbp = 10**(0.4*(sun_mag + 21.572 - ps['sb,' + band] ))
@@ -166,7 +166,7 @@ def plot_annuli(data, apertures):
     plt.show()
 
 
-def compute_stellar_specific_angmom(sb_mag, v_los_map, v_disp_map, smajax, ellip, a_delta, theta):
+def compute_stellar_specific_angmom(center, sb_mag, v_los_map, v_disp_map, smajax, ellip, a_delta, theta):
     lum = to_astropy_quantity(sb_mag, units='mag/arcsec**2')
     v_los = to_astropy_quantity(v_los_map)
     v_disp = to_astropy_quantity(v_disp_map)
@@ -231,124 +231,126 @@ def print_fit_results(model):
     for name, value in zip(model.param_names, model.parameters):
         logger.info("  {:10s} = {:.4g}".format(name, value))
 
-logger.info("Opening file")
-snap = "/home/michele/sim/MoRIA/M1-10_Verbeke2017/M10sim41001/snapshot_0036"
-s = pynbody.load(snap)
-max_boxsize = 4000
-s.properties['boxsize'] = pynbody.units.Unit("{} kpc".format(max_boxsize))
-s.physical_units()
-logger.info(s.properties)
+if __name__ == '__main__':
+    
+    logger.info("Opening file")
+    snap = "/home/michele/sim/MoRIA/M1-10_Verbeke2017/M10sim41001/snapshot_0036"
+    s = pynbody.load(snap)
+    max_boxsize = 4000
+    s.properties['boxsize'] = pynbody.units.Unit("{} kpc".format(max_boxsize))
+    s.physical_units()
+    logger.info(s.properties)
 
-width = 5
-resolution = 500
+    width = 5
+    resolution = 500
 
-logger.info("Set width: {:3d} kpc; resolution {:3d}".format(width, resolution) )
-pynbody.analysis.halo.center(s.s)#, vel=False)
-subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-width*1.1))]
+    logger.info("Set width: {:3d} kpc; resolution {:3d}".format(width, resolution) )
+    pynbody.analysis.halo.center(s.s)#, vel=False)
+    subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-width*1.1))]
 
-logger.info("Computing overall angular momentum")
+    logger.info("Computing overall angular momentum")
 
-pynbody.analysis.angmom.sideon(subsnap.s, disk_size=subsnap.s['pos'].max())
+    pynbody.analysis.angmom.sideon(subsnap.s, disk_size=subsnap.s['pos'].max())
 
-logger.info("Computing surface brightness")
+    logger.info("Computing surface brightness")
 
-if SHOW:
-    fig, ax = plt.subplots()
-    sb = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=True, subplot=ax)
-    plot_angmom(subsnap.s, ax)
-    plt.show()
-else:
-    sb = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=True, noplot=True)
-
-r_eff_kpc3d = pynbody.analysis.luminosity.half_light_r(subsnap, cylindrical=False)
-
-r_eff_kpc = pynbody.analysis.luminosity.half_light_r(subsnap, cylindrical=True)
-
-r_eff_pix = kpc2pix(r_eff_kpc, width=width, resolution=resolution)
-
-logger.info("Computed R_eff:")
-logger.info(" 2D: {:.4f} kpc".format(r_eff_kpc))
-logger.info(" 3D: {:.4f} kpc".format(r_eff_kpc3d))
-
-if FIT_PROFILE:
-    band = 'v'
-    r_bins, sbp = sb_profile(band=band)
     if SHOW:
-        plt.plot(r_bins, sbp, linewidth=2);
-        plt.ylabel("I [$L_{{\odot,{}}}/pc^2$]".format(band))
-        plt.xlabel("r/kpc")
-        plt.title('Surface brightness profile')
-    sersic1D = fit_sersic_1D(r_eff_kpc3d, r_bins, sbp, show=SHOW)
+        fig, ax = plt.subplots()
+        sb = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=True, subplot=ax)
+        plot_angmom(subsnap.s, ax)
+        plt.show()
+    else:
+        sb = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=True, noplot=True)
 
-    print_fit_results(sersic1D)
+    r_eff_kpc3d = pynbody.analysis.luminosity.half_light_r(subsnap, cylindrical=False)
 
-    N_0 = sersic1D.n
+    r_eff_kpc = pynbody.analysis.luminosity.half_light_r(subsnap, cylindrical=True)
 
-logger.info("Fitting Sersic2D")
+    r_eff_pix = kpc2pix(r_eff_kpc, width=width, resolution=resolution)
 
-sersic2D = fit_sersic_2D(sb, r_eff=r_eff_pix, n=N_0, resolution=resolution, ellip=ELLIP_0, theta=THETA_0)
-print_fit_results(sersic2D)
+    logger.info("Computed R_eff:")
+    logger.info(" 2D: {:.4f} kpc".format(r_eff_kpc))
+    logger.info(" 3D: {:.4f} kpc".format(r_eff_kpc3d))
 
-if sersic2D.ellip.value <= 1:
-    ellip = sersic2D.ellip.value
-    theta = sersic2D.theta.value
-else:
-    logger.warning("ellipticity > 1: swapping minor <-> major axis")
-    ellip = 1/sersic2D.ellip.value
-    theta = np.pi/2 + sersic2D.theta.value
+    if FIT_PROFILE:
+        band = 'v'
+        r_bins, sbp = sb_profile(subsnap, band=band)
+        if SHOW:
+            plt.plot(r_bins, sbp, linewidth=2);
+            plt.ylabel("I [$L_{{\odot,{}}}/pc^2$]".format(band))
+            plt.xlabel("r/kpc")
+            plt.title('Surface brightness profile')
+        sersic1D = fit_sersic_1D(r_eff_kpc3d, r_bins, sbp, show=SHOW)
 
+        print_fit_results(sersic1D)
 
-# aper = plot_aperture_geometry(sb, sersic=sersic2D, resolution=resolution, show=SHOW)
-# logger.info(aper.positions)
-# logger.info(aper.a)
-# logger.info(aper.b)
-# logger.info(aper.theta)
+        N_0 = sersic1D.n
 
+    logger.info("Fitting Sersic2D")
 
-# Do the photometry
+    sersic2D = fit_sersic_2D(sb, r_eff=r_eff_pix, n=N_0, resolution=resolution, ellip=ELLIP_0, theta=THETA_0)
+    print_fit_results(sersic2D)
 
-sb_mag = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=False, noplot=not(SHOW))
-
-center = (sersic2D.x_0.value, sersic2D.y_0.value)
-a_delta = 20
-smajax = np.arange(30, 200, a_delta)
-# print(smajax)
-
-logger.info("Created apertures")
-
-apertures = create_apertures(center, smajax, ellip, a_delta, theta)
-if SHOW:
-    plot_annuli(sb_mag, apertures)
-
-# logger.info("Doing aperture photometry")
-
-# sb_ap = to_astropy_quantity(sb_mag)
-# flux_table = aperture_photometry(sb_ap, apertures)
-# for col in flux_table.colnames:
-#     flux_table[col].info.format = '%.8g'  # for consistent table output
-# print(flux_table)
+    if sersic2D.ellip.value <= 1:
+        ellip = sersic2D.ellip.value
+        theta = sersic2D.theta.value
+    else:
+        logger.warning("ellipticity > 1: swapping minor <-> major axis")
+        ellip = 1/sersic2D.ellip.value
+        theta = np.pi/2 + sersic2D.theta.value
 
 
-# p = integrate_annulus(sb_ap, center, smajax, sersic2D.ellip.value, a_delta, sersic2D.theta.value)
-# print(p)
-### 
+    # aper = plot_aperture_geometry(sb, sersic=sersic2D, resolution=resolution, show=SHOW)
+    # logger.info(aper.positions)
+    # logger.info(aper.a)
+    # logger.info(aper.b)
+    # logger.info(aper.theta)
 
-logger.info("Computing lambda_R")
-v_los_map = pynbody.plot.sph.image(subsnap.s, qty='vz', av_z=True, width=width, resolution=resolution, noplot=True, log=False)
-v_disp_map = pynbody.plot.sph.image(subsnap.s, qty='v_disp', av_z=True, width=width, resolution=resolution, noplot=True, log=False)
 
-grid = plot_maps(sb_mag, v_los_map, v_disp_map, width, resolution)
+    # Do the photometry
 
-lambda_R = compute_stellar_specific_angmom(sb_mag, v_los_map, v_disp_map, smajax, ellip, a_delta, theta)
-logger.info(lambda_R)
+    sb_mag = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=False, noplot=not(SHOW))
 
-annuli_to_plot = deepcopy(apertures)
-for aper in annuli_to_plot:
-    for attr in ('a_in', 'a_out', "b_in", "b_out"):
-        qty = getattr(aper, attr)
-        setattr(aper, attr, pix2kpc(qty, width=width, resolution=resolution))
-    aper.positions = np.array([[0,0]])
-    aper.plot(color='white', ax=grid[0], alpha=0.2)
+    center = (sersic2D.x_0.value, sersic2D.y_0.value)
+    a_delta = 20
+    smajax = np.arange(30, 200, a_delta)
+    # print(smajax)
 
-plot_angmom(subsnap.s, grid[0])
-plt.show()
+    logger.info("Created apertures")
+
+    apertures = create_apertures(center, smajax, ellip, a_delta, theta)
+    if SHOW:
+        plot_annuli(sb_mag, apertures)
+
+    # logger.info("Doing aperture photometry")
+
+    # sb_ap = to_astropy_quantity(sb_mag)
+    # flux_table = aperture_photometry(sb_ap, apertures)
+    # for col in flux_table.colnames:
+    #     flux_table[col].info.format = '%.8g'  # for consistent table output
+    # print(flux_table)
+
+
+    # p = integrate_annulus(sb_ap, center, smajax, sersic2D.ellip.value, a_delta, sersic2D.theta.value)
+    # print(p)
+    ### 
+
+    logger.info("Computing lambda_R")
+    v_los_map = pynbody.plot.sph.image(subsnap.s, qty='vz', av_z=True, width=width, resolution=resolution, noplot=True, log=False)
+    v_disp_map = pynbody.plot.sph.image(subsnap.s, qty='v_disp', av_z=True, width=width, resolution=resolution, noplot=True, log=False)
+
+    grid = plot_maps(sb_mag, v_los_map, v_disp_map, width, resolution)
+
+    lambda_R = compute_stellar_specific_angmom(center, sb_mag, v_los_map, v_disp_map, smajax, ellip, a_delta, theta)
+    logger.info(lambda_R)
+
+    annuli_to_plot = deepcopy(apertures)
+    for aper in annuli_to_plot:
+        for attr in ('a_in', 'a_out', "b_in", "b_out"):
+            qty = getattr(aper, attr)
+            setattr(aper, attr, pix2kpc(qty, width=width, resolution=resolution))
+        aper.positions = np.array([[0,0]])
+        aper.plot(color='white', ax=grid[0], alpha=0.2)
+
+    plot_angmom(subsnap.s, grid[0])
+    plt.show()
