@@ -40,7 +40,7 @@ class Photometry:
             sersic1D = self.fit_profile(snap, r_eff_pix)
             self._n_0 = sersic1D.n
         logger.info("Fitting Sersic2D")
-        sersic2D = fit_sersic_2D(sb_lum, r_eff=r_eff_pix, n=self._n_0, resolution=resolution, 
+        sersic2D = fit_sersic_2D(sb_lum, r_eff=r_eff_pix, n=self._n_0, resolution=resolution,
             ellip=self._ellip_0, theta=self._theta_0)
 
         self._sersic2D = sersic2D
@@ -58,6 +58,8 @@ class Photometry:
             logger.warning("ellipticity > 1: swapping minor <-> major axis")
             self.ellip = 1/sersic2D.ellip.value
             self.theta = np.pi/2 + sersic2D.theta.value
+        # Use half of the quadrant.
+        self.theta = self.theta % np.pi
         self.center = (sersic2D.x_0.value, sersic2D.y_0.value)
 
         return sersic2D
@@ -128,7 +130,9 @@ class Snap:
         logger.info("{:.2f} Gyr".format(self.time))
 
         pynbody.analysis.halo.center(s.s)#, vel=False)
-        self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))] # -width*1.1
+
+        # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
+        self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(cuboid_edge))]
 
     def sideon(self):
         logger.info("Rotating sideon")
@@ -138,7 +142,7 @@ class Snap:
         logger.info("Rotating faceon")
         pynbody.analysis.angmom.faceon(self.subsnap.s, disk_size=self.subsnap.s['pos'].max())
 
-    @property    
+    @property
     def angmom(self):
         logger.info("Computing overall angular momentum")
         return pynbody.analysis.angmom.ang_mom_vec(self.subsnap)
@@ -171,7 +175,7 @@ class SSAM:
         logger.info("Computed R_eff:")
         logger.info(" 2D: {:.4f} kpc".format(self.snap.r_eff_kpc))
         # logger.info(" 3D: {:.4f} kpc".format(self.snap.r_eff_kpc3d))
-        
+
         r_eff_pix = kpc2pix(self.snap.r_eff_kpc,  # use partial?
                             width=self.w,
                             resolution=self.res)
@@ -180,17 +184,17 @@ class SSAM:
                             resolution=self.res,
                             fit_profile=fit_profile,
                             snap=self.snap.subsnap)
-        
+
         center, smajax, ellip, theta = self.photometry.get_params()
-        lambda_R = compute_stellar_specific_angmom(center, self.sb_mag, self.v_los_map, self.v_disp_map, 
+        lambda_R = compute_stellar_specific_angmom(center, self.sb_mag, self.v_los_map, self.v_disp_map,
                                                    smajax, ellip, self.photometry.a_delta, theta)
         self.lambda_R = lambda_R
         logger.info("Lambda_R = {:.4f}".format(lambda_R))
         return lambda_R
 
     def plot_maps(self, save_fig=None, sb_range=None, v_los_range=None, sigma_range=None):
-        grid = plot_maps(self.sb_mag, self.v_los_map, self.v_disp_map, 
-                         self.w, self.res,
+        grid = plot_maps(self.sb_mag, self.v_los_map, self.v_disp_map,
+                         self.w, self.res, self.photometry.band,
                          sb_range, v_los_range, sigma_range)
         annuli_to_plot = deepcopy(self.photometry.apertures)
         for aper in annuli_to_plot:
@@ -261,9 +265,10 @@ if __name__ == '__main__':
     ssam = SSAM(snap, photometry=ph, imaging=im)
 
     ssam.compute_lambda(fit_profile=False)
-    
-    print(ssam.time, ssam.lambda_R)
-    
+
+    print('{:.5f} {:.5f} {:.5f} {:.5f}'.format(
+        ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta))
+
     ssam.plot_maps(save_fig=out_name, sb_range=(18,29),
                                       v_los_range=(-15,15),
                                       sigma_range=(10,40))

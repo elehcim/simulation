@@ -105,7 +105,7 @@ def fit_sersic_2D(sb, r_eff, n, resolution, ellip, theta, show=SHOW):
                              # bounds={ 'ellip':(0,1)}) #, 'x_0':(200,300) 'y_0':(200,300),
     # s_init = models.Polynomial2D(degree=4)
     # s_init = models.Gaussian2D(x_mean=resolution/2, y_mean=resolution/2, theta=theta,
-    #                            fixed={'amplitude':False, 'x_mean':False, 'y_mean':False, 'theta':False}, 
+    #                            fixed={'amplitude':False, 'x_mean':False, 'y_mean':False, 'theta':False},
     #                            bounds={'theta':(0, np.pi), 'x_mean':(200,300), 'y_mean':(200,300)})
 
     fit_s = fitting.SLSQPLSQFitter()
@@ -187,7 +187,8 @@ def adjust_cbar_range(cbar_range):
         return None, None
     return m, M
 
-def plot_maps(sb, vlos, sigma, width, resolution, sb_range=None, v_los_range=None, sigma_range=None):
+def plot_maps(sb, vlos, sigma, width, resolution, band=None,
+              sb_range=None, v_los_range=None, sigma_range=None):
     from mpl_toolkits.axes_grid1 import AxesGrid
     fig = plt.figure(figsize=(12,4))
     grid = AxesGrid(fig, 111,  # similar to subplot(142)
@@ -216,9 +217,9 @@ def plot_maps(sb, vlos, sigma, width, resolution, sb_range=None, v_los_range=Non
     grid[2].set_xlabel('x/kpc')
 
     grid[0].set_ylabel('y/kpc')
-    
+
     cb1 = grid.cbar_axes[0].colorbar(a)
-    cb1.set_label_text('$\mu$ [mag/arcsec$^2$]')
+    cb1.set_label_text('$\mu_{}$'.format(band) if band is not None else '$\mu$' + ' [mag/arcsec$^2$]')
 
     cb2 = grid.cbar_axes[1].colorbar(b)
     cb2.set_label_text("$v_{LOS}$ [km/s]")
@@ -233,7 +234,7 @@ def print_fit_results(model):
         logger.info("  {:10s} = {:.4g}".format(name, value))
 
 if __name__ == '__main__':
-    
+
     logger.info("Opening file")
     snap = "/home/michele/sim/MoRIA/M1-10_Verbeke2017/M10sim41001/snapshot_0036"
     s = pynbody.load(snap)
@@ -334,7 +335,7 @@ if __name__ == '__main__':
 
     # p = integrate_annulus(sb_ap, center, smajax, sersic2D.ellip.value, a_delta, sersic2D.theta.value)
     # print(p)
-    ### 
+    ###
 
     logger.info("Computing lambda_R")
     v_los_map = pynbody.plot.sph.image(subsnap.s, qty='vz', av_z=True, width=width, resolution=resolution, noplot=True, log=False)
