@@ -126,7 +126,8 @@ class Snap:
         max_boxsize = 4000
         s.properties['boxsize'] = pynbody.units.Unit("{} kpc".format(max_boxsize))
         s.physical_units()
-        self.time = s.properties['time'].in_units('Gyr')
+        self.time = s.header.time
+        self.time_gyr = s.properties['time'].in_units('Gyr')
         logger.info("{:.2f} Gyr".format(self.time))
 
         pynbody.analysis.halo.center(s.s)#, vel=False)
@@ -168,6 +169,7 @@ class SSAM:
         self.sb_mag = self.imaging.sb_mag()
         self.v_los_map, self.v_disp_map = self.imaging.v_los_map(), self.imaging.v_disp_map()
         self.time = snap.time
+        self.time_gyr = snap.time_gyr
         self.lambda_R = None
 
     def compute_lambda(self, fit_profile=False):
@@ -206,7 +208,7 @@ class SSAM:
 
         plot_angmom(self.snap.subsnap.s, grid[0])
         fig = plt.gcf()
-        fig.suptitle('t={:.2f} Gyr  $\lambda_R$={:.4f}'.format(self.time, self.lambda_R))
+        fig.suptitle('t={:.2f} Gyr  $\lambda_R$={:.4f}'.format(self.time_gyr, self.lambda_R))
         plt.subplots_adjust(top=0.80)
         if save_fig:
             logger.info("Saving figure: {}".format(save_fig))
