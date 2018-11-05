@@ -158,6 +158,8 @@ class Snap:
     def r_eff_kpc(self):
         return pynbody.analysis.luminosity.half_light_r(self.subsnap, cylindrical=True)
 
+    def magnitude(self, band):
+        return pynbody.analysis.luminosity.halo_mag(self.subsnap, band=band)
 
 class SSAM:
     def __init__(self, snap, photometry, imaging):
@@ -268,8 +270,9 @@ if __name__ == '__main__':
 
     ssam.compute_lambda(fit_profile=False)
 
-    print('{:.5f} {:.5f} {:.5f} {:.5f}'.format(
-        ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta))
+    print('{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.5f}'.format(
+        ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta,
+        snap.r_eff_kpc, snap.r_eff_kpc3d, *snap.angmom, snap.magnitude('v')))
 
     ssam.plot_maps(save_fig=out_name, sb_range=(18,29),
                                       v_los_range=(-15,15),
