@@ -105,7 +105,6 @@ s2.add_layout(legend)
 
 vline = Span(dimension='height', line_color='red')
 s2.add_layout(vline)
-
 ##########
 
 s3 = figure(**COMMON_FIG_ARGS, match_aspect=True)
@@ -147,9 +146,12 @@ s6 = figure(**COMMON_FIG_ARGS)
 
 s6.line(source.data['ellip_mean'], source.data['lambda_r_mean'])
 circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW])
-# s5.add_layout(circle_ell)
 
 ################
+for _plot in [s1, s2, s3, s4, s5, s6]:
+    _plot.toolbar.autohide = True
+
+###
 
 cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
                         cross=cross.glyph, circle_mag=circle_mag.glyph,
