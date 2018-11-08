@@ -19,6 +19,8 @@ DATA_DIR = 'ssam.69p2.xy.sph.new'
 # DATA_DIR_S = 'ssam.69p2.side.sph.new'
 SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 
+
+TOOLS='pan,wheel_zoom,reset'
 def get_data(filename, generate=False, save_data=True):
     if not generate:
         return pd.read_pickle(filename)
@@ -59,20 +61,8 @@ df = get_data('d1.pkl', generate=False, save_data=True)
 # Visualization part:
 source = ColumnDataSource(df)
 
-
-s1 = figure(plot_width=350, plot_height=250)
-s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
-
-vline = Span(dimension='height', line_color='red')
-
 p = figure(x_range=(0,1), y_range=(0,1), tools='', plot_height=430, plot_width=1150, sizing_mode='stretch_both')
 im = p.image_url(url=[source.data['maps'][0]], x=-0.01, y=1, w=None,h=None, anchor="top_left")
-
-vline = Span(dimension='height', line_color='red')
-
-circle = s1.circle(x=source.data['time'][0], y=source.data['lambda_r'][0])
-# im.data_source.data['url'] = [source.data['maps'][5]]
-
 
 p.toolbar.logo = None
 p.toolbar_location = None
@@ -82,23 +72,34 @@ p.xgrid.grid_line_color = None
 p.ygrid.grid_line_color = None
 p.outline_line_alpha = 0
 
+#####
+s1 = figure(plot_width=350, plot_height=250, tools=TOOLS)
+s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
+vline = Span(dimension='height', line_color='red')
+
+circle = s1.circle(x=source.data['time'][0], y=source.data['lambda_r_mean'][0])
+# im.data_source.data['url'] = [source.data['maps'][5]]
+s1.title.text = "Specific Stellar Angular Momentum"
+s1.xaxis.axis_label = 'time'
+s1.yaxis.axis_label = 'lambda_mean 10'
+
 ############
 
-s2 = figure(x_range=s1.x_range, plot_width=350, plot_height=250)
+s2 = figure(x_range=s1.x_range, plot_width=350, plot_height=250, tools=TOOLS)
 # r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']], color=['blue', 'green'])
 r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']], color=['blue', 'green'])
 # s2.line(x=source.data['time'], y=source.data['r_eff_kpc3d'], color='green')
 
 ##########
 
-s3 = figure(plot_width=350, plot_height=250, match_aspect=True)
+s3 = figure(plot_width=350, plot_height=250, tools=TOOLS, match_aspect=True)
 
 pos = s3.line(source.data['x'], source.data['y'])
 cross = s3.cross(x=source.data['x'][0], y=source.data['y'][0], color='red')
 s3.add_layout(cross)
 ######################
 
-s4 = figure(plot_width=350, plot_height=250)
+s4 = figure(plot_width=350, plot_height=250, tools=TOOLS)
 
 pos = s4.line(source.data['time'], source.data['mag_v'])
 circle_mag = s4.circle(x=source.data['time'][0], y=source.data['mag_v'][0])
