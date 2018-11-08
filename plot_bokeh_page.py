@@ -75,19 +75,21 @@ p.ygrid.grid_line_color = None
 p.outline_line_alpha = 0
 
 #####
-s1 = figure(plot_width=350, plot_height=250, tools=TOOLS)
-s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
-vline = Span(dimension='height', line_color='red')
+COMMON_FIG_ARGS = dict(plot_width=450, plot_height=350, tools=TOOLS)
 
+s1 = figure(**COMMON_FIG_ARGS)
+s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
+s1.y_range.start = 0
 circle = s1.circle(x=source.data['time'][WINDOW], y=source.data['lambda_r_mean'][WINDOW])
 # im.data_source.data['url'] = [source.data['maps'][5]]
 s1.title.text = "Specific Stellar Angular Momentum"
 s1.xaxis.axis_label = 'time'
 s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
 
+s1.add_layout(circle)
 ############
 
-s2 = figure(x_range=s1.x_range, plot_width=350, plot_height=250, tools=TOOLS)
+s2 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
 # r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']], color=['blue', 'green'])
 r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']],
                   color=['blue', 'green'])
@@ -96,22 +98,27 @@ legend = Legend(items=[
     LegendItem(label="r_eff", renderers=[r], index=0),
     LegendItem(label="3D r_eff", renderers=[r], index=1),
 ])
-s1.title.text = "Effective radius"
-s1.xaxis.axis_label = 'time'
-s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
+s2.y_range.start = 0
+s2.title.text = "Effective radius"
+s2.xaxis.axis_label = 'time'
+s2.yaxis.axis_label = 'r_eff'
 legend.location = "top_left"
 s2.add_layout(legend)
 
+vline = Span(dimension='height', line_color='red')
+s2.add_layout(vline)
+
 ##########
 
-s3 = figure(plot_width=350, plot_height=250, tools=TOOLS, match_aspect=True)
+s3 = figure(**COMMON_FIG_ARGS, match_aspect=True)
 
 pos = s3.line(source.data['x'], source.data['y'])
-cross = s3.cross(x=source.data['x'][0], y=source.data['y'][0], color='red')
+cross = s3.cross(x=source.data['x'][0], y=source.data['y'][0], color='red', size=12)
+s3.cross(x=0, y=0, color='green', size=4)
 s3.add_layout(cross)
 ######################
 
-s4 = figure(plot_width=350, plot_height=250, tools=TOOLS)
+s4 = figure(**COMMON_FIG_ARGS)
 
 pos = s4.line(source.data['time'], source.data['mag_v'])
 circle_mag = s4.circle(x=source.data['time'][0], y=source.data['mag_v'][0])
@@ -139,9 +146,6 @@ cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
 
 # slider.js_on_change('value', cb)
 slider = Slider(start=0, end=len(df.maps)-1, value=0, step=1, title="image number", callback=cb)
-s1.add_layout(vline)
-
-s1.add_layout(circle)
 
 l = layout([p, slider, row(column(s1, s2), column(s3, s4))])
 
