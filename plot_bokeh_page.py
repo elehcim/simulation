@@ -21,6 +21,8 @@ SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 
 
 TOOLS='pan,wheel_zoom,reset'
+
+WINDOW=20
 def get_data(filename, generate=False, save_data=True):
     if not generate:
         return pd.read_pickle(filename)
@@ -49,8 +51,8 @@ def get_data(filename, generate=False, save_data=True):
     print(df.vx.head())
 
     ## Do rolling averages
-    df['lambda_r_mean'] = df.lambda_r.rolling(window=20).agg(np.mean)
-    df['ellip_mean'] = df.ellip.rolling(window=20).agg(np.mean)
+    df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW).agg(np.mean)
+    df['ellip_mean'] = df.ellip.rolling(window=WINDOW).agg(np.mean)
 
     if save_data:
         df.to_pickle(filename)
@@ -77,18 +79,28 @@ s1 = figure(plot_width=350, plot_height=250, tools=TOOLS)
 s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
 vline = Span(dimension='height', line_color='red')
 
-circle = s1.circle(x=source.data['time'][0], y=source.data['lambda_r_mean'][0])
+circle = s1.circle(x=source.data['time'][WINDOW], y=source.data['lambda_r_mean'][WINDOW])
 # im.data_source.data['url'] = [source.data['maps'][5]]
 s1.title.text = "Specific Stellar Angular Momentum"
 s1.xaxis.axis_label = 'time'
-s1.yaxis.axis_label = 'lambda_mean 10'
+s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
 
 ############
 
 s2 = figure(x_range=s1.x_range, plot_width=350, plot_height=250, tools=TOOLS)
 # r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']], color=['blue', 'green'])
-r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']], color=['blue', 'green'])
+r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']],
+                  color=['blue', 'green'])
 # s2.line(x=source.data['time'], y=source.data['r_eff_kpc3d'], color='green')
+legend = Legend(items=[
+    LegendItem(label="r_eff", renderers=[r], index=0),
+    LegendItem(label="3D r_eff", renderers=[r], index=1),
+])
+s1.title.text = "Effective radius"
+s1.xaxis.axis_label = 'time'
+s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
+legend.location = "top_left"
+s2.add_layout(legend)
 
 ##########
 
@@ -110,18 +122,6 @@ s4.add_layout(circle_mag)
 # tab2 = Panel(child=p2, title="size")
 
 # tabs = Tabs(tabs=[ tab1, tab2 ])
-
-
-# p = figure()
-# r = p.multi_line([[1,2,3], [1,2,3]], [[1,3,2], [3,4,3]],
-#                  color=["orange", "red"], line_width=4)
-
-legend = Legend(items=[
-    LegendItem(label="r_eff", renderers=[r], index=0),
-    LegendItem(label="3D r_eff", renderers=[r], index=1),
-])
-legend.location = "top_left"
-s2.add_layout(legend)
 
 
 cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
