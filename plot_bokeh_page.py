@@ -64,7 +64,7 @@ df = get_data('d1.pkl', generate=False, save_data=True)
 source = ColumnDataSource(df)
 
 p = figure(x_range=(0,1), y_range=(0,1), tools='', plot_height=430, plot_width=1150, sizing_mode='stretch_both')
-im = p.image_url(url=[source.data['maps'][0]], x=-0.01, y=1, w=None,h=None, anchor="top_left")
+im = p.image_url(url=[source.data['maps'][0]], x=-0.11, y=1, w=None, h=None, anchor="top_left")
 
 p.toolbar.logo = None
 p.toolbar_location = None
@@ -85,8 +85,6 @@ circle = s1.circle(x=source.data['time'][WINDOW], y=source.data['lambda_r_mean']
 s1.title.text = "Specific Stellar Angular Momentum"
 s1.xaxis.axis_label = 'time'
 s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
-
-s1.add_layout(circle)
 ############
 
 s2 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
@@ -114,15 +112,20 @@ s3 = figure(**COMMON_FIG_ARGS, match_aspect=True)
 
 pos = s3.line(source.data['x'], source.data['y'])
 cross = s3.cross(x=source.data['x'][0], y=source.data['y'][0], color='red', size=12)
-s3.cross(x=0, y=0, color='green', size=4)
-s3.add_layout(cross)
+s3.cross(x=0, y=0, color='green')
+s3.title.text = "Orbit"
+s3.xaxis.axis_label = 'x [kpc]'
+s3.yaxis.axis_label = 'y [kpc]'
 ######################
 
 s4 = figure(**COMMON_FIG_ARGS)
 
 pos = s4.line(source.data['time'], source.data['mag_v'])
 circle_mag = s4.circle(x=source.data['time'][0], y=source.data['mag_v'][0])
-s4.add_layout(circle_mag)
+s4.y_range.flipped = True
+s4.title.text = "Magnitude"
+s4.xaxis.axis_label = 'time'
+s4.yaxis.axis_label = 'μ (V band)'
 ######################
 
 # tab1 = Panel(child=p1, title="xy")
@@ -131,12 +134,34 @@ s4.add_layout(circle_mag)
 # tabs = Tabs(tabs=[ tab1, tab2 ])
 
 
+s5 = figure(**COMMON_FIG_ARGS)
+
+s5.line(source.data['time'], source.data['ellip_mean'])
+circle_ell_t = s5.circle(x=source.data['time'][WINDOW], y=source.data['ellip_mean'][WINDOW])
+s5.title.text = "Ellipticity"
+s5.xaxis.axis_label = 'time'
+s5.yaxis.axis_label = 'ellip'
+
+###########
+s6 = figure(**COMMON_FIG_ARGS)
+
+s6.line(source.data['ellip_mean'], source.data['lambda_r_mean'])
+circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW])
+# s5.add_layout(circle_ell)
+
+################
+
 cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
-                        cross=cross.glyph, circle_mag=circle_mag.glyph), code="""
+                        cross=cross.glyph, circle_mag=circle_mag.glyph,
+                        cet=circle_ell_t.glyph, cel=circle_ell_l.glyph), code="""
     circle.x=source.data['time'][cb_obj.value];
     circle.y=source.data['lambda_r_mean'][cb_obj.value];
     circle_mag.x=source.data['time'][cb_obj.value];
     circle_mag.y=source.data['mag_v'][cb_obj.value];
+    cet.x=source.data['time'][cb_obj.value];
+    cet.y=source.data['ellip_mean'][cb_obj.value];
+    cel.x=source.data['ellip_mean'][cb_obj.value];
+    cel.y=source.data['lambda_r_mean'][cb_obj.value];
     cross.x=source.data['x'][cb_obj.value];
     cross.y=source.data['y'][cb_obj.value];
     span.location = source.data['time'][cb_obj.value];
@@ -147,6 +172,6 @@ cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
 # slider.js_on_change('value', cb)
 slider = Slider(start=0, end=len(df.maps)-1, value=0, step=1, title="image number", callback=cb)
 
-l = layout([p, slider, row(column(s1, s2), column(s3, s4))])
+l = layout([p, slider, row(column(s1, s2), column(s3, s4), column(s5, s6))])
 
 save(l)
