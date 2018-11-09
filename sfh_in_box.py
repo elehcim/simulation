@@ -76,5 +76,6 @@ if __name__ == '__main__':
     times = np.array(time)
     massformed = np.array(mf)
 
+    import astropy.units as u
 
-
+    conv_fac = (u.kpc/(u.km/u.s)).to(u.Gyr)

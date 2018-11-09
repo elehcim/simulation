@@ -23,6 +23,44 @@ SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 TOOLS='pan,wheel_zoom,reset'
 
 WINDOW=20
+
+def _pairwise(iterable):
+    from itertools import tee
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
+
+
+def sfh(sim_path):
+    import simulation
+    sim = simulation.Simulation(sim_path)
+
+    ns = list()
+    ns_idx = list()
+    new_stars = list()
+    for (a0, a1) in _pairwise(sim):
+        s0, s1 = a0.s['iord'].view(np.ndarray), a1.s['iord'].view(np.ndarray)
+        new_stars = np.setdiff1d(s1, s0)
+        ns_idx.append(np.where(np.isin(s1, new_stars))[0])
+        ns.append(new_stars)
+
+    # time contains left border of the time bin
+    mf = list()
+    for (idx, (a0, a1)) in zip(ns_idx, _pairwise(sim)):
+        mf.append(np.sum(a1.s['massform'][idx]).view(np.ndarray))
+
+    # last snap is not done:
+    mf.append(0)
+    # assuming constant binsize (like the last one):
+    dt = a1.header.time - a0.header.time
+    massformed = np.array(mf)
+
+    return dt, massformed
+
+
+
+
 def get_data(filename, generate=False, save_data=True):
     if not generate:
         return pd.read_pickle(filename)
@@ -36,9 +74,7 @@ def get_data(filename, generate=False, save_data=True):
 
 
     from parse_trace import parse_trace
-    sim_path = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
-    # sim = simulation.Simulation(sim_path)
-    trace = parse_trace(os.path.join(sim_path, 'trace.txt'))
+    trace = parse_trace(os.path.join(SIM_PATH, 'trace.txt'))
 
     # Sync trace time and snapshot time
     # Right is true to keep the last index otherwise it will result in NaN
@@ -48,11 +84,17 @@ def get_data(filename, generate=False, save_data=True):
     for f in ['r', 'v', 'a', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az']:
         df[f] = trace[f].loc[locations].values
 
-    print(df.vx.head())
-
     ## Do rolling averages
     df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW).agg(np.mean)
     df['ellip_mean'] = df.ellip.rolling(window=WINDOW).agg(np.mean)
+    dt, massformed = sfh(SIM_PATH)
+    print(dt)
+    print(massformed.shape)
+
+    import astropy.units as u
+    t_conv_fac = (u.kpc/(u.km/u.s)).to(u.yr)
+
+    df['sfr'] = (massformed * 10**10 ) / (dt * t_conv_fac)
 
     if save_data:
         df.to_pickle(filename)
@@ -137,9 +179,10 @@ s5 = figure(**COMMON_FIG_ARGS)
 
 s5.line(source.data['time'], source.data['ellip_mean'])
 circle_ell_t = s5.circle(x=source.data['time'][WINDOW], y=source.data['ellip_mean'][WINDOW])
+s5.y_range.start = 0
 s5.title.text = "Ellipticity"
 s5.xaxis.axis_label = 'time'
-s5.yaxis.axis_label = 'ellip'
+s5.yaxis.axis_label = 'ellip_mean ' + str(WINDOW)
 
 ###########
 s6 = figure(**COMMON_FIG_ARGS)
@@ -147,15 +190,25 @@ s6 = figure(**COMMON_FIG_ARGS)
 s6.line(source.data['ellip_mean'], source.data['lambda_r_mean'])
 circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW])
 
-################
-for _plot in [s1, s2, s3, s4, s5, s6]:
+######################
+
+s7 = figure(**COMMON_FIG_ARGS)
+
+pos = s7.line(source.data['time'], source.data['sfr'])
+circle_sfh = s7.circle(x=source.data['time'][0], y=source.data['sfr'][0])
+s7.title.text = "SFH"
+s7.xaxis.axis_label = 'time'
+s7.yaxis.axis_label = 'SFR [Msol/yr]'
+######################
+
+for _plot in [s1, s2, s3, s4, s5, s6, s7]:
     _plot.toolbar.autohide = True
 
 ###
 
 cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
                         cross=cross.glyph, circle_mag=circle_mag.glyph,
-                        cet=circle_ell_t.glyph, cel=circle_ell_l.glyph), code="""
+                        cet=circle_ell_t.glyph, cel=circle_ell_l.glyph, csfr=circle_sfh.glyph), code="""
     circle.x=source.data['time'][cb_obj.value];
     circle.y=source.data['lambda_r_mean'][cb_obj.value];
     circle_mag.x=source.data['time'][cb_obj.value];
@@ -164,6 +217,10 @@ cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
     cet.y=source.data['ellip_mean'][cb_obj.value];
     cel.x=source.data['ellip_mean'][cb_obj.value];
     cel.y=source.data['lambda_r_mean'][cb_obj.value];
+
+    csfr.x=source.data['time'][cb_obj.value];
+    csfr.y=source.data['sfr'][cb_obj.value];
+
     cross.x=source.data['x'][cb_obj.value];
     cross.y=source.data['y'][cb_obj.value];
     span.location = source.data['time'][cb_obj.value];
@@ -174,6 +231,6 @@ cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
 # slider.js_on_change('value', cb)
 slider = Slider(start=0, end=len(df.maps)-1, value=0, step=1, title="image number", callback=cb)
 
-l = layout([p, slider, row(column(s1, s2), column(s3, s4), column(s5, s6))])
+l = layout([p, slider, row(column(s1, s2), column(s3, s4), column(s5, s7))])
 
 save(l)
