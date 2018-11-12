@@ -122,7 +122,7 @@ COMMON_FIG_ARGS = dict(plot_width=450, plot_height=350, tools=TOOLS)
 s1 = figure(**COMMON_FIG_ARGS)
 s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
 s1.y_range.start = 0
-circle = s1.circle(x=source.data['time'][WINDOW], y=source.data['lambda_r_mean'][WINDOW])
+circle = s1.circle(x=source.data['time'][WINDOW], y=source.data['lambda_r_mean'][WINDOW], color='red')
 # im.data_source.data['url'] = [source.data['maps'][5]]
 s1.title.text = "Specific Stellar Angular Momentum"
 s1.xaxis.axis_label = 'time'
@@ -159,10 +159,10 @@ s3.xaxis.axis_label = 'x [kpc]'
 s3.yaxis.axis_label = 'y [kpc]'
 ######################
 
-s4 = figure(**COMMON_FIG_ARGS)
+s4 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
 
 pos = s4.line(source.data['time'], source.data['mag_v'])
-circle_mag = s4.circle(x=source.data['time'][0], y=source.data['mag_v'][0])
+circle_mag = s4.circle(x=source.data['time'][0], y=source.data['mag_v'][0], color='red')
 s4.y_range.flipped = True
 s4.title.text = "Magnitude"
 s4.xaxis.axis_label = 'time'
@@ -175,10 +175,10 @@ s4.yaxis.axis_label = 'μ (V band)'
 # tabs = Tabs(tabs=[ tab1, tab2 ])
 
 
-s5 = figure(**COMMON_FIG_ARGS)
+s5 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
 
 s5.line(source.data['time'], source.data['ellip_mean'])
-circle_ell_t = s5.circle(x=source.data['time'][WINDOW], y=source.data['ellip_mean'][WINDOW])
+circle_ell_t = s5.circle(x=source.data['time'][WINDOW], y=source.data['ellip_mean'][WINDOW], color='red')
 s5.y_range.start = 0
 s5.title.text = "Ellipticity"
 s5.xaxis.axis_label = 'time'
@@ -188,14 +188,14 @@ s5.yaxis.axis_label = 'ellip_mean ' + str(WINDOW)
 s6 = figure(**COMMON_FIG_ARGS)
 
 s6.line(source.data['ellip_mean'], source.data['lambda_r_mean'])
-circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW])
+circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW], color='red')
 
 ######################
 
-s7 = figure(**COMMON_FIG_ARGS)
+s7 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
 
 pos = s7.line(source.data['time'], source.data['sfr'])
-circle_sfh = s7.circle(x=source.data['time'][0], y=source.data['sfr'][0])
+circle_sfh = s7.circle(x=source.data['time'][0], y=source.data['sfr'][0], color='red')
 s7.title.text = "SFH"
 s7.xaxis.axis_label = 'time'
 s7.yaxis.axis_label = 'SFR [Msol/yr]'
