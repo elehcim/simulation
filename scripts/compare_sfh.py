@@ -7,11 +7,10 @@ import numpy as np
 # sim_no_kick = simulation.MoriaSim('69002', kicked=False)
 
 # sim_name = '71002'  # This has the jump in SFR.
-sim_name = '60003_snapshot_0065.kicked_p598.0_a600.0_r600.0_c8.15'
-sim = simulation.MoriaSim(sim_name, kicked=True)
-# sim_no_kick = simulation.MoriaSim(sim_name, kicked=False)
+# sim = simulation.MoriaSim('60003_snapshot_0065.kicked_p598.0_a600.0_r600.0_c8.15', kicked=True)
+# sim_1 = simulation.Simulation('~/sim/MySimulations/mb.check/mb.60003.tidal/out')
 
-
+sim = simulation.MoriaSim('60003_snapshot_0065.kicked_p598.0_a600.0_r600.0_c8.15', kicked=True)
 sim_1 = simulation.Simulation('~/sim/MySimulations/mb.check/mb.60003.tidal/out')
 
 
