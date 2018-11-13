@@ -59,8 +59,6 @@ def sfh(sim_path):
     return dt, massformed
 
 
-
-
 def get_data(filename, generate=False, save_data=True):
     if not generate:
         return pd.read_pickle(filename)
@@ -71,7 +69,6 @@ def get_data(filename, generate=False, save_data=True):
         names=['time', 'lambda_r', 'ellip', 'theta', 'r_eff_kpc', 'r_eff_kpc3d', 'Lx', 'Ly', 'Lz', 'mag_v'])
     df['maps'] = maps
     print(df.head())
-
 
     from parse_trace import parse_trace
     trace = parse_trace(os.path.join(SIM_PATH, 'trace.txt'))
@@ -84,9 +81,7 @@ def get_data(filename, generate=False, save_data=True):
     for f in ['r', 'v', 'a', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az']:
         df[f] = trace[f].loc[locations].values
 
-    ## Do rolling averages
-    df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW).agg(np.mean)
-    df['ellip_mean'] = df.ellip.rolling(window=WINDOW).agg(np.mean)
+    # SFH
     dt, massformed = sfh(SIM_PATH)
     print(dt)
     print(massformed.shape)
@@ -101,6 +96,12 @@ def get_data(filename, generate=False, save_data=True):
     return df
 
 df = get_data('d1.pkl', generate=False, save_data=True)
+
+# Do averages
+# df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW).agg(np.mean)
+# df['ellip_mean'] = df.ellip.rolling(window=WINDOW).agg(np.mean)
+df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW, win_type='gaussian', center=True).mean(std=5)
+df['ellip_mean'] = df.ellip.rolling(window=WINDOW, win_type='gaussian', center=True).mean(std=5)
 
 # Visualization part:
 source = ColumnDataSource(df)
@@ -120,10 +121,19 @@ p.outline_line_alpha = 0
 COMMON_FIG_ARGS = dict(plot_width=450, plot_height=350, tools=TOOLS)
 
 s1 = figure(**COMMON_FIG_ARGS)
-s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
+# s1.line(source.data['time'], source.data['lambda_r_mean'], color="navy")
+r1 = s1.multi_line(xs=[source.data['time']]*2, ys=[source.data['lambda_r_mean'], source.data['lambda_r']],
+                  color=['navy', 'green'], line_alpha=[1, 0.4])
+legend1 = Legend(items=[
+    LegendItem(label='lambda_mean ' + str(WINDOW), renderers=[r1], index=0),
+    LegendItem(label="lambda_r", renderers=[r1], index=1),
+])
+legend1.location = "top_left"
+legend1.border_line_alpha=0.2
+s1.add_layout(legend1)
+
 s1.y_range.start = 0
 circle = s1.circle(x=source.data['time'][WINDOW], y=source.data['lambda_r_mean'][WINDOW], color='red')
-# im.data_source.data['url'] = [source.data['maps'][5]]
 s1.title.text = "Specific Stellar Angular Momentum"
 s1.xaxis.axis_label = 'time'
 s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
@@ -131,19 +141,19 @@ s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
 
 s2 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
 # r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']], color=['blue', 'green'])
-r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']],
-                  color=['blue', 'green'])
+r2 = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']],
+                  color=['navy', 'green'])
 # s2.line(x=source.data['time'], y=source.data['r_eff_kpc3d'], color='green')
-legend = Legend(items=[
-    LegendItem(label="r_eff", renderers=[r], index=0),
-    LegendItem(label="3D r_eff", renderers=[r], index=1),
+legend2 = Legend(items=[
+    LegendItem(label="r_eff", renderers=[r2], index=0),
+    LegendItem(label="3D r_eff", renderers=[r2], index=1),
 ])
 s2.y_range.start = 0
 s2.title.text = "Effective radius"
 s2.xaxis.axis_label = 'time'
 s2.yaxis.axis_label = 'r_eff'
-legend.location = "top_left"
-s2.add_layout(legend)
+legend2.location = "top_left"
+s2.add_layout(legend2)
 
 vline = Span(dimension='height', line_color='red')
 s2.add_layout(vline)
@@ -153,7 +163,7 @@ s3 = figure(**COMMON_FIG_ARGS, match_aspect=True)
 
 pos = s3.line(source.data['x'], source.data['y'])
 cross = s3.cross(x=source.data['x'][0], y=source.data['y'][0], color='red', size=12)
-s3.cross(x=0, y=0, color='green')
+s3.cross(x=0, y=0, color='green', size=5)
 s3.title.text = "Orbit"
 s3.xaxis.axis_label = 'x [kpc]'
 s3.yaxis.axis_label = 'y [kpc]'
