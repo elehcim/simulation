@@ -98,10 +98,12 @@ def fit_sersic_1D(r_eff_kpc3d, r, sbp, show=SHOW):
     return sersic1D
 
 
-def fit_sersic_2D(sb, r_eff, n, resolution, ellip, theta, show=SHOW):
+def fit_sersic_2D(sb, r_eff, n, resolution, ellip, theta, show=SHOW, fixed=None):
     y, x = np.mgrid[:resolution, :resolution]
+    if fixed is None:
+        fixed={'amplitude':False, 'r_eff':True, 'n':False, 'x_0':True, 'y_0':True, 'ellip':False, 'theta':False}
     s_init = models.Sersic2D(r_eff=r_eff, n=n, x_0=resolution/2, y_0=resolution/2, ellip=ellip, theta=theta,
-                             fixed={'amplitude':False, 'r_eff':True, 'n':False, 'x_0':True, 'y_0':True, 'ellip':False, 'theta':False})
+                             fixed=fixed)
                              # bounds={ 'ellip':(0,1)}) #, 'x_0':(200,300) 'y_0':(200,300),
     # s_init = models.Polynomial2D(degree=4)
     # s_init = models.Gaussian2D(x_mean=resolution/2, y_mean=resolution/2, theta=theta,

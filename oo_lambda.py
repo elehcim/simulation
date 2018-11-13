@@ -35,13 +35,13 @@ class Photometry:
         self._theta_0 = THETA_0
         self.smajax = np.arange(a_min, a_max, a_delta)
 
-    def fit(self, sb_lum, r_eff_pix, resolution, fit_profile=False, snap=None):
+    def fit(self, sb_lum, r_eff_pix, resolution, fit_profile=False, snap=None, fixed=None):
         if fit_profile:
             sersic1D = self.fit_profile(snap, r_eff_pix)
             self._n_0 = sersic1D.n
         logger.info("Fitting Sersic2D")
         sersic2D = fit_sersic_2D(sb_lum, r_eff=r_eff_pix, n=self._n_0, resolution=resolution,
-            ellip=self._ellip_0, theta=self._theta_0)
+            ellip=self._ellip_0, theta=self._theta_0, fixed=fixed)
 
         self._sersic2D = sersic2D
 
@@ -61,7 +61,7 @@ class Photometry:
         # Use half of the quadrant.
         self.theta = self.theta % np.pi
         self.center = (sersic2D.x_0.value, sersic2D.y_0.value)
-
+        self.n = sersic2D.n.value
         return sersic2D
 
     # FIXME
@@ -93,7 +93,7 @@ class Photometry:
         return apertures
 
     def get_params(self):
-        return self.center, self.smajax, self.ellip, self.theta
+        return self.center, self.smajax, self.ellip, self.theta, self.n
 
 
 class Imaging:
@@ -180,7 +180,7 @@ class SSAM:
         logger.info(" 2D: {:.4f} kpc".format(self.snap.r_eff_kpc))
         # logger.info(" 3D: {:.4f} kpc".format(self.snap.r_eff_kpc3d))
 
-        r_eff_pix = kpc2pix(self.snap.r_eff_kpc,  # use partial?
+        r_eff_pix = kpc2pix(self.snap.r_eff_kpc,  # use functools.partial?
                             width=self.w,
                             resolution=self.res)
         self.photometry.fit(sb_lum,
@@ -189,7 +189,7 @@ class SSAM:
                             fit_profile=fit_profile,
                             snap=self.snap.subsnap)
 
-        center, smajax, ellip, theta = self.photometry.get_params()
+        center, smajax, ellip, theta, n = self.photometry.get_params()
         lambda_R = compute_stellar_specific_angmom(center, self.sb_mag, self.v_los_map, self.v_disp_map,
                                                    smajax, ellip, self.photometry.a_delta, theta)
         self.lambda_R = lambda_R
@@ -270,8 +270,8 @@ if __name__ == '__main__':
 
     ssam.compute_lambda(fit_profile=False)
 
-    print('{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.5f}'.format(
-        ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta,
+    print('{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.5f}'.format(
+        ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta, ssam.photometry.n,
         snap.r_eff_kpc, snap.r_eff_kpc3d, *snap.angmom, snap.magnitude('v')))
 
     ssam.plot_maps(save_fig=out_name, sb_range=(18,29),
