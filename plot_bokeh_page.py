@@ -5,9 +5,11 @@ import numpy as np
 import bokeh
 from bokeh.layouts import layout, row, column
 from bokeh.plotting import figure, show, save, output_notebook, output_file
-from bokeh.models import CustomJS, Slider, ColumnDataSource, Range1d, Plot, Span, Legend, LegendItem
+from bokeh.models import CustomJS, Slider, ColumnDataSource, Range1d, Plot, Span, Legend, LegendItem, ColorBar, LinearColorMapper
 from bokeh.models.glyphs import ImageURL
 from bokeh.models.widgets import Panel, Tabs
+from bokeh.palettes import Spectral6, Viridis256
+from bokeh.transform import linear_cmap
 
 from bokeh.resources import INLINE
 # output_notebook(resources=INLINE)
@@ -203,18 +205,17 @@ s5.yaxis.axis_label = 'ellip_mean ' + str(WINDOW)
 ###########
 s6 = figure(**COMMON_FIG_ARGS)
 
-from bokeh.palettes import Spectral6, Viridis256
-from bokeh.models import ColorBar, LinearColorMapper
-
 y = df.time.values
-mapper = LinearColorMapper(palette=Viridis256, low=min(y), high=max(y))
+# mapper = LinearColorMapper(palette=Viridis256, low=min(y), high=max(y))
+mapper = linear_cmap(field_name='time', palette=Viridis256, low=min(y), high=max(y))
 
-s6.circle('ellip_mean', 'lambda_r_mean', fill_color={'field': 'time', 'transform': mapper}, source=source)
-circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW], color='red')
-color_bar = ColorBar(color_mapper=mapper, width=12, location=(0, 0))
+# s6.circle('ellip_mean', 'lambda_r_mean', fill_color={'field': 'time', 'transform': mapper}, source=source)
+el_c = s6.circle('ellip_mean', 'lambda_r_mean', line_color=mapper, fill_color=mapper, fill_alpha=1, size=8, source=source)
+
+circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW],
+                         size=el_c.glyph.size+2, fill_color=None, line_color='red')
+color_bar = ColorBar(color_mapper=mapper['transform'], width=12, location=(0, 0))
 s6.add_layout(color_bar, 'right')
-# color_bar = ColorBar(color_mapper=mapper['transform'], width=8,  location=(0,0))
-# p.add_layout(color_bar, 'right')
 
 ######################
 
