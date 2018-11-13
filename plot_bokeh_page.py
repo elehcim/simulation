@@ -11,14 +11,14 @@ from bokeh.models.widgets import Panel, Tabs
 
 from bokeh.resources import INLINE
 # output_notebook(resources=INLINE)
-output_file('ssam.html', mode='inline')
 
 print(bokeh.__version__)
 
-DATA_DIR = 'ssam.69p2.xy.sph.new'
+DATA_DIR = 'ssam.69p2.xy.sph.n.new'
 # DATA_DIR_S = 'ssam.69p2.side.sph.new'
 SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 
+output_file(os.path.join(DATA_DIR, 'ssam.html'), mode='inline', title="Specific Stellar Angular Momentum - " + DATA_DIR)
 
 TOOLS='pan,wheel_zoom,reset'
 
@@ -62,11 +62,15 @@ def sfh(sim_path):
 def get_data(filename, generate=False, save_data=True):
     if not generate:
         return pd.read_pickle(filename)
-    maps = glob.glob(os.path.join(DATA_DIR, 'maps_*.png'))
+    curdir = os.getcwd() # FIXME do it with statetemt?
+    os.chdir( DATA_DIR )
+    maps = glob.glob(os.path.join('maps', 'maps_*.png'))
+    os.chdir( curdir )
     maps.sort()
 
+    print(maps[0:5])
     df = pd.read_csv(os.path.join(DATA_DIR, "tl.dat"), sep=' ', skiprows=1,
-        names=['time', 'lambda_r', 'ellip', 'theta', 'r_eff_kpc', 'r_eff_kpc3d', 'Lx', 'Ly', 'Lz', 'mag_v'])
+        names=['time', 'lambda_r', 'ellip', 'theta', 'r_eff_kpc', 'r_eff_kpc3d', 'n', 'Lx', 'Ly', 'Lz', 'mag_v'])
     df['maps'] = maps
     print(df.head())
 
@@ -95,7 +99,7 @@ def get_data(filename, generate=False, save_data=True):
         df.to_pickle(filename)
     return df
 
-df = get_data('d1.pkl', generate=False, save_data=True)
+df = get_data(os.path.join(DATA_DIR, 'df.pkl'), generate=False, save_data=True)
 
 # Do averages
 # df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW).agg(np.mean)
@@ -197,28 +201,48 @@ s5.yaxis.axis_label = 'ellip_mean ' + str(WINDOW)
 ###########
 s6 = figure(**COMMON_FIG_ARGS)
 
-s6.line(source.data['ellip_mean'], source.data['lambda_r_mean'])
+from bokeh.palettes import Spectral6, Viridis256
+from bokeh.models import ColorBar, LinearColorMapper
+
+y = df.time.values
+mapper = LinearColorMapper(palette=Viridis256, low=min(y), high=max(y))
+
+s6.circle('ellip_mean', 'lambda_r_mean', fill_color={'field': 'time', 'transform': mapper}, source=source)
 circle_ell_l = s6.circle(x=source.data['ellip_mean'][WINDOW], y=source.data['lambda_r_mean'][WINDOW], color='red')
+color_bar = ColorBar(color_mapper=mapper, width=12, location=(0, 0))
+s6.add_layout(color_bar, 'right')
+# color_bar = ColorBar(color_mapper=mapper['transform'], width=8,  location=(0,0))
+# p.add_layout(color_bar, 'right')
 
 ######################
 
 s7 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
 
-pos = s7.line(source.data['time'], source.data['sfr'])
+s7.line(source.data['time'], source.data['sfr'])
 circle_sfh = s7.circle(x=source.data['time'][0], y=source.data['sfr'][0], color='red')
 s7.title.text = "SFH"
 s7.xaxis.axis_label = 'time'
 s7.yaxis.axis_label = 'SFR [Msol/yr]'
 ######################
 
-for _plot in [s1, s2, s3, s4, s5, s6, s7]:
+s8 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
+
+s8.line(source.data['time'], source.data['n'])
+circle_n = s8.circle(x=source.data['time'][0], y=source.data['n'][0], color='red')
+s8.title.text = "Sersic Index"
+s8.xaxis.axis_label = 'time'
+s8.yaxis.axis_label = 'n'
+
+######################
+for _plot in [s1, s2, s3, s4, s5, s6, s7, s8]:
     _plot.toolbar.autohide = True
 
 ###
 
 cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
                         cross=cross.glyph, circle_mag=circle_mag.glyph,
-                        cet=circle_ell_t.glyph, cel=circle_ell_l.glyph, csfr=circle_sfh.glyph), code="""
+                        cet=circle_ell_t.glyph, cel=circle_ell_l.glyph,
+                        csfr=circle_sfh.glyph, cn=circle_n.glyph), code="""
     circle.x=source.data['time'][cb_obj.value];
     circle.y=source.data['lambda_r_mean'][cb_obj.value];
     circle_mag.x=source.data['time'][cb_obj.value];
@@ -231,6 +255,9 @@ cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
     csfr.x=source.data['time'][cb_obj.value];
     csfr.y=source.data['sfr'][cb_obj.value];
 
+    cn.x=source.data['time'][cb_obj.value];
+    cn.y=source.data['n'][cb_obj.value];
+
     cross.x=source.data['x'][cb_obj.value];
     cross.y=source.data['y'][cb_obj.value];
     span.location = source.data['time'][cb_obj.value];
@@ -241,6 +268,6 @@ cb = CustomJS(args=dict(span=vline, im=im, source=source, circle=circle.glyph,
 # slider.js_on_change('value', cb)
 slider = Slider(start=0, end=len(df.maps)-1, value=0, step=1, title="image number", callback=cb)
 
-l = layout([p, slider, row(column(s1, s2), column(s3, s4), column(s5, s7))])
+l = layout([p, slider, row(column(s1, s2), column(s3, s4), column(s5, s6), column(s7, s8))])
 
 save(l)
