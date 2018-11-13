@@ -16,15 +16,22 @@ from bokeh.resources import INLINE
 
 print(bokeh.__version__)
 
-DATA_DIR = 'ssam.69p2.xy.sph.n.new'
+# DATA_DIR = 'ssam.m41.side'
+# DATA_DIR = 'ssam.m41.xy'
+DATA_DIR = 'ssam.69p2.side.sph.n.new'
 # DATA_DIR_S = 'ssam.69p2.side.sph.new'
 SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
+# SIM_PATH = '/mnt/data/MoRIA/M1-10_Verbeke2017/M10sim41001/'
 
 output_file(os.path.join(DATA_DIR, 'ssam.html'), mode='inline', title="Specific Stellar Angular Momentum - " + DATA_DIR)
 
-TOOLS='pan,wheel_zoom,reset'
+GENERATE_DATA = True
+
+USE_TRACE = True
 
 WINDOW=20
+
+TOOLS='pan,wheel_zoom,reset'
 
 def _pairwise(iterable):
     from itertools import tee
@@ -104,7 +111,7 @@ def get_data(filename, generate=False, save_data=True, use_trace=True):
         df.to_pickle(filename)
     return df
 
-df = get_data(os.path.join(DATA_DIR, 'df.pkl'), generate=False, save_data=True)
+df = get_data(os.path.join(DATA_DIR, 'df.pkl'), generate=GENERATE_DATA, save_data=True, use_trace=USE_TRACE)
 
 # Do averages
 # df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW).agg(np.mean)
