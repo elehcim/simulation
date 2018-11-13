@@ -59,7 +59,7 @@ def sfh(sim_path):
     return dt, massformed
 
 
-def get_data(filename, generate=False, save_data=True):
+def get_data(filename, generate=False, save_data=True, use_trace=True):
     if not generate:
         return pd.read_pickle(filename)
     curdir = os.getcwd() # FIXME do it with statetemt?
@@ -74,17 +74,20 @@ def get_data(filename, generate=False, save_data=True):
     df['maps'] = maps
     print(df.head())
 
-    from parse_trace import parse_trace
-    trace = parse_trace(os.path.join(SIM_PATH, 'trace.txt'))
+    if use_trace:
+        from parse_trace import parse_trace
+        trace = parse_trace(os.path.join(SIM_PATH, 'trace.txt'))
 
-    # Sync trace time and snapshot time
-    # Right is true to keep the last index otherwise it will result in NaN
-    locations = np.digitize(df.time, trace.t, right=True)
-    print(locations.shape)
+        # Sync trace time and snapshot time
+        # Right is true to keep the last index otherwise it will result in NaN
+        locations = np.digitize(df.time, trace.t, right=True)
+        print(locations.shape)
 
-    for f in ['r', 'v', 'a', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az']:
-        df[f] = trace[f].loc[locations].values
-
+        for f in ['r', 'v', 'a', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az']:
+            df[f] = trace[f].loc[locations].values
+    else:
+        for f in ['r', 'v', 'a', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az']:
+            df[f] = np.zeros(len(maps))
     # SFH
     dt, massformed = sfh(SIM_PATH)
     print(dt)
@@ -144,7 +147,6 @@ s1.yaxis.axis_label = 'lambda_mean ' + str(WINDOW)
 ############
 
 s2 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
-# r = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']], color=['blue', 'green'])
 r2 = s2.multi_line(xs=[source.data['time']]*2, ys=[source.data['r_eff_kpc'], source.data['r_eff_kpc3d']],
                   color=['navy', 'green'])
 # s2.line(x=source.data['time'], y=source.data['r_eff_kpc3d'], color='green')
@@ -180,7 +182,7 @@ circle_mag = s4.circle(x=source.data['time'][0], y=source.data['mag_v'][0], colo
 s4.y_range.flipped = True
 s4.title.text = "Magnitude"
 s4.xaxis.axis_label = 'time'
-s4.yaxis.axis_label = 'μ (V band)'
+s4.yaxis.axis_label = 'Magnitude (V band)'
 ######################
 
 # tab1 = Panel(child=p1, title="xy")
@@ -229,6 +231,7 @@ s8 = figure(**COMMON_FIG_ARGS, x_range=s1.x_range)
 
 s8.line(source.data['time'], source.data['n'])
 circle_n = s8.circle(x=source.data['time'][0], y=source.data['n'][0], color='red')
+s8.y_range.start = 0
 s8.title.text = "Sersic Index"
 s8.xaxis.axis_label = 'time'
 s8.yaxis.axis_label = 'n'
