@@ -10,6 +10,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+def make_snaps_path(sim_number, kicked):
+    if kicked:
+        return os.path.join(KICKED_PATH, 'sim{}'.format(sim_number), 'out')
+    else:
+        return os.path.join(MORIA_PATH, 'sim{}'.format(sim_number))
+
 def snapshot_file_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False):
     """Return a list of the path to all the snapshots in the simulation folder"""
     if not os.path.isdir(dirname):
@@ -41,15 +47,23 @@ def load_snap(snap_dir, snap_number):
         raise RuntimeError("No snap {} in simulation folder {}".format(snap_number, snap_dir))
     return pynbody.load(snap)
 
-def load_moria(sim_number, snap_number=None, path=MORIA_PATH):
-    sim_dir = os.path.join(path, 'sim{}'.format(sim_number))
+def load_moria(sim_number, snap_number=None, path=None):
+    if path is None:
+        sim_dir = make_snaps_path(sim_number, kicked=False)
+    else:
+        sim_dir = os.path.join(MORIA_PATH, 'sim{}'.format(sim_number))
+
     if snap_number is None:
         return load_sim(sim_dir)
     else:
         return load_snap(sim_dir, snap_number)
 
-def load_kicked(sim_number, snap_number=None, path=KICKED_PATH):
-    sim_dir = os.path.join(path, 'sim{}'.format(sim_number), 'out')
+def load_kicked(sim_number, snap_number=None, path=None):
+    if path is None:
+        sim_dir = make_snaps_path(sim_number, kicked=True)
+    else:
+        sim_dir = os.path.join(KICKED_PATH, 'sim{}'.format(sim_number), 'out')
+
     if snap_number is None:
         return load_sim(sim_dir)
     else:

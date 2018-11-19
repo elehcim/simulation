@@ -5,7 +5,7 @@ import matplotlib.pylab as plt
 import csv
 import logging
 import pynbody
-from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
+from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim, make_snaps_path
 from util import np_printoptions
 from analyze_sumfiles import get_sumfile
 from multiprocessing import Pool, Process, Queue
@@ -737,6 +737,7 @@ class MoriaSim(Simulation):
     def __init__(self, sim_id, kicked=False):
         self.sim_id = str(sim_id)
         self.kicked = kicked
+
         # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
         # super(MoriaSim, self).__init__(sim_id)
         self._load(sim_id, kicked)
@@ -748,9 +749,11 @@ class MoriaSim(Simulation):
             logger.info("No sumfile found")
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
-    def _load(self, sim_id, kicked=False):
+    def _load(self, sim_id, kicked):
         logger.info("loading simulation: {}".format(sim_id))
         self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
+        self._sim_dir = make_snaps_path(sim_id, kicked)
+
         # Overwrite and fix cosmological parameters
         print('Fixing cosmological parameters of MoRIA simulation')
         for i, snap in enumerate(self.snap_list):
