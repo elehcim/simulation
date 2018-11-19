@@ -25,13 +25,13 @@ SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 
 output_file(os.path.join(DATA_DIR, 'ssam.html'), mode='inline', title="Specific Stellar Angular Momentum - " + DATA_DIR)
 
-GENERATE_DATA = True
+GENERATE_DATA = False
 
 USE_TRACE = True
 
 WINDOW=20
 
-TOOLS='pan,wheel_zoom,reset'
+TOOLS='pan,wheel_zoom,reset,hover'
 
 def _pairwise(iterable):
     from itertools import tee
