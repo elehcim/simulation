@@ -11,9 +11,6 @@ sim_name = '69002_p10.0_a600.0_r600.0_c8.15_z0'
 sim = simulation.MoriaSim(sim_name, kicked=True)
 # sim_no_kick = simulation.MoriaSim(sim_name, kicked=False)
 
-
-
-
 sim.compute_cog(save_cache=True, force=True)
 
 
@@ -31,3 +28,4 @@ lines, labels = ax_sfh.get_legend_handles_labels()
 lines2, labels2 = ax_r1.get_legend_handles_labels()
 ax_sfh.legend(lines + lines2, labels + labels2, loc=0)
 fig.show()
+plt.show()
