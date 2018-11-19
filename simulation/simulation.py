@@ -761,8 +761,8 @@ class MoriaSim(Simulation):
             snap.properties['omegaL0']= 0.72
             snap.properties['omegaM0']= 0.28
             # Remove boxsize which complicates the plotting
-            if i==0:
-                self.boxsize = snap.properties.pop('boxsize', None).copy()
+            if i==0 and 'boxsize' in snap.properties:
+                self.boxsize = snap.properties.pop('boxsize').copy()
             snap.properties.pop('boxsize', None)
 
     def clear_snap_list(self):
