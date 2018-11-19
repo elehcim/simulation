@@ -26,7 +26,7 @@ import chyplot
 getProp = chyplot.cglobals.plmap.getSecond
 
 first_snap, last_snap = first_last_snap(args.dir)
-print "Found snapshots [{}: {}]".format(first_snap, last_snap)
+print("Found snapshots [{}: {}]".format(first_snap, last_snap))
 
 
 snapshots = range(first_snap, last_snap)
@@ -47,9 +47,9 @@ def compute_cog(snapshots, directory, save_cache=True):
 		# else:
 		# 	dr.set_file(args.snap)
 
-		print "reading file ", dr.filename()
+		print("reading file ", dr.filename())
 		data = dr.readFile()
-		print "snapshot time {} Gyr".format(data.time())
+		print("snapshot time {} Gyr".format(data.time()))
 		# data.rcom(True, enums.T_star, 0, 0, 0, True)
 		# data.vcom(True, enums.T_star)
 		# data.rotate(enums.T_gas, 2, True)
@@ -65,7 +65,7 @@ def compute_cog(snapshots, directory, save_cache=True):
 		# print "tot mass = {} 10^10 Msol".format(tot_mass)
 
 		cog[:,i] = ((x*mass).sum()/tot_mass,
-					(y*mass).sum()/tot_mass, 
+					(y*mass).sum()/tot_mass,
 					(z*mass).sum()/tot_mass)
 
 		i += 1
@@ -92,9 +92,9 @@ if __name__ == '__main__':
 	ax2.set_xlabel("x (kpc)")
 	ax2.set_ylabel("y (kpc)")
 	ax2.scatter(*cog[:2])
-	
+
 	plt.axis('equal')
-	
+
 	plt.tight_layout()
 	plt.show()
 

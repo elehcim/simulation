@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import sys
 
 def main(filename=sys.argv[-1]):
+    if not filename:
+        print('cannot read input file')
+        sys.exit(2)
     print('loading file...'.format())
     t = np.loadtxt(filename)
     print('done')
@@ -15,6 +18,7 @@ def main(filename=sys.argv[-1]):
     plt.xlabel('x [kpc]')
     plt.ylabel('y [kpc]')
     plt.title('t: {:5.2f} - {:5.2f} Gyr'.format(t[0,0], t[-1,0]))
+    plt.axes().set_aspect('equal')
     plt.show()
 
 if __name__ == '__main__':

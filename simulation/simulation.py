@@ -10,7 +10,7 @@ from util import np_printoptions
 from analyze_sumfiles import get_sumfile
 from multiprocessing import Pool, Process, Queue
 from functools import lru_cache
-from parse_trace import parse_trace, parse_dens_trace
+from parsers.parse_trace import parse_trace, parse_dens_trace
 
 
 logger = logging.getLogger(__name__)
@@ -112,7 +112,7 @@ def get_compiler_options(path):
     if os.path.isdir(path):
         path = os.path.join(path, 'compiler.txt')
     else:
-        return None  
+        return None
     try:
         with open(path) as f:
             logger.info("Found compiler file")
@@ -136,14 +136,14 @@ class Simulation(object):
         self.sim_id = sim_id
         self._sim_dir = sim_dir
         logger.info("loading simulation: {}".format(sim_id))
-        self.params = get_param_used(sim_dir) 
-        self.compiler_opts = get_compiler_options(sim_dir) 
+        self.params = get_param_used(sim_dir)
+        self.compiler_opts = get_compiler_options(sim_dir)
         self.snap_list = self._load(sim_dir, force_cosmo)
         if len(self.snap_list) == 0:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
-        self.trace = get_trace(sim_dir) 
+        self.trace = get_trace(sim_dir)
 
     def _load(self, sim_id, force_cosmo=False):
         snap_list = load_sim(sim_id)
@@ -205,7 +205,7 @@ class Simulation(object):
     @property
     def mass_resolution(self):
         return mass_resolution(self[0])
-    
+
     @property
     def mass_resolution_baryons(self):
         snap = self[0]
@@ -315,7 +315,7 @@ class Simulation(object):
 
         self.cog = np.zeros((3, len(self)), dtype=float)
 
-        # if use_multiprocess:  # Not working for now, it is stuck it seems because of a thread lock in SimSnap. 
+        # if use_multiprocess:  # Not working for now, it is stuck it seems because of a thread lock in SimSnap.
         #     import multiprocess
         #     pool = multiprocess.Pool(processes=8)
         #     multiple_results = pool.map(my_cog, self.snap_list)
@@ -385,7 +385,7 @@ class Simulation(object):
     #     # ignore AccuracyWarning that is issued when an integral is zero
     #     import warnings
     #     from scipy.integrate.quadrature import AccuracyWarning
-    #     np.zeros(len(self.snap_list), dtype=float) 
+    #     np.zeros(len(self.snap_list), dtype=float)
     #     self.snap_list[last_snap]
     #     with warnings.catch_warnings():
     #         warnings.filterwarnings("ignore", category=AccuracyWarning)
@@ -625,9 +625,9 @@ class Simulation(object):
     def _available_keys():  # FIXME do it in an automamtic way. But seems that self.profiles is not useful and better not use it.
         # keys = set(self[0].g.loadable_keys()).union(set(sim.profiles[0]['g'].derivable_keys()))
         # return keys
-        keys = ['E_circ', 'acce_norm', 'vel_norm', 'Q', 'X', 'beta', 'density', 'density_enc', 'dyntime', 'fesp', 'fourier', 
+        keys = ['E_circ', 'acce_norm', 'vel_norm', 'Q', 'X', 'beta', 'density', 'density_enc', 'dyntime', 'fesp', 'fourier',
         'g_spherical', 'j_circ', 'j_phi', 'j_theta', 'jtot', 'kappa', 'magnitudes', 'mass', 'mass_enc',
-        'mgsp', 'omega', 'pattern_frequency', 'pot', 'p', 'rho', 'rotation_curve_spherical', 'sb', 
+        'mgsp', 'omega', 'pattern_frequency', 'pot', 'p', 'rho', 'rotation_curve_spherical', 'sb',
         'smooth', 'temp', 'u', 'v_circ', 'vel', 'zsph', 'vr', 'vr_disp']
 
         return keys
@@ -669,7 +669,7 @@ class Simulation(object):
         def k(i, family, y, vrange=None):
             if vrange is not None:
                 kwargs.update({'min': vrange[0], 'max':vrange[1]})
-            
+
             i = offset + i
             from pynbody import units
             snap = self[i]
@@ -769,7 +769,7 @@ class MoriaSim(Simulation):
         # print(mem_1)
         del self.snap_list
         nobs = gc.collect()
-        # mem_2 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss  
+        # mem_2 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         # print(mem_2)
         # logger.info("freed {} objects - {:.2f} MB".format(nobs, round((mem_1-mem_2)/1024.0,1)))
         logger.info("freed {} objects".format(nobs))

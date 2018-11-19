@@ -3,7 +3,7 @@ import pynbody
 from pynbody.plot import sph
 import matplotlib.pylab as plt
 
-from notebooks.snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
+from simulation.snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 
 SIMNUMBER = "69002_p200.0_a600.0_r600.0_c8.15"
 # SIMNUMBER = "69002_p598.0_a600.0_r600.0_c8.15"
@@ -27,7 +27,7 @@ def np_printoptions(*args, **kwargs):
     np.set_printoptions(*args, **kwargs)
     try:
         yield
-    finally: 
+    finally:
         np.set_printoptions(**original)
 
 def gas_image(sim, **kwargs):
@@ -49,7 +49,7 @@ def gas_velocity_lateral_view(sim, **kwargs):
     velocity = sim['vel'].mean(axis=0)
     backup = sim['pos'].copy()
     v_modulus = np.linalg.norm(velocity)
-    x_p = (velocity[1]  * sim['pos'][:,0] + velocity[0] * sim['pos'][:,1])/v_modulus 
+    x_p = (velocity[1]  * sim['pos'][:,0] + velocity[0] * sim['pos'][:,1])/v_modulus
     y_p = (-velocity[0] * sim['pos'][:,0] + velocity[1] * sim['pos'][:,1])/v_modulus
     sim['pos'][:,0] = x_p
     sim['pos'][:,1] = y_p
@@ -77,7 +77,7 @@ def gas_orthogonal_projection(sim, qty='rho', **kwargs):
         im = sph.image(sim.g, subplot=ax_xy, **kwargs)
         ax_xy.set_xlabel("$x/%s$" % u_st)
         ax_xy.set_ylabel("$y/%s$" % u_st)
-        
+
         x=sim['pos'][:,0].copy()
         sim['pos'][:,0] = sim['pos'][:,2].copy()
         sph.image(sim.g, subplot=ax_zy, **kwargs)
@@ -96,12 +96,12 @@ def gas_orthogonal_projection(sim, qty='rho', **kwargs):
         ax_angmom.set_xlabel("$x/%s$" % u_st)
         ax_angmom.set_ylabel("$y/%s$" % u_st)
         ax_angmom.set_title("angular momentum faceon")
-        
+
         fig.tight_layout()
         fig.subplots_adjust(top=0.96, bottom=0.11)
         cbar_ax = fig.add_axes([0.2,  0.05, 0.6, 0.02])
         fig.colorbar(im, cax=cbar_ax, orientation='horizontal').set_label(qty+"/"+kwargs['units'])
-        
+
         snap = int(sim.filename[-4:])
         title = '$t={:5.2f}$ Gyr, snap={}'.format(sim.properties['time'].in_units("Gyr"), snap)
         fig.suptitle(title)
@@ -113,10 +113,10 @@ def gas_orthogonal_projection(sim, qty='rho', **kwargs):
 
 def main():
     snap_list = load_kicked(SIMNUMBER) if kicked else load_moria(SIMNUMBER)
-    
+
     folder = "pngs_{}".format(SIMNUMBER)
     os.makedirs(folder, exist_ok=True )
-    
+
     for sim in snap_list:
         snap = int(sim.filename[-4:])
         fig, ax = plt.subplots(figsize=figsize)
@@ -131,10 +131,10 @@ def main():
 
 def save_orthogonal():
     snap_list = load_kicked(SIMNUMBER) if kicked else load_moria(SIMNUMBER)
-    
+
     folder = "pngs_{}".format(SIMNUMBER)
     os.makedirs(folder, exist_ok=True )
-    
+
     for sim in snap_list:
         snap = int(sim.filename[-4:])
         filename = os.path.join(folder,"gas_image_proj_{:03d}.png".format(snap))
@@ -144,10 +144,10 @@ def save_orthogonal():
 
 def save_velocity_lateral_view():
     snap_list = load_kicked(SIMNUMBER) if kicked else load_moria(SIMNUMBER)
-    
+
     folder = "pngs_{}".format(SIMNUMBER)
     os.makedirs(folder, exist_ok=True )
-    
+
     for sim in snap_list:
         snap = int(sim.filename[-4:])
         fig, ax = plt.subplots(figsize=figsize)

@@ -1,4 +1,6 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+
+# print(find_packages())
 
 setup(name='simulation',
       version='0.1',
@@ -6,12 +8,13 @@ setup(name='simulation',
       license="MIT",
       author='Michele Mastropietro',
       author_email='michele.mastropietro@ugent.be',
-      install_requires=['pynbody', 'astropy'],
-      py_modules=['simulation', 'glass_ic', 'sim_duration'],
+      install_requires=['pynbody', 'astropy', 'pandas'],
+      py_modules=['glass_ic', 'sim_duration'],
+      # packages=find_packages(),
       scripts=['scripts/get_maxid', 'scripts/read_header'],
       entry_points={
           'console_scripts': ['sim_duration=sim_duration:main',
-                              'plot_sfh=plot_sfh:main',
-                              'plot_trace=plot_trace:main']
+                              'plot_sfh=plot.plot_sfh:main',
+                              'plot_trace=plot.plot_trace:main']
       }
       )
