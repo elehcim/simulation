@@ -96,7 +96,8 @@ class GadgetHeader(object):
         res = \
 """
     time:     {}
-    redshift: {}""".format(self.time, self.redshift)
+    redshift: {}
+    npart:    g={} dm={} s={}""".format(self.time, self.redshift, self.npart[0], self.npart[0], self.npart[4])
         return res
 
 
