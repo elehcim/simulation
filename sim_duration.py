@@ -60,7 +60,7 @@ class SimDuration(object):
         s += "ETA:           {}".format(self.eta())
         try:
             s += "Particles:     dm:{} g:{} s:{}".format( len(self.last_snap.dm), len(self.last_snap.g), len(self.last_snap.s) )
-        except: AttributeError:
+        except AttributeError:
             pass
         return s
 
