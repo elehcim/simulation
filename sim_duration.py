@@ -59,7 +59,7 @@ class SimDuration(object):
         s += "Gyr/day:       {:.4f} ({:.4f} Gyr)\n".format(self._simtime_day, self.gyr_day)
         s += "ETA:           {}\n".format(self.eta())
         try:
-            s += "Particles (start): dm:{} g:{} s:{}".format( len(self.first_snap.dm), len(self.first_snap.g), len(self.first_snap.s) )
+            s += "Particles (start): dm:{} g:{} s:{}\n".format( len(self.first_snap.dm), len(self.first_snap.g), len(self.first_snap.s) )
             s += "Particles (now):   dm:{} g:{} s:{}".format( len(self.last_snap.dm), len(self.last_snap.g), len(self.last_snap.s) )
         except AttributeError:
             pass
