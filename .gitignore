@@ -9,6 +9,7 @@
 .cache/
 *.log
 results/
+data/
 *.mp4
 
 # python datafile

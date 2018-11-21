@@ -16,10 +16,10 @@ from bokeh.resources import INLINE
 
 print(bokeh.__version__)
 
-# DATA_DIR = 'ssam.m41.side'
-# DATA_DIR = 'ssam.m41.xy'
-DATA_DIR = 'ssam.69p2.side.sph.n.new'
-# DATA_DIR_S = 'ssam.69p2.side.sph.new'
+# DATA_DIR = 'data/ssam.m41.side'
+# DATA_DIR = 'data/ssam.m41.xy'
+DATA_DIR = 'data/ssam.69p2.side.sph.n.new'
+# DATA_DIR_S = 'data/ssam.69p2.side.sph.new'
 SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 # SIM_PATH = '/mnt/data/MoRIA/M1-10_Verbeke2017/M10sim41001/'
 
