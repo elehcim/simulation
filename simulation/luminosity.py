@@ -6,13 +6,16 @@ from scipy.ndimage.filters import gaussian_filter
 
 sun_abs_magnitudes = {'u':5.56, 'b':5.45, 'v':4.8, 'r':4.46, 'i':4.1, 'j':3.66, 'h':3.32, 'k':3.28}
 
+
 def kpc2pix(qty_kpc, width, resolution):
     kpc_per_pixel = width/resolution
     return int(np.floor(qty_kpc/kpc_per_pixel))
 
+
 def pix2kpc(qty_pix, width, resolution):
     kpc_per_pixel = width/resolution
     return qty_pix*kpc_per_pixel
+
 
 def convert_to_mag_arcsec2(image, band):
     """Convert a pynbody.SimArray of luminosity density to one in mag/arcsec^2
@@ -26,6 +29,7 @@ def convert_to_mag_arcsec2(image, band):
     img_mag_arcsec2 = sun_abs_magnitudes[band] - 2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
+
 
 def surface_brightness(snap, band='v', width=10, resolution=500, center=False, lum_pc2=False, noplot=False,
                        mag_filter=None, gaussian_sigma=None, subplot=None, show_cbar=True, cax=None, 
@@ -65,7 +69,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
         The map of surface brightness in mag/arcsec^2 or in Lsol/pc**2
     """
     if center:
-        pynbody.analysis.halo.center(snap.s, vel=False);
+        pynbody.analysis.halo.center(snap.s, vel=False)
 
     lum_density_name = band + '_lum_density'
     sun_abs_mag = sun_abs_magnitudes[band]
@@ -136,7 +140,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
             levels = isophotes
         cont = ax.contour(sb, levels=levels, extent=extent) #  cmap='flag' # very visible countours 
         if label_contour:
-            ax.clabel(cont, inline=1, fmt='%1.0f');
+            ax.clabel(cont, inline=1, fmt='%1.0f')
     if title is not None:
         ax.set_title(title)
     plt.draw()
@@ -182,7 +186,7 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, g
     assert len(bands) == 2
 
     if center:
-        pynbody.analysis.halo.center(snap.s, vel=False);
+        pynbody.analysis.halo.center(snap.s, vel=False)
 
     sb = list()
     for band in bands:
@@ -204,7 +208,6 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, g
     if noplot:
         return color
 
-    
     if subplot:
         fig, ax = subplot.figure, subplot
     else:
@@ -214,11 +217,11 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, g
     cmap.set_bad('black')
     extent = (-width/2, width/2, -width/2, width/2)
     img = ax.imshow(color, cmap=cmap, interpolation='none', extent=extent, origin='lower', vmin=vmin, vmax=vmax)
-    cbar = ax.figure.colorbar(img);
+    cbar = ax.figure.colorbar(img)
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
     color_name = '{}-{}'.format(*bands)
-    cbar.set_label('{} [mag/arcsec$^2$]'.format(color_name.upper()));
+    cbar.set_label('{} [mag/arcsec$^2$]'.format(color_name.upper()))
     # cont = ax.contour(img, cmap='flag', extent=(-width/2, width/2, -width/2, width/2))
     if title is not None:
         ax.set_title(title)

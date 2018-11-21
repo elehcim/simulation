@@ -17,7 +17,7 @@ from bokeh.client import push_session
 from bokeh.plotting import figure, curdoc
 
 import re
-from parse_info import pattern
+from parsers.parse_info import pattern
 
 # def push(step, dt):
 #     source.stream(dict(x=[step], y=[dt]), 1000)
@@ -50,6 +50,7 @@ def update():
                 d[k] = [float(v)]
             # print(d)
             push(d)
+
 
 hover = HoverTool(tooltips=[
     ("Time", "@t"),

@@ -1,8 +1,12 @@
+import numpy as np
+import matplotlib.pylab as plt
+import pynbody
 from ipywidgets import (interactive, HBox, VBox, Checkbox, Layout,
-					   IntSlider, FloatSlider, FloatRangeSlider, ToggleButtons, SelectMultiple, Select)
+                        IntSlider, FloatRangeSlider, ToggleButtons, SelectMultiple)
 
-_RHO_MAX=2e-1
-_RHO_MIN=5e-4;
+_RHO_MAX = 2e-1
+_RHO_MIN = 5e-4
+
 
 def _available_keys():  # FIXME do it in an automamtic way. But seems that self.profiles is not useful and better not use it.
     # keys = set(self[0].g.loadable_keys()).union(set(sim.profiles[0]['g'].derivable_keys()))
@@ -15,6 +19,8 @@ def _available_keys():  # FIXME do it in an automamtic way. But seems that self.
     return keys
 
 # FIXME I need to find a unified way to interact...
+
+
 def interact_gas(sim, rho_min=_RHO_MIN, rho_max=_RHO_MAX, step=1e-5):
 
     def k(i, velocity_proj, sfh, cog, vrange, width, resolution):
@@ -92,6 +98,7 @@ def interact(sim, rho_min=_RHO_MIN, rho_max=_RHO_MAX, step=1e-5):
     b = VBox([HBox([VBox(w.children[0:4]), VBox(w.children[4:8])],
              layout=Layout(display='flex', width='150%')), w.children[-1]])
     return b
+
 
 def interact_profiles(sim, default='u', eps=0.03, keys=_available_keys(), add_keys=None, selection=True,
                           _snap_slider=None, offset=0, log=False, **kwargs):

@@ -41,7 +41,7 @@ class Photometry:
             self._n_0 = sersic1D.n
         logger.info("Fitting Sersic2D")
         sersic2D = fit_sersic_2D(sb_lum, r_eff=r_eff_pix, n=self._n_0, resolution=resolution,
-            ellip=self._ellip_0, theta=self._theta_0, fixed=fixed)
+                                 ellip=self._ellip_0, theta=self._theta_0, fixed=fixed)
 
         self._sersic2D = sersic2D
 
@@ -52,12 +52,12 @@ class Photometry:
             self.theta = sersic2D.theta.value
         elif sersic2D.ellip.value < 0:
             logger.warning("ellipticity < 0: swapping minor <-> major axis")
-            self.ellip = 1/(1-sersic2D.ellip.value)
-            self.theta = np.pi/2 + sersic2D.theta.value
+            self.ellip = 1 / (1 - sersic2D.ellip.value)
+            self.theta = np.pi / 2 + sersic2D.theta.value
         else:
             logger.warning("ellipticity > 1: swapping minor <-> major axis")
-            self.ellip = 1/sersic2D.ellip.value
-            self.theta = np.pi/2 + sersic2D.theta.value
+            self.ellip = 1 / sersic2D.ellip.value
+            self.theta = np.pi / 2 + sersic2D.theta.value
         # Use half of the quadrant.
         self.theta = self.theta % np.pi
         self.center = (sersic2D.x_0.value, sersic2D.y_0.value)
@@ -88,8 +88,8 @@ class Photometry:
         apertures = list()
         for a, b in zip(self.smajax, sminax):
             apertures.append(EllipticalAnnulus(self.center,
-                                       a_in=a-self.a_delta, a_out=a+self.a_delta,
-                                       b_out=b, theta=self.theta))
+                                               a_in=a - self.a_delta, a_out=a + self.a_delta,
+                                               b_out=b, theta=self.theta))
         return apertures
 
     def get_params(self):
@@ -104,19 +104,20 @@ class Imaging:
 
     def v_los_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='vz', av_z=True, width=self.width,
-            resolution=self.resolution, noplot=True, log=False)
+                                      resolution=self.resolution, noplot=True, log=False)
 
     def v_disp_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='v_disp', av_z=True, width=self.width,
-            resolution=self.resolution, noplot=True, log=False)
+                                      resolution=self.resolution, noplot=True, log=False)
 
     def sb_lum(self):
         return surface_brightness(self._snap.s, width=self.width, resolution=self.resolution,
-            lum_pc2=True, noplot=True)
+                                  lum_pc2=True, noplot=True)
 
     def sb_mag(self):
         return surface_brightness(self._snap.s, width=self.width, resolution=self.resolution,
-            lum_pc2=False, noplot=True)
+                                  lum_pc2=False, noplot=True)
+
 
 class Snap:
     def __init__(self, snap_name, cuboid_edge):
@@ -130,7 +131,7 @@ class Snap:
         self.time_gyr = s.properties['time'].in_units('Gyr')
         logger.info("{:.2f} Gyr".format(self.time))
 
-        pynbody.analysis.halo.center(s.s)#, vel=False)
+        pynbody.analysis.halo.center(s.s)  # , vel=False)
 
         # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
         self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(cuboid_edge))]
@@ -160,6 +161,7 @@ class Snap:
 
     def magnitude(self, band):
         return pynbody.analysis.luminosity.halo_mag(self.subsnap, band=band)
+
 
 class SSAM:
     def __init__(self, snap, photometry, imaging):
@@ -205,7 +207,7 @@ class SSAM:
             for attr in ('a_in', 'a_out', "b_in", "b_out"):
                 qty = getattr(aper, attr)
                 setattr(aper, attr, pix2kpc(qty, width=self.w, resolution=self.res))
-            aper.positions = np.array([[0,0]])
+            aper.positions = np.array([[0, 0]])
             aper.plot(color='white', ax=grid[0], alpha=0.2)
 
         plot_angmom(self.snap.subsnap.s, grid[0])
@@ -217,6 +219,7 @@ class SSAM:
             plt.savefig(save_fig)
         else:
             plt.show()
+
 
 if __name__ == '__main__':
     # snap_name = "/home/michele/sim/MoRIA/M1-10_Verbeke2017/M10sim41001/snapshot_0036"
@@ -251,9 +254,9 @@ if __name__ == '__main__':
     out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}_a{}'.format(band, width, resolution, a_delta)
     if out_dir is not None:
         if os.path.isdir(out_dir):
-           out_name = os.path.join(os.path.expanduser(out_dir), out_name)
+            out_name = os.path.join(os.path.expanduser(out_dir), out_name)
 
-    snap = Snap(snap_name, cuboid_edge=width*1.1)
+    snap = Snap(snap_name, cuboid_edge=width * 1.1)
 
     if args.side and args.face:
         print("Option 'side' and 'face' are mutually exclusive", file=sys.stderr)
@@ -274,7 +277,6 @@ if __name__ == '__main__':
         ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta, ssam.photometry.n,
         snap.r_eff_kpc, snap.r_eff_kpc3d, *snap.angmom, snap.magnitude('v')))
 
-    ssam.plot_maps(save_fig=out_name, sb_range=(18,29),
-                                      v_los_range=(-15,15),
-                                      sigma_range=(10,40))
-
+    ssam.plot_maps(save_fig=out_name, sb_range=(18, 29),
+                   v_los_range=(-15, 15),
+                   sigma_range=(10, 40))
