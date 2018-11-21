@@ -34,8 +34,10 @@ class SimDuration(object):
     def __init__(self, path, first=0, last=-1):
         self.path = path
         snaplist = snapshot_file_list(os.path.expanduser(self.path), include_dir=True)
-        self.f = SnapTime(pynbody.load(snaplist[first]))
-        self.l = SnapTime(pynbody.load(snaplist[last]))
+        self.first_snap = pynbody.load(snaplist[first])
+        self.last_snap = pynbody.load(snaplist[last])
+        self.f = SnapTime(self.first_snap)
+        self.l = SnapTime(self.last_snap)
         self.params = get_param_used(path)
         self.arrival = float(self.params['TimeMax'])
         self.gyr = self.l.gyr - self.f.gyr
@@ -56,6 +58,10 @@ class SimDuration(object):
         s += "Arrival:       {}\n".format(self.arrival)
         s += "Gyr/day:       {:.4f} ({:.4f} Gyr)\n".format(self._simtime_day, self.gyr_day)
         s += "ETA:           {}".format(self.eta())
+        try:
+            s += "Particles:     dm:{} g:{} s:{}".format( len(self.last_snap.dm), len(self.last_snap.g), len(self.last_snap.s) )
+        except: AttributeError:
+            pass
         return s
 
     @property
@@ -72,7 +78,7 @@ class SimDuration(object):
         f = self.f
         l = self.l
 
-        eta = f.creation + (self.arrival - f.time) / (l.time - f.time) * (l.creation - f.creation) 
+        eta = f.creation + (self.arrival - f.time) / (l.time - f.time) * (l.creation - f.creation)
         return  unix2time(eta)
 
 
