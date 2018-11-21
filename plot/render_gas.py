@@ -2,6 +2,7 @@ import os
 import pynbody
 from pynbody.plot import sph
 import matplotlib.pylab as plt
+import numpy as np
 
 from simulation.snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim
 

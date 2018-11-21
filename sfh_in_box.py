@@ -1,7 +1,8 @@
 import simulation
+import pynbody
 from itertools import tee
 import astropy.units as u
-
+import numpy as np
 
 def _pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
@@ -81,16 +82,16 @@ if __name__ == '__main__':
     massformed = np.array(mf)
 
     conv_fac = (u.kpc/(u.km/u.s)).to(u.Gyr)
-    dt, sfr = sfh(sim_path)
+    dt, sfr = sfh(SIM_PATH)
 
     import matplotlib.pyplot as plt
 
     fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(12,4))
 
-    pynbody.plot.stars.sfh(sim.snap_list[-1], subplot=ax1, bins=len(sim), trange=sim.t_range);
+    pynbody.plot.stars.sfh(sim.snap_list[-1], subplot=ax1, bins=len(sim), trange=sim.t_range)
     # ax1.grid()
     ax2.plot(sim.times, sfr)
     ax2.set_ylim(0, None)
     # ax2.grid()
     ax2.set_xlabel('time')
-    ax2.set_ylabel('SFR [Msol/yr]');
+    ax2.set_ylabel('SFR [Msol/yr]')

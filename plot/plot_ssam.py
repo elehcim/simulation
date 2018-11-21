@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 # import simulation
 import numpy as np
 import pandas as pd
-from parse_trace import parse_trace
+from parsers.parse_trace import parse_trace
 import matplotlib.ticker as tck
 
 a = np.loadtxt('ssam.69p2.xy.sph/tl.dat')

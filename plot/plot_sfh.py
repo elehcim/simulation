@@ -1,5 +1,4 @@
 import simulation
-import pynbody
 import matplotlib.pylab as plt
 import numpy as np
 import argparse

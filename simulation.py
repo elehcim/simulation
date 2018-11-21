@@ -1,17 +1,16 @@
-import os
-import sys
-import numpy as np
-import matplotlib.pylab as plt
 import csv
 import logging
-import pynbody
-from snap_io import load_moria_sim_and_kicked, load_moria, load_kicked, load_sim, make_snaps_path
-from util import np_printoptions
-from analyze_sumfiles import get_sumfile
-from multiprocessing import Pool, Process, Queue
+import os
 from functools import lru_cache
-from parsers.parse_trace import parse_trace, parse_dens_trace
+from multiprocessing import Process, Queue
 
+import matplotlib.pylab as plt
+import numpy as np
+import pynbody
+from analyze_sumfiles import get_sumfile
+from parsers.parse_trace import parse_trace, parse_dens_trace
+from snap_io import load_moria, load_kicked, load_sim, make_snaps_path
+from util import np_printoptions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -93,6 +92,7 @@ def get_param_used(path):
         return None
     return d
 
+
 def get_trace(path):
     path = os.path.expanduser(path)
     if os.path.isdir(path):
@@ -106,9 +106,9 @@ def get_trace(path):
         return None
     return df
 
+
 def get_compiler_options(path):
     path = os.path.expanduser(path)
-    l = []
     if os.path.isdir(path):
         path = os.path.join(path, 'compiler.txt')
     else:
@@ -116,10 +116,11 @@ def get_compiler_options(path):
     try:
         with open(path) as f:
             logger.info("Found compiler file")
-            l = [s.strip() for s in f.readlines()]
+            ll = [s.strip() for s in f.readlines()]
     except FileNotFoundError:
         return None
-    return l
+    return ll
+
 
 class Simulation(object):
     """docstring for Simulation"""
@@ -152,10 +153,10 @@ class Simulation(object):
                 snap.properties['omegaL0'] = float(self.params['OmegaLambda'])
                 snap.properties['omegaM0'] = float(self.params['OmegaBaryon'])
             # Take boxsize from first snap
-            if i==0:
+            if i == 0:
                 self.boxsize = snap.properties.get('boxsize', None)
             if force_cosmo:
-                if i==0:
+                if i == 0:
                     logger.info('Forcing cosmological parameters (h=0.7, omegaL0=0.72, omegaM0=0.28')
                 snap.properties['h']= 0.7
                 snap.properties['omegaL0']= 0.72
@@ -234,9 +235,6 @@ class Simulation(object):
         for i, snap in enumerate(self.snap_list):
             self._times[i] = snap.properties['time'].in_units('Gyr')
         return self._times
-
-    def mass_resolution(self):
-        return mass_resolution(self.snap_list[0])
 
     def __getitem__(self, idx):
         return self.snap_list[idx]
@@ -605,31 +603,25 @@ class MoriaSim(Simulation):
         plt.legend(loc=0)
 
 
-class BhSim(Simulation):
-    """docstring for MoriaSim"""
-    _sim_dir = "/home/michele/sim/MySimulations/bh"
-    _sf_bh_folder = os.path.join(_sim_dir, "results/sumfiles/")
-
-    def __init__(self, sim_id):
-        self.sim_id = sim_id
-        # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
-        # super(MoriaSim, self).__init__(sim_id)
-        self._load(sim_id)
-
-    def _load(self, sim_id):
-        logger.info("loading simulation: {}".format(sim_id))
-        self.snap_list = load_sim(os.path.join(self._sim_dir, sim_id, "out"))
-        # Remove boxsize which complicates the plotting
-        for i, snap in enumerate(self.snap_list):
-            if i==0:
-                self.boxsize = snap.properties.pop('boxsize', None).copy()
-            snap.properties.pop('boxsize', None)
-
-def time_range_kicked_moria():
-    trange = (min(np.min(times_moria), np.min(times_kicked)), max(np.max(times_moria), np.max(times_kicked)))
-    trange = (0, min(np.max(times_moria), np.max(times_kicked)))
-    bins = np.linspace(*trange, bins_sfr)
-    trange, times_moria[-1], times_kicked[-1]
+# class BhSim(Simulation):
+#     """docstring for MoriaSim"""
+#     _sim_dir = "/home/michele/sim/MySimulations/bh"
+#     _sf_bh_folder = os.path.join(_sim_dir, "results/sumfiles/")
+#
+#     def __init__(self, sim_id):
+#         self.sim_id = sim_id
+#         # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
+#         # super(MoriaSim, self).__init__(sim_id)
+#         self._load(sim_id)
+#
+#     def _load(self, sim_id):
+#         logger.info("loading simulation: {}".format(sim_id))
+#         self.snap_list = load_sim(os.path.join(self._sim_dir, sim_id, "out"))
+#         # Remove boxsize which complicates the plotting
+#         for i, snap in enumerate(self.snap_list):
+#             if i==0:
+#                 self.boxsize = snap.properties.pop('boxsize', None).copy()
+#             snap.properties.pop('boxsize', None)
 
 if __name__ == '__main__':
     SIMNUMBER = "69002_p200.0_a600.0_r600.0_c8.15"
