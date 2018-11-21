@@ -48,7 +48,8 @@ def sfh(sim_path):
     ns = list()
     ns_idx = list()
     new_stars = list()
-    for (a0, a1) in _pairwise(sim):
+    snaps = sim
+    for (a0, a1) in _pairwise(snaps):
         s0, s1 = a0.s['iord'].view(np.ndarray), a1.s['iord'].view(np.ndarray)
         new_stars = np.setdiff1d(s1, s0)
         ns_idx.append(np.where(np.isin(s1, new_stars))[0])
@@ -56,17 +57,26 @@ def sfh(sim_path):
 
     # time contains left border of the time bin
     mf = list()
-    for (idx, (a0, a1)) in zip(ns_idx, _pairwise(sim)):
-        mf.append(np.sum(a1.s['massform'][idx]).view(np.ndarray))
+    dts = list()
+    for (idx, (a0, a1)) in zip(ns_idx, _pairwise(snaps)):
+        mf.append(np.sum(a1.s['massform'][idx].in_units('Msol')).view(np.ndarray))
+        dts.append(a1.header.time - a0.header.time)
 
-    # last snap is not done:
     mf.append(0)
-    # assuming constant binsize (like the last one):
-    dt = a1.header.time - a0.header.time
+    dts.append(np.inf)
+
     massformed = np.array(mf)
+    dt = np.array(dts)
 
-    return dt, massformed
+    import astropy.units as u
+    t_conv_fac = (u.kpc/(u.km/u.s)).to(u.yr)
 
+    sfr = (massformed) / (dt * t_conv_fac)
+    # last snap is not done:
+    sfr = np.append(sfr, 0)
+    dt = np.append(dt, 0)
+
+    return dt, sfr
 
 def get_data(filename, generate=False, save_data=True, use_trace=True):
     if not generate:
@@ -98,14 +108,8 @@ def get_data(filename, generate=False, save_data=True, use_trace=True):
         for f in ['r', 'v', 'a', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az']:
             df[f] = np.zeros(len(maps))
     # SFH
-    dt, massformed = sfh(SIM_PATH)
-    print(dt)
-    print(massformed.shape)
-
-    import astropy.units as u
-    t_conv_fac = (u.kpc/(u.km/u.s)).to(u.yr)
-
-    df['sfr'] = (massformed * 10**10 ) / (dt * t_conv_fac)
+    dt, sfr = sfh(SIM_PATH)
+    df['sfr'] = sfr
 
     if save_data:
         df.to_pickle(filename)
