@@ -15,6 +15,7 @@ from util import first_last_snap
 
 parser = argparse.ArgumentParser()
 parser.add_argument('snap_dir', help='Snapshots directory')
+# parser.add_argument('-f', '--file', default=None, help='Input file (single file mode)')
 parser.add_argument('-o', '--output_dir', '--out', help='Output directory (create it if it does not exist)')
 parser.add_argument('-s', '--start', default=None, type=int, help='First snapshot to consider')
 parser.add_argument('-e', '--end',   default=None, type=int, help='Last snapshot to consider ')
@@ -23,6 +24,11 @@ args.snap_dir = os.path.expanduser(args.snap_dir)
 
 import chyplot
 import enums
+
+# def recenter_snap(filename):
+#     dr = chyplot.CDataGadget()
+#     dr.setPrefix( args.snap_dir )
+#     data = dr.readFile()
 
 # run = int(args[0])
 # snapStart = int(args[1])
@@ -54,7 +60,6 @@ for snap in range(snapStart, snapEnd+1):
     chyplot.cglobals.plmap.setDataBlock(data)
 
     newDir = args.output_dir
-    # newDir = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/sim69002_p200.0_a600.0_r600.0_c8.15_movie_recentered"
     if not os.path.exists(newDir):
         os.system('mkdir -p %s' %newDir)
     fileName = os.path.join(newDir, snapName + "%04.d" % snap)
