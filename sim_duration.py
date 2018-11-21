@@ -75,7 +75,6 @@ class SimDuration(object):
 
     def eta(self):
         """Estimated time of arrival"""
-        snaplist = snapshot_file_list(os.path.expanduser(self.path), include_dir=True)
         f = self.f
         l = self.l
 
