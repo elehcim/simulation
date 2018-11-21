@@ -57,9 +57,10 @@ class SimDuration(object):
         s += "Last time:     {}  ({})\n".format(self.l, self.l.number)
         s += "Arrival:       {}\n".format(self.arrival)
         s += "Gyr/day:       {:.4f} ({:.4f} Gyr)\n".format(self._simtime_day, self.gyr_day)
-        s += "ETA:           {}".format(self.eta())
+        s += "ETA:           {}\n".format(self.eta())
         try:
-            s += "Particles:     dm:{} g:{} s:{}".format( len(self.last_snap.dm), len(self.last_snap.g), len(self.last_snap.s) )
+            s += "Particles (start): dm:{} g:{} s:{}".format( len(self.first_snap.dm), len(self.first_snap.g), len(self.first_snap.s) )
+            s += "Particles (now):   dm:{} g:{} s:{}".format( len(self.last_snap.dm), len(self.last_snap.g), len(self.last_snap.s) )
         except AttributeError:
             pass
         return s
