@@ -10,7 +10,7 @@ STD_PROPERTIES = dict(a=1.0,
                       boxsize=11.111*units.kpc,
                       h=0.7,
                       omegaL0=0.72,
-                      omegaM0=1.0,
+                      omegaM0=0.28,
                       time=0 * units.Unit("s kpc km**-1"))
 
 
@@ -79,7 +79,7 @@ def create_gas_box(N, box_size, tot_gas_mass, filename):
     rest_of_fields = ['u', 'rho', 'smooth', 'fesp', 'mgsp', 'temp', 'zsph', 'p'] #  'tform'
     for name in rest_of_fields:
         s.g[name] = zero_arr
-        
+
     # s.g['smooth'] = np.ones(N, dtype=np.float32)
 
     s.properties = STD_PROPERTIES
@@ -97,7 +97,7 @@ def create_gas_box(N, box_size, tot_gas_mass, filename):
 #     ak.sort()
 #     return ak
 
-# This approach is not feasible because to relax the cluster should be evolved before being simulated 
+# This approach is not feasible because to relax the cluster should be evolved before being simulated
 # together with the galaxy
 # def attach_gas_particles(input_snap, cluster, profile):
 #     f = input_snap
