@@ -97,9 +97,10 @@ class GadgetHeader(object):
 """
     time:     {}
     redshift: {}
+    boxsize:  {}
     npart:    gas = {}
               dm  = {}
-              s   = {}""".format(self.time, self.redshift, self.npart[0], self.npart[1], self.npart[4])
+              s   = {}""".format(self.time, self.redshift, self.BoxSize, self.npart[0], self.npart[1], self.npart[4])
         return res
 
 
