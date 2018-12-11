@@ -1,15 +1,15 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 import re
 import pandas as pd
 from itertools import zip_longest
 
 # From Gadget2 Documentation
 # 7.2 Performance statistics of the gravitational tree
-# 
+#
 # In the file specified by TimingsFile, you get some statistics about the performance of the
 # gravitational force computation by the tree algorithm, which is usually (but not always) the
 # main sink of computational time in a simulation. A typical output may look like this:
-# 
+#
 #   Step= 482 t= 1.29199 dt= 0.00292969
 #   Nf= 10992 total-Nf= 0016981370
 #   work-load balance: 1.10997 max=0.618782 avg=0.557475 PE0=0.618782
@@ -22,18 +22,18 @@ from itertools import zip_longest
 #   particle-load balance: 1.02133
 #   max. nodes: 15202, filled: 0.422278
 #   part/sec=12134.9 | 11934.7 ia/part=805.744 (0)
-# 
-# 
+#
+#
 # The first line of the block generated for each step informs you about the number of the current
 # timestep, the current simulation time, and the system timestep itself (i.e. the time difference to
 # the last force computation).
-# `Nf` gives the number of particles that receive a force computation in the current timestep, 
+# `Nf` gives the number of particles that receive a force computation in the current timestep,
 # while `total-Nf` gives the total number of force computations since the simulation was started.
-# `work-load balance` gives the work-load balance in the actual tree walk, i.e. the largest 
+# `work-load balance` gives the work-load balance in the actual tree walk, i.e. the largest
 # required time of all the processors divided by the average time.
 # The number given by `max` is the maximum time (in seconds) among the processors spent for the tree walk,
 # while `avg` gives the average, and `PE0` the time for processor 0.
-# `particle-load balance` gives the maximum number of particles per processor divided by the 
+# `particle-load balance` gives the maximum number of particles per processor divided by the
 # average number, i.e. it measures the memory imbalance. An upper bound for this number is PartAllocFactor.
 # However, for technical reasons, the domain decomposition always leaves room for a few par-
 # ticles, hence this upper bound is never exactly reached. `max.nodes` informs about the maxi-
@@ -44,7 +44,7 @@ from itertools import zip_longest
 # ber gives the speed that would be achieved for perfect work-load balance. Due to work-load
 # imbalance, the actually achieved average effective force speed will always be lower in practice,
 # and this number is given after the vertical line.
-# `ia/part` gives the average number of particle node interactions required to compute the force 
+# `ia/part` gives the average number of particle node interactions required to compute the force
 # for each of the active particles.
 # The number in parenthesis is only non-zero if the Ewald correction is used to obtain periodic boundaries.
 # It then gives the average number of Ewald correction-forces evaluated per particle.
@@ -65,7 +65,7 @@ regex_float = r'(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 regex_int = r'\d+'
 g = regex_float
 i = regex_int
-ordered_columns = ["step", "t", "dt", 
+ordered_columns = ["step", "t", "dt",
                    "Nf", "tot_Nf", "ex", "iter",
                    "wl", "max", "avg", "PE0",
                    "plb",
