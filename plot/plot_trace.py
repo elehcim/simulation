@@ -69,7 +69,7 @@ def _plot_trace_df_old(df):
     plt.show()
 
 
-def main(filename):
+def main(filename=sys.argv[-1]):
     arr = load_trace(filename)
     plot_trace_np(arr)
 
