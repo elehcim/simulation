@@ -9,14 +9,28 @@ import numpy as np
 import pynbody
 from analyze_sumfiles import get_sumfile
 from parsers.parse_trace import parse_trace, parse_dens_trace
-from snap_io import load_moria, load_kicked, load_sim, make_snaps_path
+from snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
 from util import np_printoptions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+
 def find_sfh(snap, bins=100):
+    """
+
+    Parameters
+    ----------
+    snap : pynbody.SimSnap
+        Input snapshot
+    bins : int
+        Number of bins for SFH plot
+    Returns
+    -------
+    sfh, sfhtimes : 2-tuple of ndarray
+        the SFH in Msol/yr and the midpoints of the bins in Gyr
+    """
     trange = [snap.star['tform'].in_units("Gyr").min(), snap.star['tform'].in_units("Gyr").max()]
     binnorm = 1e-9*bins / (trange[1] - trange[0])
     tforms = snap.star['tform'].in_units('Gyr')
@@ -71,6 +85,18 @@ def plot_cog(cog, ax_cog=None, cur_snap=None, **kwargs):
 
 
 def get_param_used(path):
+    """
+    Parse the `parameters-usedvalues` files
+
+    Parameters
+    ----------
+    path : str
+        path of the simulation `out` directory
+
+    Returns
+    -------
+    A dictionary of {parameter: value}. Values are all strings.
+    """
     d = {}
     path = os.path.expanduser(path)
     if os.path.isdir(path):
@@ -86,9 +112,9 @@ def get_param_used(path):
                     k, v = line
                     d[k] = v
                 except ValueError as e:
-                    logger.warn("{}. But continuing".format(e))
+                    logger.warning("{}. But continuing".format(e))
     except FileNotFoundError as e:
-        logger.warn("Parameter file not found: {}. But continuing".format(e))
+        logger.warning("Parameter file not found: {}. But continuing".format(e))
         return None
     return d
 
@@ -128,7 +154,22 @@ class Simulation(object):
     cog = None
     _computed_cog = False
 
-    def __init__(self, sim_dir, sim_id=None, force_cosmo=False):
+    def __init__(self, sim_dir, snap_indexes=None, sim_id=None, force_cosmo=False):
+        """
+
+        Parameters
+        ----------
+        sim_dir : str
+            path of the simulation `out` dir
+        sim_id : str
+            Identification ID of the simulation. If None, `sim_dir` is used
+        snap_indexes : iterable (list, slice, tuple, int)
+            list of the snapshots to load. Example to take the last 10 snaps:
+                        `snap_indexes = slice(-10,None)`
+        force_cosmo : bool
+            Use default cosmology, do not read cosmological parameters from the snapshots.
+            It can be useful if the snapshots contain an incorrect value of OmegaM0 for example.
+        """
         # TODO join this __init__ with the Moria or Kicked class
         if sim_id is None:
             sim_id = sim_dir
@@ -137,15 +178,22 @@ class Simulation(object):
         logger.info("loading simulation: {}".format(sim_id))
         self.params = get_param_used(sim_dir)
         self.compiler_opts = get_compiler_options(sim_dir)
-        self.snap_list = self._load(sim_dir, force_cosmo)
+        self.snap_list = self._load(sim_dir, force_cosmo, snap_indexes)
         if len(self.snap_list) == 0:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
         self.trace = get_trace(sim_dir)
 
-    def _load(self, sim_id, force_cosmo=False):
-        snap_list = load_sim(sim_id)
+    def _load(self, sim_id, force_cosmo=False, snap_indexes=None):
+        snap_name_list = snapshot_file_list(os.path.expanduser(sim_id), include_dir=True)
+        logger.info("Found {} snapshots".format(len(snap_name_list)))
+        if snap_indexes is not None:
+            snap_name_list = snap_name_list[snap_indexes]
+            logger.info("Taking {} snapshots ({})".format(len(snap_name_list), snap_indexes))
+
+        snap_list = list(pynbody.load(snap) for snap in snap_name_list)
+
         logger.info('Loading cosmological parameters')
         for i, snap in enumerate(snap_list):
             if self.params is not None:
@@ -176,7 +224,7 @@ class Simulation(object):
     @property
     def is_moving_box(self):
         return self.trace is not None
-        # This should be the correct way but it is not consistent at the moment
+        # This should be the correct way but it is not usable at the moment:
         # given that up to now the simulations do not save the HOT_HALO flag on file
         # if self.compiler_opts is not None:
         #     return 'HOT_HALO' in self.compiler_opts
@@ -375,23 +423,25 @@ class Simulation(object):
         return ax_sfh
 
     #TODO
-    # def m_star(self, ax_m_star, snap_time_gyr=None, last_snap=-1, **kwargs):
-    #     if ax_m_star is None:
-    #         fig, ax_m_star = plt.subplots(1, figsize=(8,6))
-    #     # ignore AccuracyWarning that is issued when an integral is zero
-    #     import warnings
-    #     from scipy.integrate.quadrature import AccuracyWarning
-    #     np.zeros(len(self.snap_list), dtype=float)
-    #     self.snap_list[last_snap]
-    #     with warnings.catch_warnings():
-    #         warnings.filterwarnings("ignore", category=AccuracyWarning)
-    #         pynbody.plot.stars.m_star(self.snap_list[last_snap], subplot=ax_m_star, **kwargs)
-    #     if snap_time_gyr is not None:
-    #         ax_m_star.axvline(x=snap_time_gyr, linestyle="--")
-    #     # ax_m_star.set_title("m_star")
-    #     ax_m_star.set_xlabel("Time [Gyr]")
-    #     ax_m_star.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
-    #     return ax_m_star
+    """
+    def m_star(self, ax_m_star, snap_time_gyr=None, last_snap=-1, **kwargs):
+        if ax_m_star is None:
+            fig, ax_m_star = plt.subplots(1, figsize=(8,6))
+        # ignore AccuracyWarning that is issued when an integral is zero
+        import warnings
+        from scipy.integrate.quadrature import AccuracyWarning
+        np.zeros(len(self.snap_list), dtype=float)
+        self.snap_list[last_snap]
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=AccuracyWarning)
+            pynbody.plot.stars.m_star(self.snap_list[last_snap], subplot=ax_m_star, **kwargs)
+        if snap_time_gyr is not None:
+            ax_m_star.axvline(x=snap_time_gyr, linestyle="--")
+        # ax_m_star.set_title("m_star")
+        ax_m_star.set_xlabel("Time [Gyr]")
+        ax_m_star.set_ylabel("SFR [M$_\odot$ yr$^{-1}$]")
+        return ax_m_star
+    """
 
     def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, starsize=None, **kwargs):
         """Create figure with gas and star rendering from pynbody"""
@@ -628,4 +678,3 @@ if __name__ == '__main__':
     kicked=True
     sim = MoriaSim(SIMNUMBER, kicked)
     s = sim.snap_list[0]
-    s

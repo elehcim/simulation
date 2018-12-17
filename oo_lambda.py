@@ -34,6 +34,7 @@ class Photometry:
         self._ellip_0 = ELLIP_0
         self._theta_0 = THETA_0
         self.smajax = np.arange(a_min, a_max, a_delta)
+        self._sersic2D = None
 
     def fit(self, sb_lum, r_eff_pix, resolution, fit_profile=False, snap=None, fixed=None):
         if fit_profile:
@@ -65,6 +66,7 @@ class Photometry:
         return sersic2D
 
     # FIXME
+    """
     def fit_profile(self, snap, r_eff_pix):
         logger.info("Creating profile")
         r_bins, sbp = sb_profile(snap, band=self.band)
@@ -81,7 +83,7 @@ class Photometry:
 
         print_fit_results(sersic1D)
         return sersic1D
-
+    """
     @property
     def apertures(self):
         sminax = self.smajax * np.sqrt(1 - self.ellip)
