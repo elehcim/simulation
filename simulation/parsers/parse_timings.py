@@ -70,19 +70,21 @@ ordered_columns = ["step", "t", "dt",
                    "wl", "max", "avg", "PE0",
                    "plb",
                    "max_nodes", "filled",
-                   "part_sec", "boh", "ia_part"]
+                   "ps", "ps_real", "ia_part"]
 
 patterns = [r'Step= (?P<step>{})  t= (?P<t>{})  dt= (?P<dt>{})'.format(i, g, g),
             r'Nf= (?P<Nf>{})  total-Nf= (?P<tot_Nf>{})  ex-frac= (?P<ex>{})  iter= (?P<iter>{})'.format(i, i, g, i),
             r'work-load balance: (?P<wl>{})  max=(?P<max>{}) avg=(?P<avg>{}) PE0=(?P<PE0>{})'.format(g, g, g, g),
             r'particle-load balance: (?P<plb>{})'.format(g),
             r'max. nodes: (?P<max_nodes>{}), filled: (?P<filled>{})'.format(i, g),
-            r'part/sec=(?P<part_sec>{}) \| (?P<boh>{})  ia/part=(?P<ia_part>{})'.format(g, g, g)
+            r'part/sec=(?P<ps>{}) \| (?P<ps_real>{})  ia/part=(?P<ia_part>{})'.format(g, g, g)
 ]
 
 def parse_timings(fname="timings.txt"):
+    print("Reading...")
     with open(fname) as f:
         content = f.read().splitlines()
+    print("Parsing...")
     frames = list()
     for lines in grouper(content, 7):
         line_dict = {}
@@ -90,9 +92,11 @@ def parse_timings(fname="timings.txt"):
             d = re.match(patterns[i], line).groupdict()
             line_dict.update(d)
         frames.append(line_dict)
+    print('Converting to DataFrame...')
     df = pd.DataFrame(frames)
     # reorder columns
     df = df[ordered_columns]
+    print('Casting types...')
     # Convert to numerics
     for col in df.columns:
         df[col] = pd.to_numeric(df[col])

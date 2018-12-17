@@ -19,7 +19,7 @@ import asciiplotlib as apl
 
 
 class SimParticle(object):
-    """Common utilities to compute duration of a Simulation"""
+    """Common utilities to compute amount of particles of a Simulation"""
     def __init__(self, path, first=0, last=-1, width=50, height=15):
         self.path = path
         sim = simulation.Simulation(os.path.expanduser(self.path))

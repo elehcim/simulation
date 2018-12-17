@@ -8,13 +8,32 @@ import numpy as np
 
 # TODO these times (especially the timestamps) are UTC. We should convert it to local time
 
+
 def unix2time(t):
+    """
+
+    Parameters
+    ----------
+    t : int
+        UNIX time
+
+    Returns
+    -------
+    A string with the timestamp relative to the input UNIX time
+    """
     return datetime.fromtimestamp(t).strftime('%Y-%m-%d %H:%M:%S')
 
 
 class SnapTime(object):
-    """Contains time values of a GadgetSnap"""
+    """Contain time values of a GadgetSnap"""
     def __init__(self, snap):
+        """
+
+        Parameters
+        ----------
+        snap : pynbody.SimSnap
+            Snapshot
+        """
         # self._snap = snap
         self.time = snap.header.time
         self.number = int(snap.filename[-4:])
@@ -31,6 +50,17 @@ class SnapTime(object):
 class SimDuration(object):
     """Common utilities to compute duration of a Simulation"""
     def __init__(self, path, first=0, last=-1):
+        """
+
+        Parameters
+        ----------
+        path : str
+            path of the simulation
+        first : int
+            first snapshot index
+        last : int
+            last snapshot index
+        """
         self.path = path
         snaplist = snapshot_file_list(os.path.expanduser(self.path), include_dir=True)
         self.first_snap = pynbody.load(snaplist[first])
@@ -81,7 +111,6 @@ class SimDuration(object):
         return  unix2time(eta)
 
 
-
 def gyr_day(path):
     f, l = load_first_last_snap(path)
     dt_day = (os.path.getmtime(l.filename) - os.path.getmtime(f.filename))/3600/24
@@ -96,6 +125,7 @@ def gyr_day(path):
 #     times = np.array(times_map)
 #     plt.hist()
 
+
 def main(cli=None):
     parser = argparse.ArgumentParser("Display some info on the simulation duration")
     parser.add_argument(help='Path of the snapshots', dest='path')
@@ -103,6 +133,7 @@ def main(cli=None):
     parser.add_argument(default=-1, type=int, nargs='?', help='Last file (ordinal, default=-1)', dest='last')
     args = parser.parse_args(cli)
     print(SimDuration(args.path, args.first, args.last))
+
 
 if __name__ == '__main__':
     main()
