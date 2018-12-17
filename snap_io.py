@@ -28,7 +28,7 @@ def snapshot_file_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False
     return filelist
 
 def load_sim(snap_dir):
-    """Return a tuple of pynbody.SimSnap contained in the directory `snap_dir`"""
+    """Return a list of pynbody.SimSnap contained in the directory `snap_dir`"""
     snap_name_list = snapshot_file_list(os.path.expanduser(snap_dir), include_dir=True)
     logger.info("Found {} snapshots".format(len(snap_name_list)))
     snap_list = list(pynbody.load(snap) for snap in snap_name_list)
