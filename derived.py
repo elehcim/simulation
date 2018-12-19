@@ -1,7 +1,6 @@
-
 import pynbody
 from pynbody import filt
-
+from .units import gadget_time_units, gadget_acc_units
 
 ######################
 ## HYPLOT CODE  (hyplot/src/CParticle)
@@ -66,4 +65,18 @@ def acce_norm(self):
 def dt_acc(self, errtol=0.05, softening=0.03):
     return np.sqrt(2 * errtol * softening / self['acce_norm'])
 
-amu = pynbody.units.NamedUnit("amu", 1.660539e-27*pynbody.units.kg)
+
+#2 * All.CourantFac * SphP[p].Hsml / SphP[p].MaxSignalVel;
+@pynbody.derived_array
+def dt_courant(self, courant=0.1):
+    return (2 * courant * self['smooth'] / self['cs']).in_units(gadget_time_units)
+
+# @pynbody.derived_array
+# def acce_norm(self):
+#     arr = np.sqrt((self['acce'] ** 2).sum(axis=1))
+#     arr.units = gadget_acc_units
+#     return  arr
+
+# @pynbody.derived_array
+# def dt_acc(self, errtol=0.05, softening=0.03):
+#     return (np.sqrt(2 * errtol * softening / self['acce_norm'] * pynbody.units.kpc)).in_units('kpc km**-1 s')
