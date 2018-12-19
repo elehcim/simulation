@@ -82,6 +82,7 @@ class SimDuration(object):
     def __repr__(self):
         s =  "First created: {}\n".format(unix2time(self.f.creation))
         s += "Last created:  {}\n".format(unix2time(self.l.creation))
+        s += "Runtime:       {:.2f} days\n".format(self.runtime)
         s += "First time:    {}  ({})\n".format(self.f, self.f.number)
         s += "Last time:     {}  ({})\n".format(self.l, self.l.number)
         s += "Arrival:       {}\n".format(self.arrival)
@@ -101,6 +102,10 @@ class SimDuration(object):
     @property
     def gyr_day(self):
         return self._gyr_day
+
+    @property
+    def runtime(self):
+        return (self.l.creation - self.f.creation)/3600/24
 
     def eta(self):
         """Estimated time of arrival"""
