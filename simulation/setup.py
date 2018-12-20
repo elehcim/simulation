@@ -15,6 +15,7 @@ setup(name='simulation',
       entry_points={
           'console_scripts': ['sim_duration=sim_duration:main',
                               'plot_sfh=plot.plot_sfh:main',
-                              'plot_trace=plot.plot_trace:main']
+                              'plot_trace=plot.plot_trace:main',
+                              'plot_dt=plot.plot_dt:main']
       }
       )
