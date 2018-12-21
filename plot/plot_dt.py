@@ -14,16 +14,21 @@ def plot_dt(df):
     plt.ylabel('dt')
     plt.yscale('log', basey=2)
 
-    ax1 = plt.gca()
-    ax2 = ax1.twinx()
-    print(ax1.get_ylim())
-    ax2.set_ylim(ax1.get_ylim())
-    ax2.set_yscale('log', basey=10)
+    ax_2 = plt.gca()
+    ax_10 = ax_2.twinx()
+    ax_time = ax_2.twiny()
 
+    # print(ax1.get_ylim())
+    ax_10.set_ylim(ax_2.get_ylim())
+    ax_10.set_yscale('log', basey=10)
+
+    ax_time.set_xlim(df.t.min(), df.t.max())
     plt.show()
 
 def main(filename=sys.argv[-1]):
+    print("Parsing file {} ...".format(filename))
     df = parse_info(filename)
+    print("Plotting")
     plot_dt(df)
 
 
