@@ -36,6 +36,7 @@ def get_sumfile(sumfilepath, **kwargs):
     table.meta = meta
     return table
 
+
 if __name__ == '__main__':
     datpath = "/home/michele/sim/MoRIA/results/sumfiles/69002.dat"
     table = get_sumfile(datpath)
