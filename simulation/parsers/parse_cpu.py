@@ -11,12 +11,14 @@ header = ["tot", "grav", "hydro", "domain",
 "comm_sph", "imb_sph", "neigh_adj",
 "PM", "peano", "add_phys", "star"]
 
+
 header_new = ["tot", "grav", "hydro", "domain",
 "potential", "drift", "kick",
 "write_snap", "tree_walk", "tree_build",
 "comm", "imbalance", "sph",
 "comm_sph", "imb_sph", "neigh_adj",
 "PM", "peano", "add_phys", "star_hydro", "star_fb", "star"]
+
 
 def parse_cpu(fname="cpu.txt", new_format=False):
     with open(fname, "r") as f:
@@ -28,6 +30,7 @@ def parse_cpu(fname="cpu.txt", new_format=False):
     h = header_new if new_format else header
     df = pd.DataFrame(nums, columns=h)
     return df
+
 
 if __name__ == '__main__':
     df = parse_cpu(sys.argv[-1])

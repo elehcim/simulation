@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-from parsers.parse_info import parse_info
+from ..parsers.parse_info import parse_info
 
 def plot_dt(df):
     """

@@ -4,6 +4,7 @@ from itertools import tee
 import astropy.units as u
 import numpy as np
 
+
 def _pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
@@ -45,6 +46,7 @@ def sfh(sim_path):
     dt = np.append(dt, 0)
 
     return dt, sfr
+
 
 if __name__ == '__main__':
 

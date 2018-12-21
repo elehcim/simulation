@@ -7,6 +7,7 @@ from pprint import pprint
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
+
 def plot_sfh(sim, ax_sfh, label='SFR', plot_traj=False, color=None, r_range=None, **kwargs):
     pprint(sim.properties)
 
@@ -29,6 +30,7 @@ def plot_sfh(sim, ax_sfh, label='SFR', plot_traj=False, color=None, r_range=None
     lines, labels = ax_sfh.get_legend_handles_labels()
     ax_sfh.legend(lines + lines2, labels + labels2, loc=0)
     # plt.show()
+
 
 def main(cli=None):
     parser = argparse.ArgumentParser()

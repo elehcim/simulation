@@ -17,7 +17,7 @@ from bokeh.client import push_session
 from bokeh.plotting import figure, curdoc
 
 import re
-from parsers.parse_info import pattern
+from .parsers.parse_info import pattern
 
 # def push(step, dt):
 #     source.stream(dict(x=[step], y=[dt]), 1000)
