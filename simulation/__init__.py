@@ -7,10 +7,10 @@ from multiprocessing import Process, Queue
 import matplotlib.pylab as plt
 import numpy as np
 import pynbody
-from analyze_sumfiles import get_sumfile
-from parsers.parse_trace import parse_trace, parse_dens_trace
-from snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
-from util import np_printoptions
+from .analyze_sumfiles import get_sumfile
+from .parsers.parse_trace import parse_trace, parse_dens_trace
+from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
+from .util import np_printoptions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -149,13 +149,31 @@ def get_compiler_options(path):
 
 
 class Simulation(object):
-    """docstring for Simulation"""
+    """An object to work with Gadget2 simulations.
+
+    The usual content of a simulation folder of which a `Simulation` is aware of is the following:
+
+    simdir:
+      |- Gadget2 (executable)
+      |- Makefile
+      |- out/
+        |- compiler.txt
+        |- cpu.txt
+        |- energy.txt
+        |- info.txt
+        |- parameter-usedvalues
+        |- sfc.dat
+        |- timings.txt
+        |- [trace.txt]
+        |- [dens_temp_traceinfo.txt]
+    """
     _times = None
     cog = None
     _computed_cog = False
 
     def __init__(self, sim_dir, snap_indexes=None, sim_id=None, force_cosmo=False):
         """
+        Initialize a Simulation.
 
         Parameters
         ----------
