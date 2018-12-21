@@ -1,4 +1,4 @@
-from snap_io import snapshot_file_list
+from .snap_io import snapshot_file_list
 from datetime import datetime
 import pynbody
 import argparse

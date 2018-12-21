@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
-from snap_io import load_first_last_snap, snapshot_file_list
+from .snap_io import load_first_last_snap, snapshot_file_list
 
 path = "/home/michele/sim/MySimulations/mb.beta/beta_model.1/out"
 

@@ -1,6 +1,7 @@
 import pynbody
 from pynbody import filt
 from .units import gadget_time_units, gadget_acc_units
+import numpy as np
 
 ######################
 ## HYPLOT CODE  (hyplot/src/CParticle)

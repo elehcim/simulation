@@ -55,6 +55,7 @@ from itertools import zip_longest
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
+
 # from here https://stackoverflow.com/a/434411/1611927
 def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
@@ -79,6 +80,7 @@ patterns = [r'Step= (?P<step>{})  t= (?P<t>{})  dt= (?P<dt>{})'.format(i, g, g),
             r'max. nodes: (?P<max_nodes>{}), filled: (?P<filled>{})'.format(i, g),
             r'part/sec=(?P<ps>{}) \| (?P<ps_real>{})  ia/part=(?P<ia_part>{})'.format(g, g, g)
 ]
+
 
 def parse_timings(fname="timings.txt"):
     print("Reading...")

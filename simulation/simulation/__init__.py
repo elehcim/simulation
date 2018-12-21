@@ -62,7 +62,7 @@ def _cog_queue(snap, q):
     q.put(np.sum(mass * pos.transpose(), axis=1) / tot_mass)
 
 
-def my_cog(snap):
+def _my_cog(snap):
     mass = snap['mass']
     pos = snap['pos']
     tot_mass = mass.sum()

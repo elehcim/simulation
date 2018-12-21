@@ -2,7 +2,6 @@ import sys
 import os
 import simulation
 import matplotlib.pyplot as plt
-from parse_trace import parse_trace
 from pprint import pprint
 
 MB_BETA_SIM_PATH = '/media/michele/My Book/Michele/MySimulations/MovingBox/beta/'

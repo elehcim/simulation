@@ -10,9 +10,9 @@ import numpy as np
 import pynbody
 from photutils import EllipticalAnnulus
 
-from lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D, \
+from .lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D, \
     fit_sersic_1D, sb_profile
-from luminosity import surface_brightness, kpc2pix, pix2kpc
+from .luminosity import surface_brightness, kpc2pix, pix2kpc
 
 logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
 logger = logging.getLogger(__name__)

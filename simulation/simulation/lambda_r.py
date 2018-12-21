@@ -1,14 +1,17 @@
-import pynbody
-import numpy as np
+import logging
+from copy import deepcopy
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pynbody
 from astropy import units as u
 from astropy.modeling import models, fitting
-from photutils import isophote, aperture_photometry
-from photutils import CircularAperture, EllipticalAperture, EllipticalAnnulus
-from photutils.isophote import EllipseGeometry, Ellipse
-from luminosity import surface_brightness, color_plot, kpc2pix, pix2kpc
-from copy import deepcopy
-import logging
+from photutils import EllipticalAperture, EllipticalAnnulus
+from photutils import aperture_photometry
+from photutils.isophote import EllipseGeometry
+
+from .luminosity import surface_brightness, kpc2pix, pix2kpc
+
 logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

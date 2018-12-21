@@ -1,6 +1,6 @@
 import os
-from simulation import get_param_used
-from snap_io import load_first_last_snap, snapshot_file_list
+from . import get_param_used
+from .snap_io import load_first_last_snap, snapshot_file_list
 from datetime import datetime
 import pynbody
 import argparse
