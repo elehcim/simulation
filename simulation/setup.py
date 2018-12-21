@@ -10,9 +10,9 @@ setup(name='simulation',
       packages=['simulation', 'simulation.plot', 'simulation.parsers'],
       scripts=['simulation/scripts/get_maxid', 'simulation/scripts/read_header'],
       entry_points={
-          'console_scripts': ['sim_duration=sim_duration:main',
-                              'plot_sfh=plot.plot_sfh:main',
-                              'plot_trace=plot.plot_trace:main',
-                              'plot_dt=plot.plot_dt:main']
+          'console_scripts': ['sim_duration=simulation.sim_duration:main',
+                              'plot_sfh=simulation.plot.plot_sfh:main',
+                              'plot_trace=simulation.plot.plot_trace:main',
+                              'plot_dt=simulation.plot.plot_dt:main']
       }
       )
