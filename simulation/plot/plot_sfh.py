@@ -69,14 +69,12 @@ def main(cli=None):
         if sim.times.max() > t_max:
             t_max = sim.times.max()
         if traj:
-            if sim.is_moving_box:
-                r_min, r_max = sim.trace.r.min(), sim.trace.r.max()
-            else:
+            if not sim.is_moving_box:
                 sim.compute_cog(save_cache=True)
-                if sim.r.max() > r_max:
-                    r_max = sim.r.max()
-                if sim.r.min() < r_min:
-                    r_min = sim.r.min()
+            if sim.r.max() > r_max:
+                r_max = sim.r.max()
+            if sim.r.min() < r_min:
+                r_min = sim.r.min()
 
     for sim, traj, label, color in zip(sims, plot_traj, args.labels, colors):
         print(sim, label, color)

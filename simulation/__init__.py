@@ -296,7 +296,9 @@ class Simulation(object):
 
     @property
     def r(self):
-        if self.cog is not None:
+        if self.is_moving_box:
+            return self.trace.r
+        elif self.cog is not None:
             return np.linalg.norm(self.cog, axis=0)
 
     def get_times(self):
