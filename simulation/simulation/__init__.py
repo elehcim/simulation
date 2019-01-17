@@ -252,7 +252,10 @@ class Simulation(object):
     @property
     def properties(self):
         d = self.snap_list[0].properties.copy()
-        del d['time'], d['a']
+        for k in ('time', 'a'):
+            if k in d:
+                del d[k]
+        # del d['time'], d['a']
         d['time_begin'] = self.snap_list[0].properties['time'].in_units('Gyr')
         d['time_end'] = self.snap_list[-1].properties['time'].in_units('Gyr')
         d['z_begin'] = self.snap_list[0].header.redshift
