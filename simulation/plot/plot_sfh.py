@@ -36,7 +36,7 @@ def main(cli=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('sim_dir', nargs='+')
     parser.add_argument('--labels', nargs='+', default=None)
-    parser.add_argument('-t', '--traj', action='store_true')
+    # parser.add_argument('-t', '--traj', action='store_true')
     parser.add_argument('-b', '--bins', help='Number of bins', default=50, type=int)
     args = parser.parse_args(cli)
 
@@ -46,39 +46,42 @@ def main(cli=None):
     fig, ax_sfh = plt.subplots(1, figsize=figsize, dpi=dpi)
     if args.labels is None:
         args.labels = ['SFR{}'.format(i) for i in range(len(args.sim_dir))]
-    
+
     # loading
     sims = []
     plot_traj = []
     for sim_dir in args.sim_dir:
         force_cosmo = False
-        if 'MoRIA' in sim_dir:
+        if 'MoRIA' in sim_dir:  ## if it is isolated
             force_cosmo = True
             plot_traj.append(False)
         else:
             plot_traj.append(True)
         sim = simulation.Simulation(sim_dir, force_cosmo=force_cosmo)
         sims.append(sim)
-    
+
     t_max = 0
     r_min, r_max = np.inf, 0
-    
+
     # preprocessing
     for sim, traj in zip(sims, plot_traj):
         # compute t_max
         if sim.times.max() > t_max:
             t_max = sim.times.max()
         if traj:
-            sim.compute_cog(save_cache=True)
-            if sim.r.max() > r_max:
-                r_max = sim.r.max()
-            if sim.r.min() < r_min:
-                r_min = sim.r.min()
+            if sim.is_moving_box:
+                r_min, r_max = sim.trace.r.min(), sim.trace.r.max()
+            else:
+                sim.compute_cog(save_cache=True)
+                if sim.r.max() > r_max:
+                    r_max = sim.r.max()
+                if sim.r.min() < r_min:
+                    r_min = sim.r.min()
 
     for sim, traj, label, color in zip(sims, plot_traj, args.labels, colors):
         print(sim, label, color)
         fig.canvas.set_window_title(sim.sim_id)
-        plot_sfh(sim, ax_sfh, label, plot_traj=traj, 
+        plot_sfh(sim, ax_sfh, label, plot_traj=traj,
                  range=[0, t_max], color=color, r_range=[r_min, r_max], bins=args.bins)
     plt.show()
 
