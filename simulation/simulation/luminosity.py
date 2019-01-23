@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
 
-
+# from an old version of this table. The value in the table have been updated recently, this values are consistent with pynbody
+# http://mips.as.arizona.edu/~cnaw/sun.html
 sun_abs_magnitudes = {'u':5.56, 'b':5.45, 'v':4.8, 'r':4.46, 'i':4.1, 'j':3.66, 'h':3.32, 'k':3.28}
 
 
@@ -19,8 +20,10 @@ def pix2kpc(qty_pix, width, resolution):
 
 def convert_to_mag_arcsec2(image, band):
     """Convert a pynbody.SimArray of luminosity density to one in mag/arcsec^2
-    
-    At 10 pc (distance for absolute magnitudes), 1 arcsec is 10 AU=1/2.06e4 pc
+
+    At 10 pc (distance for absolute magnitudes), 1 arcsec is 10 AU = 4.848e-5 pc = (1/2.06e4) pc
+    In [4]: (np.tan(np.pi/180/3600)*10.0)
+    Out[4]: 4.848e-5
     In [5]: (np.tan(np.pi/180/3600)*10.0)**2
     Out[5]: 2.3504430539466191e-09
     1 square arcsecond is thus 2.35e-9 pc^2
@@ -32,7 +35,7 @@ def convert_to_mag_arcsec2(image, band):
 
 
 def surface_brightness(snap, band='v', width=10, resolution=500, center=False, lum_pc2=False, noplot=False,
-                       mag_filter=None, gaussian_sigma=None, subplot=None, show_cbar=True, cax=None, 
+                       mag_filter=None, gaussian_sigma=None, subplot=None, show_cbar=True, cax=None,
                        cmap_name='viridis', title=None, isophotes=0, label_contour=True, **kwargs):
     """
     Plot and returns the surface brightness in mag/arcsec^2 as defined by `band`.
@@ -77,8 +80,14 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
 
     snap.s[lum_density_name].units = snap.s['rho'].units/snap.s['mass'].units
 
-    pc2 = pynbody.plot.sph.image(snap.s, qty=lum_density_name, units='pc^-2',
+    try:
+        # snap.s['smooth'] /= 2
+        pc2 = pynbody.plot.sph.image(snap.s, qty=lum_density_name, units='pc^-2',
                                  noplot=True, width=width, resolution=resolution)
+    finally:
+        # snap.s['smooth'] *= 2
+        pass
+
     if lum_pc2:
         sb = pc2
     else:
@@ -119,7 +128,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
         else:
             cbar_label = '$\mu_{}$ [mag/arcsec$^2$]'.format(band.upper())
 
-        from mpl_toolkits.axes_grid1.axes_grid import CbarAxes  
+        from mpl_toolkits.axes_grid1.axes_grid import CbarAxes
 
         if isinstance(cax, CbarAxes):
             cbar = cax.colorbar(img)
@@ -138,7 +147,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
             levels = np.linspace(sb.min(), sb.max(), isophotes, dtype=np.int)
         else:
             levels = isophotes
-        cont = ax.contour(sb, levels=levels, extent=extent) #  cmap='flag' # very visible countours 
+        cont = ax.contour(sb, levels=levels, extent=extent) #  cmap='flag' # very visible countours
         if label_contour:
             ax.clabel(cont, inline=1, fmt='%1.0f')
     if title is not None:
@@ -200,7 +209,7 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, g
         sigma_pix = kpc2pix(gaussian_sigma, width, resolution)
         print("Smoothing with gaussian kernel with sigma = {} pixel".format(sigma_pix))
         color = gaussian_filter(color, sigma_pix)
-        
+
         # from astropy.convolution import Gaussian2DKernel, convolve
         # gaussian_2D_kernel = Gaussian2DKernel(sigma_pix)
         # color = convolve(color, gaussian_2D_kernel)
