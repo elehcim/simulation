@@ -3,6 +3,7 @@ import pynbody
 from itertools import tee
 import astropy.units as u
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def _pairwise(iterable):
@@ -12,9 +13,7 @@ def _pairwise(iterable):
     return zip(a, b)
 
 
-def sfh(sim_path):
-    sim = simulation.Simulation(sim_path)
-
+def sfh(sim):
     ns = list()
     ns_idx = list()
     new_stars = list()
@@ -32,8 +31,8 @@ def sfh(sim_path):
         mf.append(np.sum(a1.s['massform'][idx].in_units('Msol')).view(np.ndarray))
         dts.append(a1.header.time - a0.header.time)
 
-    mf.append(0)
-    dts.append(np.inf)
+    # mf.append(0)
+    # dts.append(np.inf)
 
     massformed = np.array(mf)
     dt = np.array(dts)
@@ -42,14 +41,27 @@ def sfh(sim_path):
 
     sfr = (massformed) / (dt * t_conv_fac)
     # lets finish with a zero:
-    sfr = np.append(sfr, 0)
-    dt = np.append(dt, 0)
+    # sfr = np.append(sfr, 0)
+    # dt = np.append(dt, 0)
 
     return dt, sfr
 
+def plot_sfh(sim, ax=None):
+    dt, sfr = sfh(sim)
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    # pynbody.plot.stars.sfh(sim.snap_list[-1], subplot=ax, bins=len(sim), trange=sim.t_range)
+    # ax1.grid()
+    ax.plot(sim.times[:-1], sfr)
+    # ax.set_ylim(0, None)
+    # ax.grid()
+    ax.set_xlabel('time')
+    ax.set_ylabel('SFR [Msol/yr]')
+    return ax
 
 if __name__ == '__main__':
-
 
     SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 
@@ -85,8 +97,6 @@ if __name__ == '__main__':
 
     conv_fac = (u.kpc/(u.km/u.s)).to(u.Gyr)
     dt, sfr = sfh(SIM_PATH)
-
-    import matplotlib.pyplot as plt
 
     fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(12,4))
 
