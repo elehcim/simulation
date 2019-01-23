@@ -148,10 +148,10 @@ def get_compiler_options(path):
     return ll
 
 
-class Simulation(object):
+class Simulation:
     """An object to work with Gadget2 simulations.
 
-    The usual content of a simulation folder of which a `Simulation` is aware of is the following:
+    The usual content of a simulation folder which `Simulation` can read is the following:
 
     simdir:
       |- Gadget2 (executable)
@@ -631,19 +631,19 @@ class MoriaSim(Simulation):
 
         # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
         # super(MoriaSim, self).__init__(sim_id)
-        self._load(sim_id, kicked)
-        sumfile_path = os.path.join(self._sf_moria, sim_id + ".dat")
+        self._load()
+        sumfile_path = os.path.join(self._sf_moria, self.sim_id + ".dat")
         if os.path.isfile(sumfile_path):
             logger.info("Getting sumfile: {}".format(sumfile_path))
-            self.sumfile = get_sumfile(os.path.join(self._sf_moria, sim_id + ".dat"))
+            self.sumfile = get_sumfile(os.path.join(self._sf_moria, self.sim_id + ".dat"))
         else:
             logger.info("No sumfile found")
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
-    def _load(self, sim_id, kicked):
-        logger.info("loading simulation: {}".format(sim_id))
-        self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
-        self._sim_dir = make_snaps_path(sim_id, kicked)
+    def _load(self):
+        logger.info("loading simulation: {}".format(self.sim_id))
+        self.snap_list = load_kicked(self.sim_id) if self.kicked else load_moria(self.sim_id)
+        self._sim_dir = make_snaps_path(self.sim_id, self.kicked)
 
         # Overwrite and fix cosmological parameters
         print('Fixing cosmological parameters of MoRIA simulation')

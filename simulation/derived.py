@@ -41,18 +41,18 @@ import numpy as np
 
 # popIII_filt = filt.BandPass('feh', -5, 100)
 
-MgFe_sol = -0.261299
-FeH_sol = -2.756433
+MgFe_corr = -0.261299
+FeH_corr = -2.756433
 
 @pynbody.derived_array
 def mgfe(snap):
-    arr = np.log10(snap.s['mgst_sph']/snap.s['fest_sph']) - MgFe_sol
+    arr = np.log10(snap.s['mgst_sph']/snap.s['fest_sph']) - MgFe_corr
     arr[np.logical_or(snap.s['mgst_sph'] == 0.0, snap.s['fest_sph'] == 0.0)] = 0.471782
     return arr
 
 @pynbody.derived_array
 def feh(snap):
-    arr = np.log10(snap.s['fest_sph']/snap.s['mass_sph']) - FeH_sol
+    arr = np.log10(snap.s['fest_sph']/snap.s['mass_sph']) - FeH_corr
     arr[np.logical_or(snap.s['fest_sph'] == 0.0, snap.s['mass_sph'] == 0.0)] = -98.0
     return arr
 
