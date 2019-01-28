@@ -14,9 +14,22 @@ def _pairwise(iterable):
 
 
 def sfh(sim):
+    """
+    Returns the Star Formation Rate
+
+    It computes the total mass of stars born between two snapshots.
+    The new stars are spotted using the particle IDs
+    which are new w.r.t. the previous snapshot.
+
+    Returns:
+    --------
+    dt: np.ndarray
+        the delta-time of each snapshot w.r.t. the previous. (Gyr)
+    sfr: np.ndarray
+        the mass of star formed between snapshot n and n-1. (Msol)
+    """
     ns = list()
     ns_idx = list()
-    new_stars = list()
     snaps = sim
     for (a0, a1) in _pairwise(snaps):
         s0, s1 = a0.s['iord'].view(np.ndarray), a1.s['iord'].view(np.ndarray)
@@ -39,7 +52,7 @@ def sfh(sim):
 
     t_conv_fac = (u.kpc/(u.km/u.s)).to(u.yr)
 
-    sfr = (massformed) / (dt * t_conv_fac)
+    sfr = (massformed) / (dt * t_conv_fac)  # Msol/yr
     # lets finish with a zero:
     # sfr = np.append(sfr, 0)
     # dt = np.append(dt, 0)
