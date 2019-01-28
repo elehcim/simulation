@@ -240,6 +240,12 @@ class Simulation:
         return self.snap_list[idx]
 
     @property
+    def peri(self):
+        i = self._sim_dir.find('_p')
+        j = self._sim_dir.find('_a')
+        return self._sim_dir[i+2:j]
+
+    @property
     def is_moving_box(self):
         return self.trace is not None
         # This should be the correct way but it is not usable at the moment:
