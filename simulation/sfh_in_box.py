@@ -37,15 +37,12 @@ def sfh(sim):
         ns_idx.append(np.where(np.isin(s1, new_stars))[0])
         ns.append(new_stars)
 
-    # time contains left border of the time bin
-    mf = list()
-    dts = list()
+    # `dts` contains right borders of the time bin
+    mf = [0.0]
+    dts = [0.0]
     for (idx, (a0, a1)) in zip(ns_idx, _pairwise(snaps)):
         mf.append(np.sum(a1.s['massform'][idx].in_units('Msol')).view(np.ndarray))
         dts.append(a1.header.time - a0.header.time)
-
-    # mf.append(0)
-    # dts.append(np.inf)
 
     massformed = np.array(mf)
     dt = np.array(dts)
@@ -53,9 +50,6 @@ def sfh(sim):
     t_conv_fac = (u.kpc/(u.km/u.s)).to(u.yr)
 
     sfr = (massformed) / (dt * t_conv_fac)  # Msol/yr
-    # lets finish with a zero:
-    # sfr = np.append(sfr, 0)
-    # dt = np.append(dt, 0)
 
     return dt, sfr
 
