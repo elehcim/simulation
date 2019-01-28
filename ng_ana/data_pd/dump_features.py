@@ -2,7 +2,7 @@ import os
 import simulation
 import pynbody
 import numpy as np
-import ipywidgets
+import pandas as pd
 import tqdm
 import pickle
 from simulation.sfh_in_box import sfh, plot_sfh, plot_binned_sfh
@@ -40,9 +40,9 @@ def dump_features(sim, output_name, radius=5, do_sfr=True):
     # DUMP
     times = sim.times
     if do_sfr:
-	    _, sfr = sfh(sim)
+        _, sfr = sfh(sim)
     else:
-    	sfr = np.ones(len(times) + 1) * np.nan
+        sfr = np.ones(len(times) + 1) * np.nan
 
     data = [np.array(times), np.array(mass), np.array(sigma_star),
             np.array(sigma_gas), np.array(r_eff), np.array(sfr)]
@@ -51,13 +51,18 @@ def dump_features(sim, output_name, radius=5, do_sfr=True):
 
 def make_df(pickle_file):
     # Gyr, Msol,   km/s    ,  km/s    , kpc  ,Msol/yr
-    times, mass_star, sigma_star, sigma_gas, r_eff,   sfr    = pickle.load(open(filename, 'rb'))
-    df = pd.DataFrame({'t': times, 'mass_star':mass, 'sigma_star':sigma_star, 'sigma_gas':sigma_gas, 'r_eff':r_eff, 'sfr':np.append(sfr, np.nan)})
+    times, mass_star, sigma_star, sigma_gas, r_eff,   sfr    = pickle.load(open(pickle_file, 'rb'))
+    df = pd.DataFrame({'t': times,
+                       'mass_star':mass_star,
+                       'sigma_star':sigma_star,
+                       'sigma_gas':sigma_gas,
+                       'r_eff':r_eff,
+                       'sfr':sfr})
     return df
 
 if __name__=='__main__':
-	moria_list = [62002, 71002, 69002]
-	radius = 5
+    moria_list = [62002, 71002, 69002]
+    radius = 5
     for moria_name in moria_list:
         moria = simulation.MoriaSim(str(moria_name))
         dump_features(moria, "moria{}.pickle".format(moria_name), radius=radius, do_sfr=False)
