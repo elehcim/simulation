@@ -53,6 +53,55 @@ def sfh(sim):
 
     return dt, sfr
 
+
+def binned_sfh(sim, bins=100):
+    if ax is None:
+        fig, ax = plt.subplots()
+    dt, sfr = sfh(sim)
+    thebins = np.histogram_bin_edges(sim.times, bins=bins)
+    hist, binedges = np.histogram(sim.times, bins=thebins, weights=sfr*(thebins[1] - thebins[0]))  # FIXME WHY?
+    return hist, binedges
+
+
+def plot_binned_sfh(sim, bins=100, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    hist, binedges = binned_sfh(sim, bins)
+
+    # from here: https://stackoverflow.com/a/18611135
+    left,right = binedges[:-1], binedges[1:]
+    X = np.array([left,right]).T.flatten()
+    Y = np.array([hist,hist]).T.flatten()
+    ax.step(X,Y)
+
+    max_sfr = np.max(hist)
+    if ax.get_ylim()[1] < 1.2 * max_sfr:
+        ax.set_ylim(0.0, 1.2 * max_sfr)
+    ax.set_xlabel('Time [Gyr]')
+    ax.set_ylabel('SFR [Msol/yr]')
+    return ax
+
+def plot_binned_sfh_old(sim, bins=100, ax=None, in_gyr=True):
+    if ax is None:
+        fig, ax = plt.subplots()
+    dt, sfr = sfh(sim)
+    sfh_t = sim[0].header.time + np.cumsum(dt)
+
+    if in_gyr:
+        from simulation.units import gadget_time_units, gadget_dens_units
+        conv_fac = gadget_time_units.in_units('Gyr')
+        sfh_t *= conv_fac
+        ax.set_xlabel('Time [Gyr]')
+    else:
+        ax.set_xlabel('Time')
+    mybins = np.linspace(sfh_t[0], sfh_t[-1], bins)
+    # binwidth = sfh_t[1] - sfh_t[0]
+    sfhist, thebins, patches = ax.hist(sfh_t, weights=sfr, bins=bins, histtype='step')
+
+    ax.set_ylabel('SFR [Msol/yr]')
+    return ax
+
 def plot_sfh(sim, ax=None):
     dt, sfr = sfh(sim)
 
@@ -61,11 +110,12 @@ def plot_sfh(sim, ax=None):
 
     # pynbody.plot.stars.sfh(sim.snap_list[-1], subplot=ax, bins=len(sim), trange=sim.t_range)
     # ax1.grid()
-    ax.plot(sim.times[:-1], sfr)
-    # ax.set_ylim(0, None)
-    # ax.grid()
+    ax.plot(sim.times, sfr)
     ax.set_xlabel('time')
     ax.set_ylabel('SFR [Msol/yr]')
+    max_sfr = np.max(sfr)
+    if ax.get_ylim()[1] < 1.2 * max_sfr:
+        ax.set_ylim(0.0, 1.2 * max_sfr)
     return ax
 
 if __name__ == '__main__':
