@@ -4,11 +4,11 @@ from dump_features import dump_features
 import pickle
 import matplotlib.pylab as plt
 import numpy as np
-
+import glob
 
 SIMPATH = '/home/michele/sim/MySimulations/ng'
 
-good_sims = glob.glob(os.path.join(SIMPATH, 'mb*'))
+good_sims = sorted(glob.glob(os.path.join(SIMPATH, 'mb*')))
 
 def get_sim_traj(sim_name):
     s, t = sim_name.split('002_')
