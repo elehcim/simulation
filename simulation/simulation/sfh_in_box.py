@@ -66,7 +66,7 @@ def binned_sfh(sim, bins=100):
     return hist, binedges
 
 
-def plot_binned_sfh(sim, bins=100, ax=None, **kwargs):
+def plot_binned_sfh(sim, bins=100, ax=None, drawstyle='steps', **kwargs):
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -76,7 +76,7 @@ def plot_binned_sfh(sim, bins=100, ax=None, **kwargs):
     left, right = binedges[:-1], binedges[1:]
     X = np.array([left, right]).T.flatten()
     Y = np.array([hist, hist]).T.flatten()
-    ax.step(X,Y, **kwargs)
+    ax.plot(X,Y, drawstyle=drawstyle, **kwargs)
 
     max_sfr = np.max(hist)
     if ax.get_ylim()[1] < 1.2 * max_sfr:
