@@ -29,6 +29,7 @@ def dump_features(sim, output_name, radius=5, do_sfr=True):
     r_eff = list()
     sigma_star = list()
     sigma_gas = list()
+    metals_star = list()
 
     for snap in tqdm.tqdm(sim.snap_list):
         pynbody.analysis.halo.center(snap.s, vel=False)
@@ -37,6 +38,8 @@ def dump_features(sim, output_name, radius=5, do_sfr=True):
         r_eff.append(pynbody.analysis.luminosity.half_light_r(snap.s[sphere_r_eff]))
         sigma_star.append(sigma(snap.s[sphere]['vel']))
         sigma_gas.append(sigma(snap.g[sphere]['vel']))
+        metals_star.append(snap.s[sphere]['metals'].sum())
+        #TODO
 
     # DUMP
     times = sim.times
@@ -51,8 +54,11 @@ def dump_features(sim, output_name, radius=5, do_sfr=True):
                  'sigma_star':np.array(sigma_star) * u.km/u.s,
                  'sigma_gas':np.array(sigma_gas) * u.km/u.s,
                  'r_eff':np.array(r_eff) * u.kpc,
-                 'sfr':np.array(sfr) * u.solMass/u.yr})
-    tbl.write(output_name, format='fits')
+                 'sfr':np.array(sfr) * u.solMass/u.yr,
+                 'metals_star':np.array(metals_star),
+                 },
+                 )
+    tbl.write(output_name, format='fits', overwrite=True)
 
 def make_df(pickle_file):
     # Gyr, Msol,   km/s    ,  km/s    , kpc  ,Msol/yr
