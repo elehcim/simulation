@@ -9,9 +9,9 @@ import numpy as np
 # double CGasParticle::mgfe() const
 # {
 #   if (fe() != 0. && mg() != 0.)
-#   	return log10(mg() / fe()) + 0.261299;
+#       return log10(mg() / fe()) + 0.261299;
 #   else
-# 	return 0.471782;// -0.545184746714;
+#   return 0.471782;// -0.545184746714;
 # }
 # //______________________________________________________________________________
 # /*!
@@ -44,16 +44,31 @@ import numpy as np
 MgFe_corr = -0.261299
 FeH_corr = -2.756433
 
+
 @pynbody.derived_array
 def mgfe(snap):
-    arr = np.log10(snap.s['mgst_sph']/snap.s['fest_sph']) - MgFe_corr
-    arr[np.logical_or(snap.s['mgst_sph'] == 0.0, snap.s['fest_sph'] == 0.0)] = 0.471782
+    nn = pynbody.config['sph']['smooth-particles']
+    pynbody.sph.build_tree_or_trees(snap)
+    snap.kdtree.set_array_ref('smooth',snap['smooth'])
+    snap.kdtree.set_array_ref('mass',snap['mass'])
+    snap.kdtree.set_array_ref('rho',snap['rho'])
+    snap['mgst_sph'] = snap.kdtree.sph_mean(snap['mgst'], nn)
+    snap['fest_sph'] = snap.kdtree.sph_mean(snap['fest'], nn)
+    arr = np.log10(snap['mgst_sph']/snap['fest_sph']) - MgFe_corr
+    arr[np.logical_or(snap['mgst_sph'] == 0.0, snap['fest_sph'] == 0.0)] = 0.471782
     return arr
 
 @pynbody.derived_array
 def feh(snap):
-    arr = np.log10(snap.s['fest_sph']/snap.s['mass_sph']) - FeH_corr
-    arr[np.logical_or(snap.s['fest_sph'] == 0.0, snap.s['mass_sph'] == 0.0)] = -98.0
+    nn = pynbody.config['sph']['smooth-particles']
+    pynbody.sph.build_tree_or_trees(snap)
+    snap.kdtree.set_array_ref('smooth',snap['smooth'])
+    snap.kdtree.set_array_ref('mass',snap['mass'])
+    snap.kdtree.set_array_ref('rho',snap['rho'])
+    snap['fest_sph'] = snap.kdtree.sph_mean(snap['fest'], nn)
+    snap['mass_sph'] = snap.kdtree.sph_mean(snap['mass'], nn)
+    arr = np.log10(snap['fest_sph']/snap['mass_sph']) - FeH_corr
+    arr[np.logical_or(snap['fest_sph'] == 0.0, snap['mass_sph'] == 0.0)] = -98.0
     return arr
 
 
