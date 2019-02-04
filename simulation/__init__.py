@@ -11,6 +11,8 @@ from .analyze_sumfiles import get_sumfile
 from .parsers.parse_trace import parse_trace, parse_dens_trace
 from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
 from .util import np_printoptions
+from .plot.plot_trace import plot_trace, plot_trace_df
+from .sfh_in_box import plot_binned_sfh
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -517,12 +519,22 @@ class Simulation:
                 # TODO fix negative position of axes
                 #  [left, bottom, width, height]
                 ax_sfh = fig.add_axes([0.1,  -0.3, 0.35, 0.26])
-                self.plot_sfh(ax_sfh, snap_time_gyr)
+                if self.is_moving_box:
+                    plot_binned_sfh(self, bins=100, ax=ax_sfh, drawstyle='steps')
+                    ax_sfh.axvline(x=snap_time_gyr, linestyle="--")
+                else:
+                    self.plot_sfh(ax_sfh, snap_time_gyr)
 
             if cog:
                 ax_cog = fig.add_axes([0.63,  -0.3, 0.26, 0.26])
-                self.plot_cog(ax_cog, i)
-
+                if self.is_moving_box:
+                    plot_trace_df(self.trace, ax=ax_cog)
+                    idx = int(np.digitize(snap.properties['time'], self.trace.t))
+                    cur_pos = self.trace.iloc[idx]
+                    ax_cog.scatter(cur_pos.x, cur_pos.y, color="red", marker='o', facecolors='none')
+                    ax_cog.scatter(0, 0, marker='+', color="b")
+                else:
+                    self.plot_cog(ax_cog, i)
             title = '$t={:5.2f}$ Gyr, snap={}'.format(snap_time_gyr, snap_num)
             if velocity_proj:
                 with np_printoptions(precision=2):
