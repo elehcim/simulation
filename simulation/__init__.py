@@ -194,6 +194,7 @@ class Simulation:
         self.sim_id = sim_id
         self._sim_dir = sim_dir
         logger.info("loading simulation: {}".format(sim_id))
+        self.trace = get_trace(sim_dir)
         self.params = get_param_used(sim_dir)
         self.compiler_opts = get_compiler_options(sim_dir)
         self.snap_list = self._load(sim_dir, force_cosmo, snap_indexes)
@@ -201,7 +202,6 @@ class Simulation:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
-        self.trace = get_trace(sim_dir)
 
     def _load(self, sim_id, force_cosmo=False, snap_indexes=None):
         snap_name_list = snapshot_file_list(os.path.expanduser(sim_id), include_dir=True)
@@ -211,6 +211,15 @@ class Simulation:
             logger.info("Taking {} snapshots ({})".format(len(snap_name_list), snap_indexes))
 
         snap_list = list(pynbody.load(snap) for snap in snap_name_list)
+
+        if self.is_moving_box:
+            logger.info('Fixing boxsize')
+            if self.params is not None:
+                boxsize = float(self.params['BoxSize'])
+                for snap in snap_list:
+                    snap.properties['boxsize'] = boxsize * pynbody.units.kpc
+            else:
+                logger.warn('Cannot read boxsize from parameter file')
 
         logger.info('Loading cosmological parameters')
         for i, snap in enumerate(snap_list):
@@ -223,7 +232,7 @@ class Simulation:
                 self.boxsize = snap.properties.get('boxsize', None)
             if force_cosmo:
                 if i == 0:
-                    logger.info('Forcing cosmological parameters (h=0.7, omegaL0=0.72, omegaM0=0.28')
+                    logger.info('Forcing cosmological parameters (h=0.7, omegaL0=0.72, omegaM0=0.28)')
                 snap.properties['h']= 0.7
                 snap.properties['omegaL0']= 0.72
                 snap.properties['omegaM0']= 0.28
