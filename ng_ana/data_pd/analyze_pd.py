@@ -6,6 +6,8 @@ import matplotlib.pylab as plt
 import numpy as np
 import glob
 
+from astropy.table import Table
+
 SIMPATH = '/home/michele/sim/MySimulations/ng'
 
 good_sims = sorted(glob.glob(os.path.join(SIMPATH, 'mb*')))
@@ -25,14 +27,12 @@ if __name__ == '__main__':
         sim = simulation.Simulation(sim_path, snap_indexes=slice(None, None, 1))
         load_pickle = False
         radius = 5
-        outname = '{}_{}_s{}.pickle'.format(SIM, TRAJ, radius)
-        if load_pickle:
-            times, mass, sigma_star, sigma_gas, r_eff, sfr = pickle.load(open(outname, 'rb'))
-        else:
-            if not os.path.isfile(outname):
-                dump_features(sim, outname, radius=radius)
-            times, mass, sigma_star, sigma_gas, r_eff, sfr = pickle.load(open(outname, 'rb'))
+        outname = '{}_{}_s{}.fits'.format(SIM, TRAJ, radius)
+        if not os.path.isfile(outname):
+            dump_features(sim, outname, radius=radius)
 
+    # Read last table
+    tbl = Table.read(outname)
         # fig, ax = plt.subplots()
         # im = ax.scatter(mass, sigma_star, c=sim.times)
         # cbar = fig.colorbar(im)
