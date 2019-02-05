@@ -9,8 +9,7 @@ from simulation.sfh_in_box import binned_sfh, plot_binned_sfh
 import tqdm
 import astropy.units as u
 from simulation.derived import feh, mgfe
-
-from my_angmom_rotations import mysideon, myfaceon
+from simulation.angmom import sideon
 
 SIM_NUM = 62002
 
@@ -27,8 +26,8 @@ for peri in PERI_LIST:
     dens = {}
     for i, snap in enumerate(tqdm.tqdm(sim)):
         try:
-            # myfaceon(snap.s)
-            mysideon(snap.s)
+            # faceon(snap.s)
+            sideon(snap.s)
             # print(snap.s)
             snap.properties['eps'] = 0.03
             p = pynbody.analysis.profile.Profile(snap.s, max=4, nbins=100, type='lin', ndim=2)
