@@ -24,11 +24,11 @@ if __name__ == '__main__':
         SIM, TRAJ = get_sim_traj(sim_name)
         sim_path = os.path.join(SIMPATH, "{}_{}".format(SIM, TRAJ), "out")
         print(sim_name)
-        sim = simulation.Simulation(sim_path, snap_indexes=slice(None, None, 1))
         load_pickle = False
         radius = 5
         outname = '{}_{}_s{}.fits'.format(SIM, TRAJ, radius)
         if not os.path.isfile(outname):
+            sim = simulation.Simulation(sim_path, snap_indexes=slice(None, None, 1))
             dump_features(sim, outname, radius=radius)
 
     # Read last table
