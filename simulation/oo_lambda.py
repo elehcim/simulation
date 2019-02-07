@@ -328,7 +328,7 @@ def simulation_ssam(sim_path, args):
             maps_dict['mag'].append(ssam.sb_mag)
             f.write(result_str + '\n')
             f.flush()
-            if i==5:break
+
     fits_data_file = data_out_name+'.fits'
     logger.info('Writing final table {}'.format(fits_data_file))
     tbl = Table(rows=result_list, names=RESULT_COL)
