@@ -186,6 +186,7 @@ def adjust_cbar_range(cbar_range):
         return None, None
     return m, M
 
+
 def plot_maps(sb, vlos, sigma, width, resolution, band=None,
               sb_range=None, v_los_range=None, sigma_range=None):
     from mpl_toolkits.axes_grid1 import AxesGrid
