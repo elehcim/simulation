@@ -12,6 +12,7 @@ results/
 data/
 ssam_data/
 *.mp4
+*.fits
 
 # python datafile
 *.npz
