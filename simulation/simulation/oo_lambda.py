@@ -11,10 +11,10 @@ import pynbody
 from astropy.table import Table
 from photutils import EllipticalAnnulus
 
-from .units import gadget_time_units
-from .lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D
-from .luminosity import surface_brightness, kpc2pix, pix2kpc
-from .util import setup_logger
+from simulation.units import gadget_time_units
+from simulation.lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D
+from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
+from simulation.util import setup_logger
 
 logger = setup_logger('__name__', logger_level='INFO')
 
@@ -302,7 +302,7 @@ def simulation_ssam(sim_path, args):
     d = args.__dict__.copy()
     d['snap_name'] = 'data'
     data_out_name = get_outname(**d)
-
+    maps_dict = dict(vlos=list(), sig=list(), mag=list())
     # data_out_name = os.path.join(args.out_dir if args.out_dir else '.', 'data')
     with open(data_out_name + '.dat', mode='w') as f:
         f.write("# time lambda_r ellip theta r_eff_kpc r_eff_kpc3d n Lx Ly Lz mag_v\n")
@@ -323,16 +323,20 @@ def simulation_ssam(sim_path, args):
             result = result_data(ssam)
             result_list.append(result)
             result_str = RESULT_FMT.format(*result)
-
+            maps_dict['vlos'].append(ssam.v_los_map)
+            maps_dict['sig'].append(ssam.v_disp_map)
+            maps_dict['mag'].append(ssam.sb_mag)
             f.write(result_str + '\n')
             f.flush()
-
+            if i==5:break
     fits_data_file = data_out_name+'.fits'
     logger.info('Writing final table {}'.format(fits_data_file))
     tbl = Table(rows=result_list, names=RESULT_COL)
     # TODO units?
-    tbl.write(fits_data_file)
+    tbl.write(fits_data_file, overwrite=True)
 
+    mtbl = Table(maps_dict)
+    mtbl.write(fits_data_file+'_img.fits.gz', overwrite=True)
 
 def parse_args(cli=None):
     parser = argparse.ArgumentParser()
