@@ -1,19 +1,19 @@
 import argparse
 import functools
-import logging
 import os
 import sys
 from copy import deepcopy
 from pprint import pprint
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pynbody
+from astropy.table import Table
 from photutils import EllipticalAnnulus
 
-from .lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D, \
-    fit_sersic_1D, sb_profile
+from .units import gadget_time_units
+from .lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D
 from .luminosity import surface_brightness, kpc2pix, pix2kpc
-
 from .util import setup_logger
 
 logger = setup_logger('__name__', logger_level='INFO')
@@ -240,8 +240,22 @@ def get_outname(snap_name, out_dir, band, width, resolution, a_delta, suffix=Non
         out_name += suffix
     return out_name
 
+RESULT_COL = ('time', 'lambda_r', 'ellip', 'theta', 'r_eff_kpc', 'r_eff_kpc3d', 'n', 'Lx', 'Ly', 'Lz', 'mag_v')
+# RESULT_UNITs = (u.Unit("s kpc km**-1")), None, None, theta)
+RESULT_FMT = '{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.5f}'
 
-def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side, face, N_0=1, ELLIP_0=0, THETA_0=0):
+
+def result_data(ssam):
+    return (ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta, ssam.photometry.n,
+        ssam.snap.r_eff_kpc, ssam.snap.r_eff_kpc3d, *ssam.snap.angmom, ssam.snap.magnitude(ssam.photometry.band))
+
+
+def get_results_str(ssam):
+    result = RESULT_FMT.format(*result_data(ssam))
+    return result
+
+
+def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side, face, n=1, ell=0, theta=0, **kwargs):
 
     snap = Snap(os.path.expanduser(snap_name), cuboid_edge=width * 1.1)
 
@@ -254,15 +268,15 @@ def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side
         snap.faceon()
 
     im = Imaging(snap.subsnap, width=width, resolution=resolution)
-    ph = Photometry(band=band, a_delta=a_delta, N_0=N_0, ELLIP_0=ELLIP_0, THETA_0=THETA_0)
+    ph = Photometry(band=band, a_delta=a_delta, N_0=n, ELLIP_0=ell, THETA_0=theta)
 
     ssam = SSAM(snap, photometry=ph, imaging=im)
 
     ssam.compute_lambda(fit_profile=False)
 
-    print('{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.5f}'.format(
-        ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta, ssam.photometry.n,
-        snap.r_eff_kpc, snap.r_eff_kpc3d, *snap.angmom, snap.magnitude('v')))
+    result = get_results_str(ssam)
+
+    print(result)
 
     ssam.plot_maps(save_fig=out_name, sb_range=(18, 29),
                    v_los_range=(-15, 15),
@@ -283,19 +297,41 @@ def simulation_ssam(sim_path, args):
 
     n, ell, theta = N_0, ELLIP_0, THETA_0
 
+    result_list = list()
+
     d = args.__dict__.copy()
+    d['snap_name'] = 'data'
+    data_out_name = get_outname(**d)
 
-    for i, snap_name in enumerate(snap_list):
-        d['snap_name'] = snap_name
-        out_name = get_outname(suffix='_'+snap_name[-4:], **d)
+    # data_out_name = os.path.join(args.out_dir if args.out_dir else '.', 'data')
+    with open(data_out_name + '.dat', mode='w') as f:
+        f.write("# time lambda_r ellip theta r_eff_kpc r_eff_kpc3d n Lx Ly Lz mag_v\n")
 
-        ssam = single_snap_ssam(N_0=n,
-                                ELLIP_0=ell,
-                                THETA_0=theta,
-                                **d,
-                                )
-        logger.info(n)
-        _, _, ell, theta, n = ssam.photometry.get_params()
+        for i, snap_name in enumerate(snap_list):
+            d['snap_name'] = snap_name
+
+            out_name = get_outname(**d, suffix='_'+snap_name[-4:])
+
+            ssam = single_snap_ssam(n=n,
+                                    ell=ell,
+                                    theta=theta,
+                                    out_name=out_name,
+                                    **d,
+                                    )
+            _, _, ell, theta, n = ssam.photometry.get_params()
+            logger.info('Adding results to .dat file')
+            result = result_data(ssam)
+            result_list.append(result)
+            result_str = RESULT_FMT.format(*result)
+
+            f.write(result_str + '\n')
+            f.flush()
+
+    fits_data_file = data_out_name+'.fits'
+    logger.info('Writing final table {}'.format(fits_data_file))
+    tbl = Table(rows=result_list, names=RESULT_COL)
+    # TODO units?
+    tbl.write(fits_data_file)
 
 
 def parse_args(cli=None):
@@ -320,9 +356,11 @@ def main(cli=None):
     args = parse_args(cli)
 
     pprint(args.__dict__)
+    ssam = None
+
     if args.snap_name is not None:
         out_name = get_outname(**args.__dict__)
-        single_snap_ssam(snap_name=args.snap_name,
+        ssam = single_snap_ssam(snap_name=args.snap_name,
                          width=args.width,
                          resolution=args.resolution,
                          a_delta=args.a_delta,
@@ -336,6 +374,8 @@ def main(cli=None):
                         args=args,
                         )
 
+    return ssam
+
 
 if __name__ == '__main__':
-    main()
+    ssam = main(['--snap', '~/sim/MySimulations/ng/mb.69002_p200_a800_r600/out/snapshot_0043'])
