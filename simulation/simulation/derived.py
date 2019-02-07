@@ -53,41 +53,45 @@ def _get_ftype(snap):
         return None
 
 @pynbody.derived_array
-def mgfe(snap):
-    ftype = _get_ftype(snap)
-    if not ftype:
-        raise("Derived array 'mgfe' is available only for family gas or star")
-    name = 'mg' + ftype
-    name_sph = name + "_sph"
-    nn = pynbody.config['sph']['smooth-particles']
-    pynbody.sph.build_tree_or_trees(snap)
-    snap.kdtree.set_array_ref('smooth',snap['smooth'])
-    snap.kdtree.set_array_ref('mass',snap['mass'])
-    snap.kdtree.set_array_ref('rho',snap['rho'])
-    snap[name_sph] = snap.kdtree.sph_mean(snap[name], nn)
-    snap['fest_sph'] = snap.kdtree.sph_mean(snap['fest'], nn)
-    arr = np.log10(snap[name_sph]/snap['fest_sph']) - MgFe_corr
-    arr[np.logical_or(snap[name_sph] == 0.0, snap['fest_sph'] == 0.0)] = 0.471782
-    return arr
-
-@pynbody.derived_array
 def feh(snap):
     ftype = _get_ftype(snap)
     if not ftype:
         raise("Derived array 'feh' is available only for family gas or star")
     name = 'fe' + ftype
-    name_sph = name + "_sph"
-    nn = pynbody.config['sph']['smooth-particles']
-    pynbody.sph.build_tree_or_trees(snap)
-    snap.kdtree.set_array_ref('smooth',snap['smooth'])
-    snap.kdtree.set_array_ref('mass',snap['mass'])
-    snap.kdtree.set_array_ref('rho',snap['rho'])
-    snap[name_sph] = snap.kdtree.sph_mean(snap[name], nn)
-    snap['mass_sph'] = snap.kdtree.sph_mean(snap['mass'], nn)
-    arr = np.log10(snap[name_sph]/snap['mass_sph']) - FeH_corr
-    arr[np.logical_or(snap[name_sph] == 0.0, snap['mass_sph'] == 0.0)] = -98.0
+    # name_sph = name + "_sph"
+    # nn = pynbody.config['sph']['smooth-particles']
+    # pynbody.sph.build_tree_or_trees(snap)
+    # snap.kdtree.set_array_ref('smooth',snap['smooth'])
+    # snap.kdtree.set_array_ref('mass',snap['mass'])
+    # snap.kdtree.set_array_ref('rho',snap['rho'])
+    # snap[name_sph] = snap.kdtree.sph_mean(snap[name], nn)
+    # snap['mass_sph'] = snap.kdtree.sph_mean(snap['mass'], nn)
+    # arr = np.log10(snap[name_sph]/snap['mass_sph']) - FeH_corr
+    # arr[np.logical_or(snap[name_sph] == 0.0, snap['mass_sph'] == 0.0)] = -98.0
+    arr = np.log10(snap[name]/snap['mass']) - FeH_corr
+    arr[np.logical_or(snap[name] == 0.0, snap['mass'] == 0.0)] = -98.0
     return arr
 
+
+@pynbody.derived_array
+def mgfe(snap):
+    ftype = _get_ftype(snap)
+    if not ftype:
+        raise("Derived array 'mgfe' is available only for family gas or star")
+    name = 'mg' + ftype
+    # name_sph = name + "_sph"
+    # nn = pynbody.config['sph']['smooth-particles']
+    # pynbody.sph.build_tree_or_trees(snap)
+    # snap.kdtree.set_array_ref('smooth',snap['smooth'])
+    # snap.kdtree.set_array_ref('mass',snap['mass'])
+    # snap.kdtree.set_array_ref('rho',snap['rho'])
+    # snap[name_sph] = snap.kdtree.sph_mean(snap[name], nn)
+    # snap['fest_sph'] = snap.kdtree.sph_mean(snap['fest'], nn)
+    # arr = np.log10(snap[name_sph]/snap['fest_sph']) - MgFe_corr
+    # arr[np.logical_or(snap[name_sph] == 0.0, snap['fest_sph'] == 0.0)] = 0.471782
+    arr = np.log10(snap[name]/snap['fe' + ftype]) - MgFe_corr
+    arr[np.logical_or(snap[name] == 0.0, snap['fe' + ftype] == 0.0)] = 0.471782
+    return arr
 
 
 @pynbody.derived_array
