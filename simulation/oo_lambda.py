@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
-
+from pprint import pprint
 import matplotlib.pyplot as plt
 import numpy as np
 import pynbody
@@ -14,13 +14,9 @@ from .lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_a
     fit_sersic_1D, sb_profile
 from .luminosity import surface_brightness, kpc2pix, pix2kpc
 
-logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from .util import setup_logger
 
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-logger.addHandler(consoleHandler)
+logger = setup_logger('__name__', logger_level='INFO')
 
 
 class Photometry:
@@ -223,7 +219,7 @@ class SSAM:
             plt.show()
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # snap_name = "/home/michele/sim/MoRIA/M1-10_Verbeke2017/M10sim41001/snapshot_0036"
     # snap_name = "/mnt/data/MoRIA/M1-10_Verbeke2017/M10sim41001/snapshot_0036"
     # snap_name = "/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out/snapshot_0039"
@@ -232,44 +228,21 @@ if __name__ == '__main__':
     # a_delta = 20
     # band = 'v'
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--snap", "-s", help="Path to the simulation snapshot", required=True)
-    parser.add_argument("--width", '-w', default=10, type=float)
-    parser.add_argument("--resolution", '-r', default=400, type=int)
-    parser.add_argument("--band", "-b", default='v')
-    parser.add_argument("--a-delta", default=20, type=int)
-    parser.add_argument("--cuboid-factor", default=1.5, type=float)
-    parser.add_argument("--out-dir", default=None)
-    parser.add_argument('--side', action='store_true')
-    parser.add_argument('--face', action='store_true')
 
-    args = parser.parse_args()
+def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side, face, N_0=1, ELLIP_0=0, THETA_0=0):
 
-    snap_name = args.snap
-    width = args.width
-    resolution = args.resolution
-    a_delta = args.a_delta
-    band = args.band
-    out_dir = args.out_dir
+    snap = Snap(os.path.expanduser(snap_name), cuboid_edge=width * 1.1)
 
-    stem_out = 'maps_'
-    out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}_a{}'.format(band, width, resolution, a_delta)
-    if out_dir is not None:
-        if os.path.isdir(out_dir):
-            out_name = os.path.join(os.path.expanduser(out_dir), out_name)
-
-    snap = Snap(snap_name, cuboid_edge=width * 1.1)
-
-    if args.side and args.face:
+    if side and face:
         print("Option 'side' and 'face' are mutually exclusive", file=sys.stderr)
         sys.exit(2)
-    elif args.side:
+    elif side:
         snap.sideon()
-    elif args.face:
+    elif face:
         snap.faceon()
 
     im = Imaging(snap.subsnap, width=width, resolution=resolution)
-    ph = Photometry(band=band, a_delta=a_delta)
+    ph = Photometry(band=band, a_delta=a_delta, N_0=N_0, ELLIP_0=ELLIP_0, THETA_0=THETA_0)
 
     ssam = SSAM(snap, photometry=ph, imaging=im)
 
@@ -282,3 +255,79 @@ if __name__ == '__main__':
     ssam.plot_maps(save_fig=out_name, sb_range=(18, 29),
                    v_los_range=(-15, 15),
                    sigma_range=(10, 40))
+    return ssam
+
+
+def simulation_ssam(sim_path):
+    from simulation.util import snapshot_list
+    snap_list = snapshot_list(sim_path)
+    N_0 = 1
+    ELLIP_0 = 0
+    THETA_0 = 0
+
+    args = parse_args()
+
+    n, ell, theta = N_0, ELLIP_0, THETA_0
+
+    for snap in snap_list:
+        out_name = get_outname(**args.__dict__)
+        ssam = single_snap_ssam(snap_name=snap,
+                                width=args.width,
+                                resolution=args.resolution,
+                                a_delta=args.a_delta,
+                                band=args.band,
+                                out_name=out_name,
+                                side=args.side,
+                                face=args.face,
+                                N_0=n,
+                                ELLIP_0=ell,
+                                THETA_0=theta,
+                                )
+        _, _, ell, theta, n = ssam.photometry.get_params()
+
+
+def parse_args(cli=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--snap", "-s", dest='snap_name', help="Path to the simulation snapshot", required=True)
+    parser.add_argument("--width", '-w', default=10, type=float)
+    parser.add_argument("--resolution", '-r', default=400, type=int)
+    parser.add_argument("--band", "-b", default='v')
+    parser.add_argument("--a-delta", default=20, type=int)
+    parser.add_argument("--cuboid-factor", default=1.5, type=float)
+    parser.add_argument("--out-dir", default=None)
+    parser.add_argument('--side', action='store_true')
+    parser.add_argument('--face', action='store_true')
+
+    args = parser.parse_args(cli)
+    return args
+
+
+def get_outname(snap_name, out_dir, band, width, resolution, a_delta, suffix=None, stem_out = 'maps_', **kwargs):
+    out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}_a{}'.format(band, width, resolution, a_delta)
+    if out_dir is not None:
+        if os.path.isdir(out_dir):
+            out_name = os.path.join(os.path.expanduser(out_dir), out_name)
+    if suffix:
+        out_name += suffix
+    return out_name
+
+
+def main(cli=None):
+    args = parse_args(cli)
+
+    pprint(args.__dict__)
+    out_name = get_outname(**args.__dict__)
+
+    single_snap_ssam(snap_name=args.snap_name,
+                     width=args.width,
+                     resolution=args.resolution,
+                     a_delta=args.a_delta,
+                     band=args.band,
+                     out_name=out_name,
+                     side=args.side,
+                     face=args.face,
+                     )
+
+
+if __name__ == '__main__':
+    main()
