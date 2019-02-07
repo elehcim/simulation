@@ -229,6 +229,18 @@ class SSAM:
     # band = 'v'
 
 
+def get_outname(snap_name, out_dir, band, width, resolution, a_delta, suffix=None, stem_out = 'maps_', **kwargs):
+    out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}_a{}'.format(band, width, resolution, a_delta)
+    if out_dir is not None:
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+        out_name = os.path.join(os.path.expanduser(out_dir), out_name)
+
+    if suffix:
+        out_name += suffix
+    return out_name
+
+
 def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side, face, N_0=1, ELLIP_0=0, THETA_0=0):
 
     snap = Snap(os.path.expanduser(snap_name), cuboid_edge=width * 1.1)
@@ -258,37 +270,39 @@ def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side
     return ssam
 
 
-def simulation_ssam(sim_path):
+def simulation_ssam(sim_path, args):
+
+    if not os.path.isdir(sim_path):
+        raise RuntimeError('Simulation path should be a directory')
+
     from simulation.util import snapshot_list
-    snap_list = snapshot_list(sim_path)
+    snap_list = snapshot_list(sim_path, include_dir=True)
     N_0 = 1
     ELLIP_0 = 0
     THETA_0 = 0
 
-    args = parse_args()
-
     n, ell, theta = N_0, ELLIP_0, THETA_0
 
-    for snap in snap_list:
-        out_name = get_outname(**args.__dict__)
-        ssam = single_snap_ssam(snap_name=snap,
-                                width=args.width,
-                                resolution=args.resolution,
-                                a_delta=args.a_delta,
-                                band=args.band,
-                                out_name=out_name,
-                                side=args.side,
-                                face=args.face,
-                                N_0=n,
+    d = args.__dict__.copy()
+
+    for i, snap_name in enumerate(snap_list):
+        d['snap_name'] = snap_name
+        out_name = get_outname(suffix='_'+snap_name[-4:], **d)
+
+        ssam = single_snap_ssam(N_0=n,
                                 ELLIP_0=ell,
                                 THETA_0=theta,
+                                **d,
                                 )
+        logger.info(n)
         _, _, ell, theta, n = ssam.photometry.get_params()
 
 
 def parse_args(cli=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--snap", "-s", dest='snap_name', help="Path to the simulation snapshot", required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--snap", dest='snap_name', help="Path to the simulation snapshot")
+    group.add_argument("--sim", "-s", dest='sim_path', help="Path to the simulation snapshot")
     parser.add_argument("--width", '-w', default=10, type=float)
     parser.add_argument("--resolution", '-r', default=400, type=int)
     parser.add_argument("--band", "-b", default='v')
@@ -302,31 +316,25 @@ def parse_args(cli=None):
     return args
 
 
-def get_outname(snap_name, out_dir, band, width, resolution, a_delta, suffix=None, stem_out = 'maps_', **kwargs):
-    out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}_a{}'.format(band, width, resolution, a_delta)
-    if out_dir is not None:
-        if os.path.isdir(out_dir):
-            out_name = os.path.join(os.path.expanduser(out_dir), out_name)
-    if suffix:
-        out_name += suffix
-    return out_name
-
-
 def main(cli=None):
     args = parse_args(cli)
 
     pprint(args.__dict__)
-    out_name = get_outname(**args.__dict__)
-
-    single_snap_ssam(snap_name=args.snap_name,
-                     width=args.width,
-                     resolution=args.resolution,
-                     a_delta=args.a_delta,
-                     band=args.band,
-                     out_name=out_name,
-                     side=args.side,
-                     face=args.face,
-                     )
+    if args.snap_name is not None:
+        out_name = get_outname(**args.__dict__)
+        single_snap_ssam(snap_name=args.snap_name,
+                         width=args.width,
+                         resolution=args.resolution,
+                         a_delta=args.a_delta,
+                         band=args.band,
+                         out_name=out_name,
+                         side=args.side,
+                         face=args.face,
+                         )
+    elif args.sim_path is not None:
+        simulation_ssam(sim_path=args.sim_path,
+                        args=args,
+                        )
 
 
 if __name__ == '__main__':
