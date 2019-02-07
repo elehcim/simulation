@@ -12,13 +12,7 @@ from photutils.isophote import EllipseGeometry
 
 from .luminosity import surface_brightness, kpc2pix, pix2kpc
 
-logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-logger.addHandler(consoleHandler)
+logger = logging.getLogger()
 
 
 NP_ERRSTATE = {"divide":'ignore', "over":'ignore', "under":'ignore', 'invalid':'ignore'}

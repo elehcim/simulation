@@ -13,6 +13,8 @@ setup(name='simulation',
           'console_scripts': ['sim_duration=simulation.sim_duration:main',
                               'plot_sfh=simulation.plot.plot_sfh:main',
                               'plot_trace=simulation.plot.plot_trace:main',
-                              'plot_dt=simulation.plot.plot_dt:main']
-      }
+                              'plot_dt=simulation.plot.plot_dt:main',
+                              'ssam=simulation.oo_lambda:main',
+                              ]
+                   }
       )
