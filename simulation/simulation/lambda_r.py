@@ -11,6 +11,7 @@ from photutils import aperture_photometry
 from photutils.isophote import EllipseGeometry
 
 from .luminosity import surface_brightness, kpc2pix, pix2kpc
+from .util import to_astropy_quantity
 
 logger = logging.getLogger()
 
@@ -35,8 +36,6 @@ def bounding_box(snap):
         print("{}: {:10.2f}, {:10.2f} ({})".format(coord, snap[coord].min(), snap[coord].max(), unit))
     return [(float(snap[coord].min()), float(snap[coord].max())) for coord in 'x y z'.split()]
 
-def to_astropy_quantity(simarr, units=None):
-    return u.Quantity(simarr.view(type=np.ndarray), unit=units if units is not None else str(simarr.units))
 
 def plot_fit(img, fit):
     # Plot the data with the best-fit model
