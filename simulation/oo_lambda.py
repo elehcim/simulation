@@ -4,6 +4,7 @@ import os
 import sys
 from copy import deepcopy
 from pprint import pprint
+import tqdm
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -307,27 +308,39 @@ def simulation_ssam(sim_path, args):
     with open(data_out_name + '.dat', mode='w') as f:
         f.write("# time lambda_r ellip theta r_eff_kpc r_eff_kpc3d n Lx Ly Lz mag_v\n")
 
-        for i, snap_name in enumerate(snap_list):
-            d['snap_name'] = snap_name
+        for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
+            try:
+                d['snap_name'] = snap_name
 
-            out_name = get_outname(**d, suffix='_'+snap_name[-4:])
+                out_name = get_outname(**d, suffix='_'+snap_name[-4:])
 
-            ssam = single_snap_ssam(n=n,
-                                    ell=ell,
-                                    theta=theta,
-                                    out_name=out_name,
-                                    **d,
-                                    )
-            _, _, ell, theta, n = ssam.photometry.get_params()
-            logger.info('Adding results to .dat file')
-            result = result_data(ssam)
-            result_list.append(result)
-            result_str = RESULT_FMT.format(*result)
-            maps_dict['vlos'].append(ssam.v_los_map)
-            maps_dict['sig'].append(ssam.v_disp_map)
-            maps_dict['mag'].append(ssam.sb_mag)
-            f.write(result_str + '\n')
-            f.flush()
+                ssam = single_snap_ssam(n=n,
+                                        ell=ell,
+                                        theta=theta,
+                                        out_name=out_name,
+                                        **d,
+                                        )
+                _, _, ell, theta, n = ssam.photometry.get_params()
+                logger.info('Adding results to .dat file')
+                result = result_data(ssam)
+                result_list.append(result)
+                result_str = RESULT_FMT.format(*result)
+                maps_dict['vlos'].append(ssam.v_los_map)
+                maps_dict['sig'].append(ssam.v_disp_map)
+                maps_dict['mag'].append(ssam.sb_mag)
+                mtbl_loc = Table([ssam.v_los_map, ssam.v_disp_map, ssam.sb_mag], names=['vlos','sig','mag'])
+                mtbl_loc.write(out_name+'_img.fits.gz', overwrite=True)
+                f.write(result_str + '\n')
+                f.flush()
+            except ValueError as e:
+                # Usually is Insufficient particles around center to get velocity
+                logger.error(snap_name)
+                logger.error(e)
+                # Get at least the time
+                time = pynbody.load(snap_name).header.time
+                result_list.append(tuple([time] + [np.nan] * (len(RESULT_COL)-1)))
+                f.write('{:.5f}\n'.format(time))
+                f.flush()
 
     fits_data_file = data_out_name+'.fits'
     logger.info('Writing final table {}'.format(fits_data_file))
@@ -346,7 +359,7 @@ def parse_args(cli=None):
     parser.add_argument("--width", '-w', default=10, type=float)
     parser.add_argument("--resolution", '-r', default=400, type=int)
     parser.add_argument("--band", "-b", default='v')
-    parser.add_argument("--a-delta", default=20, type=int)
+    parser.add_argument("--a-delta", default=20, help='in pixels the separation on the semimajor axis from one aperture to the other', type=int)
     parser.add_argument("--cuboid-factor", default=1.5, type=float)
     parser.add_argument("--out-dir", default=None)
     parser.add_argument('--side', action='store_true')

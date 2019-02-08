@@ -3,6 +3,7 @@ import glob
 import contextlib
 import numpy as np
 import logging
+import astropy.units as u
 
 def setup_logger(logger_name=None, logger_level='DEBUG'):
 
@@ -93,3 +94,7 @@ def get_snapshot_data(simulation, snap=None):
 
     data = dr.readFile()
     return data
+
+
+def to_astropy_quantity(simarr, units=None):
+    return u.Quantity(simarr.view(type=np.ndarray), unit=units if units is not None else str(simarr.units))
