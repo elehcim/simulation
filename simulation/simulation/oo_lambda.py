@@ -9,11 +9,11 @@ import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 import pynbody
-from astropy.table import Table
+from astropy.table import Table, Column
 from photutils import EllipticalAnnulus
 
 from simulation.units import gadget_time_units
-from simulation.lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D
+from simulation.lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D, create_apertures
 from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
 from simulation.util import setup_logger
 
@@ -24,21 +24,31 @@ class Photometry:
     sersic1D = None
     sersic2D = None
 
-    def __init__(self, band, a_delta, a_min=30, a_max=200, N_0=1, ELLIP_0=0, THETA_0=0):
+    def __init__(self, band, resolution, n_annuli=20, a_min=10, N_0=1, ELLIP_0=0, THETA_0=0):
+        """
+        a_min
+        a_max
+        in pixels the min and max of the semimajor axis and the interval between one aperture and the other.
+        For now it is linked with the resolution.
+        """
         self.band = band
-        self.a_delta = a_delta
+        self.n_annuli = n_annuli
+        self.resolution = resolution
         self._n_0 = N_0
         self._ellip_0 = ELLIP_0
         self._theta_0 = THETA_0
-        self.smajax = np.arange(a_min, a_max, a_delta)
+        bit_less_than_half_diagonal = int(resolution*1.3)
+        self.smajax = np.linspace(a_min, bit_less_than_half_diagonal, n_annuli)
+        # if np.diff(smajax)[0] > a_min:
+
         self._sersic2D = None
 
-    def fit(self, sb_lum, r_eff_pix, resolution, fit_profile=False, snap=None, fixed=None):
+    def fit(self, sb_lum, r_eff_pix, fit_profile=False, snap=None, fixed=None):
         if fit_profile:
             sersic1D = self.fit_profile(snap, r_eff_pix)
             self._n_0 = sersic1D.n
         logger.info("Fitting Sersic2D")
-        sersic2D = fit_sersic_2D(sb_lum, r_eff=r_eff_pix, n=self._n_0, resolution=resolution,
+        sersic2D = fit_sersic_2D(sb_lum, r_eff=r_eff_pix, n=self._n_0, resolution=self.resolution,
                                  ellip=self._ellip_0, theta=self._theta_0, fixed=fixed)
 
         self._sersic2D = sersic2D
@@ -83,12 +93,7 @@ class Photometry:
     """
     @property
     def apertures(self):
-        sminax = self.smajax * np.sqrt(1 - self.ellip)
-        apertures = list()
-        for a, b in zip(self.smajax, sminax):
-            apertures.append(EllipticalAnnulus(self.center,
-                                               a_in=a - self.a_delta, a_out=a + self.a_delta,
-                                               b_out=b, theta=self.theta))
+        apertures = create_apertures(self.center, self.smajax, self.ellip, self.theta)
         return apertures
 
     def get_params(self):
@@ -186,15 +191,16 @@ class SSAM:
                             resolution=self.res)
         self.photometry.fit(sb_lum,
                             r_eff_pix=r_eff_pix,
-                            resolution=self.res,
                             fit_profile=fit_profile,
                             snap=self.snap.subsnap)
 
         center, smajax, ellip, theta, n = self.photometry.get_params()
-        lambda_R = compute_stellar_specific_angmom(center, self.sb_mag, self.v_los_map, self.v_disp_map,
-                                                   smajax, ellip, self.photometry.a_delta, theta)
-        self.lambda_R = lambda_R
+        lambda_R, lambda_R_prof = compute_stellar_specific_angmom(center, self.sb_mag, self.v_los_map, self.v_disp_map,
+                                                   smajax, ellip, theta)
+
+        self.lambda_R, self.lambda_R_prof = lambda_R, lambda_R_prof
         logger.info("Lambda_R = {:.4f}".format(lambda_R))
+
         return lambda_R
 
     def plot_maps(self, save_fig=None, sb_range=None, v_los_range=None, sigma_range=None):
@@ -226,12 +232,12 @@ class SSAM:
     # snap_name = "/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out/snapshot_0039"
     # width=10
     # resolution = 500
-    # a_delta = 20
+    # n_annuli = 20
     # band = 'v'
 
 
-def get_outname(snap_name, out_dir, band, width, resolution, a_delta, suffix=None, stem_out = 'maps_', **kwargs):
-    out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}_a{}'.format(band, width, resolution, a_delta)
+def get_outname(snap_name, out_dir, band, width, resolution, n_annuli, suffix=None, stem_out = 'maps_', **kwargs):
+    out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}_n{}'.format(band, width, resolution, n_annuli)
     if out_dir is not None:
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir, exist_ok=True)
@@ -256,7 +262,7 @@ def get_results_str(ssam):
     return result
 
 
-def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side, face, n=1, ell=0, theta=0, **kwargs):
+def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0, **kwargs):
 
     snap = Snap(os.path.expanduser(snap_name), cuboid_edge=width * 1.1)
 
@@ -269,7 +275,7 @@ def single_snap_ssam(snap_name, width, resolution, a_delta, band, out_name, side
         snap.faceon()
 
     im = Imaging(snap.subsnap, width=width, resolution=resolution)
-    ph = Photometry(band=band, a_delta=a_delta, N_0=n, ELLIP_0=ell, THETA_0=theta)
+    ph = Photometry(band=band, resolution=resolution, n_annuli=n_annuli, N_0=n, ELLIP_0=ell, THETA_0=theta)
 
     ssam = SSAM(snap, photometry=ph, imaging=im)
 
@@ -299,6 +305,7 @@ def simulation_ssam(sim_path, args):
     n, ell, theta = N_0, ELLIP_0, THETA_0
 
     result_list = list()
+    profile_list = list()
 
     d = args.__dict__.copy()
     d['snap_name'] = 'data'
@@ -308,43 +315,62 @@ def simulation_ssam(sim_path, args):
     with open(data_out_name + '.dat', mode='w') as f:
         f.write("# time lambda_r ellip theta r_eff_kpc r_eff_kpc3d n Lx Ly Lz mag_v\n")
 
-        for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
-            try:
-                d['snap_name'] = snap_name
+    with open(data_out_name + '_prof.dat', mode='w') as p:
+        p.write('# time lambda_r_profile {}\n'.format(args.n_annuli))
 
-                out_name = get_outname(**d, suffix='_'+snap_name[-4:])
+    for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
+        time = pynbody.load(snap_name).header.time
+        try:
+            d['snap_name'] = snap_name
 
-                ssam = single_snap_ssam(n=n,
-                                        ell=ell,
-                                        theta=theta,
-                                        out_name=out_name,
-                                        **d,
-                                        )
-                _, _, ell, theta, n = ssam.photometry.get_params()
-                logger.info('Adding results to .dat file')
-                result = result_data(ssam)
-                result_list.append(result)
-                result_str = RESULT_FMT.format(*result)
-                maps_dict['vlos'].append(ssam.v_los_map)
-                maps_dict['sig'].append(ssam.v_disp_map)
-                maps_dict['mag'].append(ssam.sb_mag)
-                mtbl_loc = Table([ssam.v_los_map, ssam.v_disp_map, ssam.sb_mag], names=['vlos','sig','mag'])
-                mtbl_loc.write(out_name+'_img.fits.gz', overwrite=True)
+            out_name = get_outname(**d, suffix='_'+snap_name[-4:])
+
+            ssam = single_snap_ssam(n=n,
+                                    ell=ell,
+                                    theta=theta,
+                                    out_name=out_name,
+                                    **d,
+                                    )
+            _, _, ell, theta, n = ssam.photometry.get_params()
+            logger.info('Adding results to .dat file')
+            result = result_data(ssam)
+            result_list.append(result)
+            profile_list.append(ssam.lambda_R_prof)
+            result_str = RESULT_FMT.format(*result)
+
+            with open(data_out_name + '.dat', mode='a') as f:
                 f.write(result_str + '\n')
                 f.flush()
-            except ValueError as e:
-                # Usually is Insufficient particles around center to get velocity
-                logger.error(snap_name)
-                logger.error(e)
-                # Get at least the time
-                time = pynbody.load(snap_name).header.time
-                result_list.append(tuple([time] + [np.nan] * (len(RESULT_COL)-1)))
+
+            with open(data_out_name + '_prof.dat', mode='a') as p:
+                p.write(('{:.5f} ' * len(ssam.lambda_R_prof+1) + '\n').format(time, *ssam.lambda_R_prof))
+                p.flush()
+
+            # Map saving
+            maps_dict['vlos'].append(ssam.v_los_map)
+            maps_dict['sig'].append(ssam.v_disp_map)
+            maps_dict['mag'].append(ssam.sb_mag)
+            mtbl_loc = Table([ssam.v_los_map, ssam.v_disp_map, ssam.sb_mag], names=['vlos','sig','mag'])
+            mtbl_loc.write(out_name+'_img.fits.gz', overwrite=True)
+
+        except ValueError as e:
+            # Usually is 'Insufficient particles around center to get velocity'
+            logger.error(snap_name)
+            logger.error(e)
+            # Get at least the time
+            result_list.append(tuple([time] + [np.nan] * (len(RESULT_COL)-1)))
+            with open(data_out_name + '.dat', mode='a') as f:
                 f.write('{:.5f}\n'.format(time))
                 f.flush()
+            with open(data_out_name + '_prof.dat', mode='a') as p:
+                p.write('{:.5f}\n'.format(time))
+                p.flush()
 
     fits_data_file = data_out_name+'.fits'
     logger.info('Writing final table {}'.format(fits_data_file))
     tbl = Table(rows=result_list, names=RESULT_COL)
+    col_prof = Column(profile_list)
+    tbl.add_column(col_prof, name='lambda_prof')
     # TODO units?
     tbl.write(fits_data_file, overwrite=True)
 
@@ -359,7 +385,7 @@ def parse_args(cli=None):
     parser.add_argument("--width", '-w', default=10, type=float)
     parser.add_argument("--resolution", '-r', default=400, type=int)
     parser.add_argument("--band", "-b", default='v')
-    parser.add_argument("--a-delta", default=20, help='in pixels the separation on the semimajor axis from one aperture to the other', type=int)
+    parser.add_argument("--n-annuli", default=30, help='How many annuli to use', type=int)
     parser.add_argument("--cuboid-factor", default=1.5, type=float)
     parser.add_argument("--out-dir", default=None)
     parser.add_argument('--side', action='store_true')
@@ -380,7 +406,7 @@ def main(cli=None):
         ssam = single_snap_ssam(snap_name=args.snap_name,
                          width=args.width,
                          resolution=args.resolution,
-                         a_delta=args.a_delta,
+                         n_annuli=args.n_annuli,
                          band=args.band,
                          out_name=out_name,
                          side=args.side,
