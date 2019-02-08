@@ -10,8 +10,8 @@ from photutils import EllipticalAperture, EllipticalAnnulus
 from photutils import aperture_photometry
 from photutils.isophote import EllipseGeometry
 
-from .luminosity import surface_brightness, kpc2pix, pix2kpc
-from .util import to_astropy_quantity
+from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
+from simulation.util import to_astropy_quantity
 
 logger = logging.getLogger()
 
@@ -66,8 +66,14 @@ def plot_angmom(snap, ax):
     norm = np.linalg.norm(L)
     ax.arrow(0, 0, L[0]/norm, L[1]/norm, head_width=0.2, head_length=.2, color='red');
 
+def ss_angmom_profile(flux, r, v_los, v_disp):
+    r_mid = r + np.diff(r)[0]  # add half an interval to all the bins
+    prof = np.cumsum(flux * r_mid * np.abs(v_los)) / np.cumsum(flux * r_mid * np.sqrt(v_los**2 + v_disp**2))
+    return prof
+
 def ss_angmom(flux, r, v_los, v_disp):
-    return np.sum(flux * r * np.abs(v_los)) / np.sum(flux * r * np.sqrt(v_los**2 + v_disp**2))
+    r_mid = r + np.diff(r)[0]  # add half an interval to all the bins
+    return np.sum(flux * r_mid * np.abs(v_los)) / np.sum(flux * r_mid * np.sqrt(v_los**2 + v_disp**2))
 
 # -2.5*np.log10(arcsec2_over_pc2_at_10pc) == 21.572
 
@@ -139,21 +145,25 @@ def plot_aperture_geometry(sb, sersic, resolution, show=SHOW):
         plt.show()
     return aper
 
-def integrate_annulus(qty, center, smajax, ellip, a_delta, theta):
-    apertures = create_apertures(center, smajax, ellip, a_delta, theta)
+def integrate_annulus(qty, center, smajax, ellip, theta):
+    apertures = create_apertures(center, smajax, ellip, theta)
     flux_table = aperture_photometry(qty, apertures)
 #     for col in flux_table.colnames:
 #         flux_table[col].info.format = '%.8g'  # for consistent table output
 #     print(flux_table)
     return u.Quantity(np.array([flux_table['aperture_sum_{}'.format(i)][0].value for i in range(len(smajax))]), unit=flux_table['aperture_sum_0'].unit)
 
-def create_apertures(center, smajax, ellip, a_delta, theta):
+def create_apertures(center, smajax, ellip, theta):
+    a_delta = np.diff(smajax)[0]
     if ellip > 1:
         logger.warning("ellipticity > 1: swapping minor <-> major axis")
         ellip = 1/ellip
         theta = np.pi/2 + theta
     sminax = smajax * np.sqrt(1 - ellip)
-    apertures = [EllipticalAnnulus(center, a_in=a-a_delta, a_out=a+a_delta, b_out=b, theta=theta) for a, b in zip(smajax, sminax)]
+    apertures = list()
+    # Don't take the first not to go below a_min, because it's already considered into a_delta
+    for a, b in zip(smajax, sminax):
+        apertures.append(EllipticalAnnulus(center, a_in=a, a_out=a+a_delta, b_out=b, theta=theta))
     return apertures
 
 def plot_annuli(data, apertures):
@@ -164,15 +174,16 @@ def plot_annuli(data, apertures):
     plt.show()
 
 
-def compute_stellar_specific_angmom(center, sb_mag, v_los_map, v_disp_map, smajax, ellip, a_delta, theta):
+def compute_stellar_specific_angmom(center, sb_mag, v_los_map, v_disp_map, smajax, ellip, theta):
     lum = to_astropy_quantity(sb_mag, units='mag/arcsec**2')
     v_los = to_astropy_quantity(v_los_map)
     v_disp = to_astropy_quantity(v_disp_map)
-    lum_annuli = integrate_annulus(lum, center, smajax, ellip, a_delta, theta)
-    v_los_annuli = integrate_annulus(v_los, center, smajax, ellip, a_delta, theta)
-    v_disp_annuli = integrate_annulus(v_disp, center, smajax, ellip, a_delta, theta)
+    lum_annuli = integrate_annulus(lum, center, smajax, ellip, theta)
+    v_los_annuli = integrate_annulus(v_los, center, smajax, ellip, theta)
+    v_disp_annuli = integrate_annulus(v_disp, center, smajax, ellip, theta)
     stellar_specific_angmom = ss_angmom(lum_annuli, smajax, v_los_annuli, v_disp_annuli)
-    return stellar_specific_angmom
+    stellar_specific_angmom_prof = ss_angmom_profile(lum_annuli, smajax, v_los_annuli, v_disp_annuli)
+    return stellar_specific_angmom, stellar_specific_angmom_prof
 
 
 def adjust_cbar_range(cbar_range):
@@ -313,13 +324,13 @@ if __name__ == '__main__':
     sb_mag = surface_brightness(subsnap.s, width=width, resolution=resolution, lum_pc2=False, noplot=not(SHOW))
 
     center = (sersic2D.x_0.value, sersic2D.y_0.value)
-    a_delta = 20
-    smajax = np.arange(30, 200, a_delta)
+    n_annuli = 20
+    smajax = np.linspace(30, 200, n_annuli)
     # print(smajax)
 
     logger.info("Created apertures")
 
-    apertures = create_apertures(center, smajax, ellip, a_delta, theta)
+    apertures = create_apertures(center, smajax, ellip, theta)
     if SHOW:
         plot_annuli(sb_mag, apertures)
 
