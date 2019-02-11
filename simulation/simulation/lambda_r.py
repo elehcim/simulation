@@ -145,6 +145,7 @@ def plot_aperture_geometry(sb, sersic, resolution, show=SHOW):
         plt.show()
     return aper
 
+@profile
 def integrate_annulus(qty, center, smajax, ellip, theta):
     apertures = create_apertures(center, smajax, ellip, theta)
     flux_table = aperture_photometry(qty, apertures)
@@ -173,7 +174,7 @@ def plot_annuli(data, apertures):
     plt.colorbar(my_img);
     plt.show()
 
-
+@profile
 def compute_stellar_specific_angmom(center, sb_mag, v_los_map, v_disp_map, smajax, ellip, theta):
     lum = to_astropy_quantity(sb_mag, units='mag/arcsec**2')
     v_los = to_astropy_quantity(v_los_map)

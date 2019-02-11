@@ -184,6 +184,7 @@ class SSAM:
         self.time_gyr = snap.time_gyr
         self.lambda_R = None
 
+    @profile
     def compute_lambda(self, fit_profile=False):
         sb_lum = self.imaging.sb_lum()
         logger.info("Computed R_eff:")
@@ -265,7 +266,7 @@ def get_results_str(ssam):
     result = RESULT_FMT.format(*result_data(ssam))
     return result
 
-
+@profile
 def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0, **kwargs):
 
     snap = Snap(os.path.expanduser(snap_name), cuboid_edge=width * 1.1)
