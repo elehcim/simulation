@@ -106,18 +106,22 @@ class Imaging:
         self.resolution = resolution
         self._snap = snap
 
+    @functools.lru_cache(1)
     def v_los_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='vz', av_z=True, width=self.width,
                                       resolution=self.resolution, noplot=True, log=False)
 
+    @functools.lru_cache(1)
     def v_disp_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='v_disp', av_z=True, width=self.width,
                                       resolution=self.resolution, noplot=True, log=False)
 
+    @functools.lru_cache(1)
     def sb_lum(self):
         return surface_brightness(self._snap.s, width=self.width, resolution=self.resolution,
                                   lum_pc2=True, noplot=True)
 
+    @functools.lru_cache(1)
     def sb_mag(self):
         return surface_brightness(self._snap.s, width=self.width, resolution=self.resolution,
                                   lum_pc2=False, noplot=True)
