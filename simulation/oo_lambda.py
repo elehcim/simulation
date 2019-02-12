@@ -351,7 +351,7 @@ def simulation_ssam(sim_path, args):
             logger.info('Adding results to .dat file')
             result = result_data(ssam)
             result_list.append(result)
-            profile_list.append([time] + [ssam.lambda_R_prof])
+            profile_list.append(ssam.lambda_R_prof)
             result_str = RESULT_FMT.format(*result)
 
             with open(data_out_name + '.dat', mode='a') as f:
