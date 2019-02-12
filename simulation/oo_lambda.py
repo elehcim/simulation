@@ -209,8 +209,8 @@ class SSAM:
 
     def plot_maps(self, save_fig=None, sb_range=None, v_los_range=None, sigma_range=None):
         grid = plot_maps(self.sb_mag, self.v_los_map, self.v_disp_map,
-                         self.w, self.res, self.photometry.band,
-                         sb_range, v_los_range, sigma_range)
+                         width=self.w, band=self.photometry.band,
+                         sb_range=sb_range, v_los_range=v_los_range, sigma_range=sigma_range)
         annuli_to_plot = deepcopy(self.photometry.apertures)
         for aper in annuli_to_plot:
             for attr in ('a_in', 'a_out', "b_in", "b_out"):

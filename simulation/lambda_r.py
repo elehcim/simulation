@@ -170,7 +170,7 @@ def plot_annuli(data, apertures):
     my_img = plt.imshow(data, origin='lower')
     for ann in apertures:
         ann.plot(color='white')
-    plt.colorbar(my_img);
+    plt.colorbar(my_img)
     plt.show()
 
 
@@ -197,15 +197,15 @@ def adjust_cbar_range(cbar_range):
     return m, M
 
 
-def plot_maps(sb, vlos, sigma, width, resolution, band=None,
+def plot_maps(sb, vlos, sigma, width, band=None,
               sb_range=None, v_los_range=None, sigma_range=None):
     from mpl_toolkits.axes_grid1 import AxesGrid
     fig = plt.figure(figsize=(12,4))
     grid = AxesGrid(fig, 111,  # similar to subplot(142)
                     nrows_ncols=(1, 3),
                     axes_pad=0.5,
-    #                 share_x=True,
-    #                 share_all=False,
+                    # share_x=True,
+                    # share_all=False,
                     label_mode="all",
                     cbar_mode="each",
                     cbar_location="top",
