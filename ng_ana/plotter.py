@@ -13,11 +13,11 @@ import astropy.units as u
 
 
 SIMPATH = '/home/michele/sim/MySimulations/ng'
-SIM_NUM = '71002'
+SIM_NUM = '62002'
 if len(sys.argv) == 2:
 	TRAJ = sys.argv[1]
 else:
-	TRAJ = 'p100_a800_r600'
+	TRAJ = 'p50_a800_r600'
 SIM = 'mb.{}'.format(SIM_NUM)
 MORIA_CACHE = 'moria{}.fits'.format(SIM_NUM)
 
@@ -28,7 +28,6 @@ moria_s = simulation.MoriaSim(SIM_NUM)[-1]
 
 from simulation.units import gadget_time_units, gadget_dens_units
 conv_fac = gadget_time_units.in_units('Gyr')
-conv_fac
 
 load_cache = True
 if load_cache:
@@ -102,11 +101,14 @@ if SIM_NUM.startswith('71'):
     ax_ram.set_ylim(1e-4, 1.2)
 elif SIM_NUM.startswith('69'):
     ax_r_eff.set_ylim(0, 30)
-    ax_sfh.set_ylim(0.0, 0.12)
-    ax_sigma.set_ylim(0.0, 35)
+    ax_sfh.set_ylim(0.0, 0.15)
+    ax_sigma.set_ylim(0.0, 41)
     ax_ram.set_ylim(1e-4, 1.2)
 elif SIM_NUM.startswith('62'):
-    pass
+    ax_r_eff.set_ylim(0, 30)
+    ax_sfh.set_ylim(0.0, 0.013)
+    ax_sigma.set_ylim(0.0, 29)
+    ax_ram.set_ylim(1e-4, 1.2)
 
 fig.subplots_adjust(hspace=0)
 
@@ -123,4 +125,4 @@ plt.setp(fig.axes[-1], visible=False)
 
 
 
-fig.savefig('v2/{}_{}.png'.format(SIM, TRAJ))
+fig.savefig('v3/{}_{}.png'.format(SIM, TRAJ))

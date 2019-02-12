@@ -387,7 +387,7 @@ def parse_args(cli=None):
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--snap", dest='snap_name', help="Path to the simulation snapshot")
     group.add_argument("--sim", "-s", dest='sim_path', help="Path to the simulation snapshot")
-    parser.add_argument("--width", '-w', default=10, type=float)
+    parser.add_argument("--width", '-w', default=10, type=float, help='In kpc')
     parser.add_argument("--resolution", '-r', default=400, type=int)
     parser.add_argument("--band", "-b", default='v')
     parser.add_argument("--n-annuli", default=30, help='How many annuli to use', type=int)
