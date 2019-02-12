@@ -266,6 +266,10 @@ def get_results_str(ssam):
     return result
 
 
+def _insert_subdir(path, subdir):
+    return os.path.join(os.path.dirname(path), subdir, os.path.basename(path))
+
+
 def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0, **kwargs):
 
     snap = Snap(os.path.expanduser(snap_name), cuboid_edge=width * 1.1)
@@ -289,6 +293,11 @@ def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, sid
 
     print(result)
 
+    if 'subdir' in kwargs:
+        subdir = kwargs['subdir']
+        out_name = _insert_subdir(out_name, subdir)
+        os.makedirs(os.path.dirname(out_name), exist_ok=True)
+
     ssam.plot_maps(save_fig=out_name, sb_range=(18, 29),
                    v_los_range=(-15, 15),
                    sigma_range=(10, 40))
@@ -310,6 +319,8 @@ def simulation_ssam(sim_path, args):
 
     result_list = list()
     profile_list = list()
+
+    img_dir = 'maps_img'
 
     d = args.__dict__.copy()
     d['snap_name'] = 'data'
@@ -333,13 +344,14 @@ def simulation_ssam(sim_path, args):
                                     ell=ell,
                                     theta=theta,
                                     out_name=out_name,
+                                    subdir=img_dir,
                                     **d,
                                     )
             _, _, ell, theta, n = ssam.photometry.get_params()
             logger.info('Adding results to .dat file')
             result = result_data(ssam)
             result_list.append(result)
-            profile_list.append(time + [ssam.lambda_R_prof])
+            profile_list.append([time] + [ssam.lambda_R_prof])
             result_str = RESULT_FMT.format(*result)
 
             with open(data_out_name + '.dat', mode='a') as f:
@@ -355,7 +367,7 @@ def simulation_ssam(sim_path, args):
             maps_dict['sig'].append(ssam.v_disp_map)
             maps_dict['mag'].append(ssam.sb_mag)
             mtbl_loc = Table([ssam.v_los_map, ssam.v_disp_map, ssam.sb_mag], names=['vlos','sig','mag'])
-            mtbl_loc.write(out_name+'_img.fits.gz', overwrite=True)
+            mtbl_loc.write(_insert_subdir(out_name+'_img.fits.gz', img_dir), overwrite=True)
 
         except ValueError as e:
             # Usually is 'Insufficient particles around center to get velocity'
