@@ -16,8 +16,12 @@ from simulation.units import gadget_time_units
 from simulation.lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D, create_apertures
 from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
 from simulation.util import setup_logger
+from simulation.angmom import faceon, sideon
 
 logger = setup_logger('__name__', logger_level='INFO')
+
+
+R_EFF_BORDER = 10  # Same as hyplot
 
 
 class Photometry:
@@ -27,8 +31,7 @@ class Photometry:
     def __init__(self, band, resolution, n_annuli=20, a_min=10, N_0=1, ELLIP_0=0, THETA_0=0):
         """
         a_min
-        a_max
-        in pixels the min and max of the semimajor axis and the interval between one aperture and the other.
+        in pixels the minimum of the semimajor axis and the interval between one aperture and the other.
         For now it is linked with the resolution.
         """
         self.band = band
@@ -73,24 +76,24 @@ class Photometry:
         return sersic2D
 
     # FIXME
-    """
     def fit_profile(self, snap, r_eff_pix):
-        logger.info("Creating profile")
-        r_bins, sbp = sb_profile(snap, band=self.band)
-        if SHOW:
-            plt.plot(r_bins, sbp, linewidth=2);
-            plt.ylabel("I [$L_{{\odot,{}}}/pc^2$]".format(self.band))
-            plt.xlabel("r/kpc")
-            plt.title('Surface brightness profile')
-        logger.info("Fitting Sersic1D")
-        # TODO use r_eff_3D here?
-        sersic1D = fit_sersic_1D(r_eff_kpc, r_bins, sbp, show=SHOW)
+        raise NotImplementedError
+        # logger.info("Creating profile")
+        # r_bins, sbp = sb_profile(snap, band=self.band)
+        # if SHOW:
+        #     plt.plot(r_bins, sbp, linewidth=2);
+        #     plt.ylabel("I [$L_{{\odot,{}}}/pc^2$]".format(self.band))
+        #     plt.xlabel("r/kpc")
+        #     plt.title('Surface brightness profile')
+        # logger.info("Fitting Sersic1D")
+        # # TODO use r_eff_3D here?
+        # sersic1D = fit_sersic_1D(r_eff_kpc, r_bins, sbp, show=SHOW)
 
-        self.sersic1D = sersic1D
+        # self.sersic1D = sersic1D
 
-        print_fit_results(sersic1D)
-        return sersic1D
-    """
+        # print_fit_results(sersic1D)
+        # return sersic1D
+
     @property
     def apertures(self):
         apertures = create_apertures(self.center, self.smajax, self.ellip, self.theta)
@@ -128,13 +131,13 @@ class Imaging:
 
 
 class Snap:
-    def __init__(self, snap_name, cuboid_edge):
+    def __init__(self, snap_name, sphere_edge):
         logger.info("Opening file {}".format(snap_name))
         s = pynbody.load(snap_name)
         self._snap = s
-        max_boxsize = 4000
-        s.properties['boxsize'] = pynbody.units.Unit("{} kpc".format(max_boxsize))
-        s.physical_units()
+        # max_boxsize = 4000
+        # s.properties['boxsize'] = pynbody.units.Unit("{} kpc".format(max_boxsize))
+        # s.physical_units()
         self.time = s.header.time
         self.time_gyr = s.properties['time'].in_units('Gyr')
         logger.info("{:.2f} Gyr".format(self.time))
@@ -142,15 +145,17 @@ class Snap:
         pynbody.analysis.halo.center(s.s)  # , vel=False)
 
         # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
-        self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(cuboid_edge))]
+        self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(sphere_edge))]
 
     def sideon(self):
         logger.info("Rotating sideon")
-        pynbody.analysis.angmom.sideon(self.subsnap.s, disk_size=self.subsnap.s['pos'].max())
+        # pynbody.analysis.angmom.sideon(self.subsnap.s, disk_size=self.subsnap.s['pos'].max())
+        sideon(self.subsnap.s)
 
     def faceon(self):
         logger.info("Rotating faceon")
-        pynbody.analysis.angmom.faceon(self.subsnap.s, disk_size=self.subsnap.s['pos'].max())
+        # pynbody.analysis.angmom.faceon(self.subsnap.s, disk_size=self.subsnap.s['pos'].max())
+        faceon(self.subsnap.s)
 
     @property
     def angmom(self):
@@ -188,7 +193,7 @@ class SSAM:
         sb_lum = self.imaging.sb_lum()
         logger.info("Computing R_eff:")
         logger.info(" 2D: {:.4f} kpc".format(self.snap.r_eff_kpc))
-        # logger.info(" 3D: {:.4f} kpc".format(self.snap.r_eff_kpc3d))
+        logger.info(" 3D: {:.4f} kpc".format(self.snap.r_eff_kpc3d))
 
         r_eff_pix = kpc2pix(self.snap.r_eff_kpc,  # use functools.partial?
                             width=self.w,
@@ -272,7 +277,7 @@ def _insert_subdir(path, subdir):
 
 def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0, **kwargs):
 
-    snap = Snap(os.path.expanduser(snap_name), cuboid_edge=width * 1.1)
+    snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER)
 
     if side and face:
         print("Option 'side' and 'face' are mutually exclusive", file=sys.stderr)
