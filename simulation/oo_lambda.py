@@ -257,8 +257,8 @@ RESULT_FMT = '{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.2f} {:.2f} {:.
 
 
 def result_data(ssam):
-    return (ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta, ssam.photometry.n,
-        ssam.snap.r_eff_kpc, ssam.snap.r_eff_kpc3d, *ssam.snap.angmom, ssam.snap.magnitude(ssam.photometry.band))
+    return (ssam.time, ssam.lambda_R, ssam.photometry.ellip, ssam.photometry.theta, ssam.snap.r_eff_kpc, ssam.snap.r_eff_kpc3d,
+            ssam.photometry.n, *ssam.snap.angmom, ssam.snap.magnitude(ssam.photometry.band))
 
 
 def get_results_str(ssam):
