@@ -165,15 +165,15 @@ class Snap:
     @property
     @functools.lru_cache(1)
     def r_eff_kpc3d(self):
-        return pynbody.analysis.luminosity.half_light_r(self.subsnap, cylindrical=False)
+        return pynbody.analysis.luminosity.half_light_r(self.subsnap.s, cylindrical=False)
 
     @property
     @functools.lru_cache(1)
     def r_eff_kpc(self):
-        return pynbody.analysis.luminosity.half_light_r(self.subsnap, cylindrical=True)
+        return pynbody.analysis.luminosity.half_light_r(self.subsnap.s, cylindrical=True)
 
     def magnitude(self, band):
-        return pynbody.analysis.luminosity.halo_mag(self.subsnap, band=band)
+        return pynbody.analysis.luminosity.halo_mag(self.subsnap.s, band=band)
 
 
 class SSAM:
