@@ -85,10 +85,21 @@ def feh(snap):
     snap[name_sph] = snap.kdtree.sph_mean(snap[name], nn)
     snap['mass_sph'] = snap.kdtree.sph_mean(snap['mass'], nn)
     arr = np.log10(snap[name_sph]/snap['mass_sph']) - FeH_corr
-    arr[np.logical_or(snap[name_sph] == 0.0, snap['mass_sph'] == 0.0)] = -98.0
+    # arr[np.logical_or(snap[name_sph] == 0.0, snap['mass_sph'] == 0.0)] = -98.0
     return arr
 
-
+@pynbody.derived_array
+def gas_metals(snap):
+    # nn = pynbody.config['sph']['smooth-particles']
+    # pynbody.sph.build_tree_or_trees(snap)
+    # snap.kdtree.set_array_ref('smooth',snap['smooth'])
+    # snap.kdtree.set_array_ref('mass',snap['mass'])
+    # snap.kdtree.set_array_ref('rho',snap['rho'])
+    # snap[name_sph] = snap.kdtree.sph_mean(snap[name], nn)
+    # snap['mass_sph'] = snap.kdtree.sph_mean(snap['mass'], nn)
+    arr = snap['fesp'] + snap['mgsp']/snap['mass']
+    # arr[np.logical_or(snap[name_sph] == 0.0, snap['mass_sph'] == 0.0)] = -98.0
+    return arr
 
 @pynbody.derived_array
 def acce_norm(self):
