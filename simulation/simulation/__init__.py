@@ -13,6 +13,7 @@ from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapsho
 from .util import np_printoptions
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
+from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -205,6 +206,10 @@ class Simulation:
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
         self.trace = get_trace(sim_dir)
 
+        locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+        self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
+        self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
+
     def _load(self, sim_id, force_cosmo=False, snap_indexes=None):
         snap_name_list = snapshot_file_list(os.path.expanduser(sim_id), include_dir=True)
         logger.info("Found {} snapshots".format(len(snap_name_list)))
@@ -243,9 +248,12 @@ class Simulation:
 
     @property
     def peri(self):
-        i = self._sim_dir.find('_p')
-        j = self._sim_dir.find('_a')
-        return self._sim_dir[i+2:j]
+        if self.is_moving_box:
+            i = self._sim_dir.find('_p')
+            j = self._sim_dir.find('_a')
+            return self._sim_dir[i+2:j]
+        else:
+            return ""
 
     @property
     def is_moving_box(self):

@@ -18,8 +18,9 @@ PERI_LIST = [50, 100, 150, 200, 300]
 
 NTH = 1
 
-for peri in PERI_LIST:
-    sim_path = os.path.join(SIM_PATH.replace('XX', str(peri)), 'out')
+sim_list = [os.path.join(SIM_PATH.replace('XX', str(peri)), 'out') for peri in PERI_LIST]
+
+for sim_path in sim_list:
     sim = simulation.Simulation(sim_path, snap_indexes=slice(None, None, NTH))
     surf_bright = {}
     v_circ = {}

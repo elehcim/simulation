@@ -186,7 +186,7 @@ class SSAM:
 
     def compute_lambda(self, fit_profile=False):
         sb_lum = self.imaging.sb_lum()
-        logger.info("Computed R_eff:")
+        logger.info("Computing R_eff:")
         logger.info(" 2D: {:.4f} kpc".format(self.snap.r_eff_kpc))
         # logger.info(" 3D: {:.4f} kpc".format(self.snap.r_eff_kpc3d))
 
@@ -375,7 +375,7 @@ def simulation_ssam(sim_path, args):
             logger.error(e)
             # Get at least the time
             result_list.append(tuple([time] + [np.nan] * (len(RESULT_COL)-1)))
-            profile_list.append(tuple([time] + [np.nan] * (args.n_annuli-1)))
+            profile_list.append(tuple([np.nan] * args.n_annuli))
             with open(data_out_name + '.dat', mode='a') as f:
                 f.write('{:.5f}\n'.format(time))
                 f.flush()
