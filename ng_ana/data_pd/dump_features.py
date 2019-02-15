@@ -43,14 +43,14 @@ def dump_features(sim, output_name, radius=R_EFF_BORDER, do_sfr=True):
         sigma_star.append(sigma(snap.s[sphere]['vel']))
         sigma_gas.append(sigma(snap.g[sphere]['vel']))
         metals_star.append((snap.s[sphere]['metals'] * snap.s[sphere]['mass']).sum()/star_m)
-        #TODO
+
 
     # DUMP
     times = sim.times
     if do_sfr:
         _, sfr = sfh(sim)
     else:
-        sfr = np.ones(len(times) + 1) * np.nan
+        sfr = np.ones(len(times)) * np.nan
 
 
     tbl = Table({'t': np.array(times) * u.Gyr,
