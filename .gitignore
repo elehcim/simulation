@@ -13,6 +13,9 @@ data/
 ssam_data/
 *.mp4
 *.fits
+*.fits.gz
+*.gz
+*.dat
 
 # python datafile
 *.npz
