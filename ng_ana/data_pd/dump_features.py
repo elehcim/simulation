@@ -42,7 +42,7 @@ def dump_features(sim, output_name, radius=R_EFF_BORDER, do_sfr=True):
         r_eff3d.append(pynbody.analysis.luminosity.half_light_r(snap.s[sphere], cylindrical=False))
         sigma_star.append(sigma(snap.s[sphere]['vel']))
         sigma_gas.append(sigma(snap.g[sphere]['vel']))
-        metals_star.append((snap.s[sphere]['metals'] * snap.s[sphere]['mass']).sum()/star_m)
+        metals_star.append((snap.s[sphere]['metals'] * snap.s[sphere]['mass'].in_units('Msol')).sum()/star_m)
 
 
     # DUMP
@@ -88,7 +88,7 @@ def dump_features(sim, output_name, radius=R_EFF_BORDER, do_sfr=True):
 #     return tbl
 
 if __name__=='__main__':
-    moria_list = [62002, 71002, 69002]
+    moria_list = [69002, 62002, 71002]
     for moria_name in moria_list:
         moria = simulation.MoriaSim(str(moria_name))
         dump_features(moria, "moria{}.fits".format(moria_name), do_sfr=False)
