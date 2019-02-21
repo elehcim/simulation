@@ -37,7 +37,7 @@ import enums
 # snapshot = 36
 # # Mass of the analytical halo
 # Mtot = 1e12
-# # This will create a new simulation. This is the name of the new simulation. 
+# # This will create a new simulation. This is the name of the new simulation.
 # newsim = 1
 # # Prograde or retrograde orbit
 # prograde = True
@@ -149,9 +149,9 @@ class NFWPotential:
 
 
 def turnp2mom(periapsis, apoapsis, V0, dV0dr):
-    """Convert turning points (periapsis and apoapsis) to 
+    """Convert turning points (periapsis and apoapsis) to
     binding energy E and angular momentum J.
-    
+
     V0 is the negative potential and dV0dr its derivative.
 
     Returns
@@ -196,7 +196,7 @@ def get_velocity(rp, ra, r, V0, dV0dr):
     v = np.sqrt(2 * (V0(r) - E))
 
     print("Kick velocity modulus", v, "km/s")
-    
+
     v_theta = J / r
     v_r = np.sqrt(v**2 - v_theta**2)
 
@@ -238,7 +238,7 @@ def data_velocity_dispersion(data):
 def radial_period(r1, r2, E, V0, J):
     """Return the radial period.
 
-    The time required for a particle in a spherically 
+    The time required for a particle in a spherically
     symmetric potential to travel from apocenter to pericenter and back.
 
     Source: GD sec: 3.1 eq. 3.17"""
@@ -354,10 +354,10 @@ if __name__ == "__main__":
     v_r, v_theta = get_velocity(rp, ra, r, nfw.V0, nfw.dV0dr)
     # print(v_r, v_theta, "km/s")
 
-    # The galaxy is on the y axis
-    x = 0
+    # The galaxy is on the x axis
+    y = 0
     z = 0
-    y = np.sqrt(r**2 - x**2 - z**2)  # still in km
+    x = -np.sqrt(r**2 - y**2 - z**2)  # still in km
 
     vx, vy = polar_to_cartesian(x, y, v_r, v_theta)
     vz = 0
@@ -403,6 +403,12 @@ if __name__ == "__main__":
     print_average_particle_velocities(data)
 
     v_disp = data_velocity_dispersion(data)
+
+
+    # Rotating
+    print("\n-- Rotating")
+
+    data.generalRotation(0,0,90)
 
     print("\n-- Performing Kick")
     print("Velocity dispersion sigma_x={:.2f} sigma_y={:.2f} sigma_z={:.2f}".format(*v_disp))
@@ -458,7 +464,7 @@ if __name__ == "__main__":
 ## This code generates a .gic file. Now to do:
 ## change parameter file
 ## make directories on node
-## Copy .gic file and parameterfile to cluster. 
-## run as: mpirun -np numb_of_cores ./Gadget2 parameterfiles/namesim.param 2 > namesim.output 2> namesim.err & 
-##          (the 2>namesim.err isn't necessary: it helps to determine what went wrong when the code crashes. 
+## Copy .gic file and parameterfile to cluster.
+## run as: mpirun -np numb_of_cores ./Gadget2 parameterfiles/namesim.param 2 > namesim.output 2> namesim.err &
+##          (the 2>namesim.err isn't necessary: it helps to determine what went wrong when the code crashes.
 ## don't forget the final 2 this is a restart flag
