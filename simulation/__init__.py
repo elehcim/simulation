@@ -125,12 +125,12 @@ def get_param_used(path):
 def get_dens_trace(path):
     path = os.path.expanduser(path)
     if os.path.isdir(path):
-        path = os.path.join(path, 'dens_trace.txt')
+        path = os.path.join(path, 'dens_temp_trace.txt')
     else:
         return None
     try:
-        df = parse_trace(path)
-        logger.info("Found dens_trace file")
+        df = parse_dens_trace(path)
+        logger.info("Found dens_temp_trace file")
     except FileNotFoundError:
         return None
     return df
@@ -220,7 +220,7 @@ class Simulation:
 
         self.trace = get_trace(sim_dir)
         self.dens_trace = get_dens_trace(sim_dir)
-        if self.dens_trace:
+        if self.dens_trace is not None:
             locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
             self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
             self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
