@@ -60,7 +60,11 @@ def sfh(sim):
 
 
 def bin_sfh(times, sfr, bins=100):
-    hist, binedges = np.histogram(times, bins=bins, weights=sfr*bins*(times[1]-times[0]))
+    trange = times.max() - times.min()
+    dt_orig = trange / len(sfr)
+    dt_new = trange / bins
+    bin_width_ratio = dt_orig / dt_new
+    hist, binedges = np.histogram(times, bins=bins, weights=sfr*bin_width_ratio)
     return hist, binedges
 
 
@@ -134,7 +138,7 @@ def plot_sfh(sim, ax=None):
     # pynbody.plot.stars.sfh(sim.snap_list[-1], subplot=ax, bins=len(sim), trange=sim.t_range)
     # ax1.grid()
     ax.plot(sim.times, sfr)
-    ax.set_xlabel('time')
+    ax.set_xlabel('Time [Gyr]')
     ax.set_ylabel('SFR [Msol/yr]')
     max_sfr = np.max(sfr)
     if ax.get_ylim()[1] < 1.2 * max_sfr:
