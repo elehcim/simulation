@@ -122,6 +122,19 @@ def get_param_used(path):
     return d
 
 
+def get_dens_trace(path):
+    path = os.path.expanduser(path)
+    if os.path.isdir(path):
+        path = os.path.join(path, 'dens_trace.txt')
+    else:
+        return None
+    try:
+        df = parse_trace(path)
+        logger.info("Found dens_trace file")
+    except FileNotFoundError:
+        return None
+    return df
+
 def get_trace(path):
     path = os.path.expanduser(path)
     if os.path.isdir(path):
@@ -204,11 +217,15 @@ class Simulation:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
-        self.trace = get_trace(sim_dir)
 
-        locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
-        self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
-        self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
+        self.trace = get_trace(sim_dir)
+        self.dens_trace = get_dens_trace(sim_dir)
+        if self.dens_trace:
+            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+            self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
+            self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
+        else:
+            self.v_host = self.rho_host = None
 
     def _load(self, sim_id, force_cosmo=False, snap_indexes=None):
         snap_name_list = snapshot_file_list(os.path.expanduser(sim_id), include_dir=True)
@@ -299,11 +316,6 @@ class Simulation:
     @lru_cache(1)
     def times(self):
         return pynbody.array.SimArray([snap.properties['time'].in_units('Gyr') for snap in self.snap_list], units=pynbody.units.Gyr)
-
-    @property
-    @lru_cache(1)
-    def dens_trace(self):
-        return parse_dens_trace(os.path.join(self._sim_dir, 'dens_temp_trace.txt'))
 
     @property
     @lru_cache(1)
