@@ -59,18 +59,38 @@ def sfh(sim):
     return dt, sfr
 
 
-def binned_sfh(sim, bins=100):
-    dt, sfr = sfh(sim)
-    thebins = np.histogram_bin_edges(sim.times, bins=bins)
-    hist, binedges = np.histogram(sim.times, bins=thebins, weights=sfr*(thebins[1] - thebins[0]))  # FIXME WHY?
+def bin_sfh(times, sfr, bins=100):
+    hist, binedges = np.histogram(times, bins=bins, weights=sfr*bins*(times[1]-times[0]))
     return hist, binedges
+
+
+def compute_binned_sfh(sim, bins=100):
+    dt, sfr = sfh(sim)
+    hist, binedges = bin_sfh(sim.times, sfr, bins=bins)
+    return hist, binedges
+
+
+def plot_hist_sfh(hist, binedges, ax=None, drawstyle='steps', **kwargs):
+    if ax is None:
+        fig, ax = plt.subplots()
+    # from here: https://stackoverflow.com/a/18611135
+    left, right = binedges[:-1], binedges[1:]
+    X = np.array([left, right]).T.flatten()
+    Y = np.array([hist, hist]).T.flatten()
+    ax.plot(X,Y, drawstyle=drawstyle, **kwargs)
+
+    max_sfr = np.max(hist)
+    if ax.get_ylim()[1] < 1.2 * max_sfr:
+        ax.set_ylim(0.0, 1.2 * max_sfr)
+    ax.set_xlabel('Time [Gyr]')
+    ax.set_ylabel('SFR [Msol/yr]')
 
 
 def plot_binned_sfh(sim, bins=100, ax=None, drawstyle='steps', **kwargs):
     if ax is None:
         fig, ax = plt.subplots()
 
-    hist, binedges = binned_sfh(sim, bins)
+    hist, binedges = compute_binned_sfh(sim, bins)
 
     # from here: https://stackoverflow.com/a/18611135
     left, right = binedges[:-1], binedges[1:]
