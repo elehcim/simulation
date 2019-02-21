@@ -31,7 +31,7 @@ conv_fac = gadget_time_units.in_units('Gyr')
 
 load_cache = True
 if load_cache:
-    filename = 'data_pd/{}_{}_s5.fits'.format(SIM,TRAJ)
+    filename = 'data_pd/{}_{}.fits'.format(SIM,TRAJ)
     tbl = Table.read(filename)
     df = tbl.to_pandas()
 
