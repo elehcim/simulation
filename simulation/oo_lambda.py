@@ -142,6 +142,7 @@ class Snap:
         self.time_gyr = s.properties['time'].in_units('Gyr')
         logger.info("{:.2f} Gyr".format(self.time))
 
+        logger.info("Centering on stars")
         pynbody.analysis.halo.center(s.s)  # , vel=False)
 
         # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
