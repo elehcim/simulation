@@ -111,8 +111,8 @@ def sfh(sim):
     # from https://stackoverflow.com/a/37977222
     # The problem is that in the first place I have 0.0/0.0.
     # I'd like the first element of sfr to be 0.0
-    # sfr = (massformed) / (dt * t_conv_fac)  # Msol/yr
     denom = dt * t_conv_fac
+    # sfr = (massformed) / (denom)  # Msol/yr
     sfr = np.divide(massformed, denom, out=np.zeros_like(massformed), where=(denom != 0.0))
 
     return dt, sfr
