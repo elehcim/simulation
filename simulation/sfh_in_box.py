@@ -1,9 +1,68 @@
 import simulation
 import pynbody
+from pynbody import filt
 from itertools import tee
 import astropy.units as u
 import numpy as np
 import matplotlib.pyplot as plt
+import warnings
+
+
+def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
+    '''
+    star formation history from pynbody.plot.stars
+
+    By default, sfh will use the formation mass of the star.  In tipsy, this will be
+    taken from the starlog file. Set massform=False if you want the final (observed)
+    star formation history
+
+    Parameters:
+    ----------
+    trange : list, array, or tuple
+        Specifies the time range. len(t_range) must be 2.
+    bins : int
+        number of bins to use for the SFH.
+    massform : bool
+        decides whether to use original star mass (massform) or final star mass.
+
+    Returns
+    -------
+    sfhist : pynbody.array.SimArray (Msol/yr)
+        The SFR in each time bin
+    thebins : pynbody.array.SimArray (Gyr)
+        The bins edges
+    '''
+    if 'nbins' in kwargs:
+        bins = kwargs['nbins']
+
+    if ((len(snap.g)>0) | (len(snap.d)>0)):
+        simstars = snap.star
+    else:
+        simstars = snap
+
+    if trange:
+        assert len(trange) == 2
+    else:
+        trange = [simstars['tform'].in_units("Gyr").min(), simstars['tform'].in_units("Gyr").max()]
+
+    binnorm = 1e-9 * bins / (trange[1] - trange[0])
+
+    trangefilt = filt.And(filt.HighPass('tform', str(trange[0]) + ' Gyr'),
+                          filt.LowPass('tform', str(trange[1]) + ' Gyr'))
+    tforms = simstars[trangefilt]['tform'].in_units('Gyr')
+
+    if massform:
+        try:
+            weight = simstars[trangefilt]['massform'].in_units('Msol') * binnorm
+        except (KeyError, pynbody.units.UnitsException):
+            warnings.warn("Could not load massform array -- falling back to current stellar masses", RuntimeWarning)
+            weight = simstars[trangefilt]['mass'].in_units('Msol') * binnorm
+    else:
+        weight = simstars[trangefilt]['mass'].in_units('Msol') * binnorm
+
+    sfhist, thebins = np.histogram(tforms, weights=weight, bins=bins, **kwargs)
+
+    return pynbody.array.SimArray(sfhist, "Msol yr**-1"), pynbody.array.SimArray(thebins, "Gyr")
 
 
 def _pairwise(iterable):
