@@ -14,6 +14,7 @@ from .util import np_printoptions
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
+from .derotating_box import get_omega_box
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -263,6 +264,20 @@ class Simulation:
     def snap(self, idx):
         return self.snap_list[idx]
 
+    def get_traj(self):
+        locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
+        x = self.trace.x[locations]
+        y = self.trace.y[locations]
+        # z = self.trace.z[locations]
+        return pynbody.array.SimArray(np.vstack([x, y]), 'kpc').T
+
+    def get_omega(self):
+        omega = None
+        if self.is_moving_box:
+            omega_arr = get_omega_box(self)
+            omega = pynbody.array.SimArray(omega_arr, 1/gadget_time_units)
+        return omega
+
     @property
     def peri(self):
         if self.is_moving_box:
@@ -319,13 +334,20 @@ class Simulation:
 
     @property
     @lru_cache(1)
+    def times_header(self):
+        return np.array([snap.header.time for snap in self.snap_list])
+
+    @property
+    @lru_cache(1)
     def ram_pressure(self):
         return self.dens_trace.vel**2 * self.dens_trace.rho
 
     @property
     def r(self):
         if self.is_moving_box:
-            return self.trace.r
+            locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
+            # self.r = pynbody.array.SimArray(self.trace.r[locations], 'kpc')
+            return self.trace.r[locations]
         elif self.cog is not None:
             return np.linalg.norm(self.cog, axis=0)
 
