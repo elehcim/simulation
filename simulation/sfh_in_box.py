@@ -66,19 +66,46 @@ def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
 
 
 def _pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    "s -> (s0,s1), (s1,s2), (s2, s3), ... (sn-1,sn)"
     a, b = tee(iterable)
     next(b, None)
     return zip(a, b)
 
 
-def sfh(sim):
+def new_stars_id(sim):
+    """ Use ID (iord in pynbody) to identify the new stars"""
+    # Unfortunately for simulation with Moving Box, IDs are not unique
+    ns_idx = list()
+    for (a0, a1) in _pairwise(sim):
+        s0, s1 = a0.s['iord'].view(np.ndarray), a1.s['iord'].view(np.ndarray)
+        new_stars = np.setdiff1d(s1, s0)
+        ns_idx.append(np.where(np.isin(s1, new_stars))[0])
+    return ns_idx
+
+
+def new_stars_time(sim):
+    """Get star particles which were born after the timestamp of the previous snapshot"""
+    ns_idx = list()
+    for (a0, a1) in _pairwise(sim):
+        is_new_star = a1.s['tform'] > a0.properties['time']
+        ns_idx.append(np.where(is_new_star)[0])
+    return ns_idx
+
+
+def sfh(sim, selection_method='id'):
     """
     Returns the Star Formation Rate
 
     It computes the total mass of stars born between two snapshots.
     The new stars are spotted using the particle IDs
     which are new w.r.t. the previous snapshot.
+
+    Parameters:
+    -----------
+    sim : Simulation
+        The target simulation
+    selection_method : str ('time', 'id')
+        Use time or ID to select new stars
 
     Returns:
     --------
@@ -87,19 +114,17 @@ def sfh(sim):
     sfr: np.ndarray
         the mass of star formed between snapshot n and n-1. (Msol)
     """
-    ns = list()
-    ns_idx = list()
-    snaps = sim
-    for (a0, a1) in _pairwise(snaps):
-        s0, s1 = a0.s['iord'].view(np.ndarray), a1.s['iord'].view(np.ndarray)
-        new_stars = np.setdiff1d(s1, s0)
-        ns_idx.append(np.where(np.isin(s1, new_stars))[0])
-        ns.append(new_stars)
+    if selection_method.lower() == 'time':
+        ns_idx = new_stars_time(sim)
+    elif selection_method.lower() == 'id':
+        ns_idx = new_stars_id(sim)
+    else:
+        raise RuntimeError('Use "time" or "id" to select the method to identify new stars')
 
     # `dts` contains right borders of the time bin
     mf = [0.0]
     dts = [0.0]
-    for (idx, (a0, a1)) in zip(ns_idx, _pairwise(snaps)):
+    for (idx, (a0, a1)) in zip(ns_idx, _pairwise(sim)):
         mf.append(np.sum(a1.s['massform'][idx].in_units('Msol')).view(np.ndarray))
         dts.append(a1.header.time - a0.header.time)
 
