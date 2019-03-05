@@ -25,8 +25,8 @@ def plot_trace(x, y, t=None, ax=None):
     ax.plot((0,0),'r+')
     begin = x[0], y[0]
     end = x[-1], y[-1]
-    ax.plot(*begin,'go')
-    ax.plot(*end,'ro')
+    ax.plot(*begin,'go', markersize=1)
+    ax.plot(*end,'ro', markersize=1)
     ax.set_xlabel('x [kpc]')
     ax.set_ylabel('y [kpc]')
     if t is not None:
