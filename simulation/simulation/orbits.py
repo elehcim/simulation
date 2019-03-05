@@ -7,6 +7,7 @@ import numpy as np
 from scipy.integrate import quad
 import matplotlib.pyplot as plt
 from scipy.integrate import simps
+from simulation.units import gadget_time_units
 
 
 
@@ -165,18 +166,20 @@ def radial_period(r1, r2, E, V0, J):
     Parameters
     ----------
     r1 : float
-        Pericenter in km
+        Pericenter in km.
     r2 : float
-        Apocenter in km
+        Apocenter in km.
     E : float
-        Orbital energy in km**2/s**2
+        Orbital energy in km**2/s**2.
     J : float
-        Angular momentum in km**2/s
+        Angular momentum in km**2/s.
 
     Returns
     -------
-    res : 2-tuple
-        Radial period in Gyr and integration error
+    T_r : float
+        Radial period in Gyr.
+    quad_err : float
+        An estimate of the absolute error in the result.
     """
 
     if not r1 <= r2:
@@ -192,16 +195,30 @@ def radial_period(r1, r2, E, V0, J):
     # y = integrand(x)
     # res = simps(y,x)
     epsilon = 10
-    res = quad(integrand, r1+epsilon, r2-epsilon)  # Avoid apoasis because there 1/(dr/dt) is inf
-    return res
+    T_r, quad_error = quad(integrand, r1+epsilon, r2-epsilon)  # Avoid apoasis because there 1/(dr/dt) is inf
+    return T_r, quad_error
 
 
 def radial_period_integrand(r, E, V0, J):
+    """Binney and Tremaine 2008, Galactic Dynamics, sec: 3.1 eq. 3.17 (pag.146)
+
+    Parameters
+    ----------
+    r : float
+        Radius in km.
+    E : float
+        Orbital energy in km**2/s**2.
+    V0 : function
+        Spherially symmetric potential. Phi(r) = -V0(r). Output units are in km^2/s^2
+    J : float
+        Angular momentum in km**2/s.
+    """
     res = 2.0 / np.sqrt(np.abs(2*(V0(r) - E) - J**2/r**2))
     return res
 
 
 def plot_integrand(rp, ra, E, V0, J):
+    # TODO fixme units
     fig = plt.figure()
     ax = fig.add_subplot(111)
     x_ = np.linspace(rp, ra, 100)[1:-1]
@@ -211,3 +228,37 @@ def plot_integrand(rp, ra, E, V0, J):
     # plt.show()
 
 
+def measure_radial_period(sim):
+    dr = np.diff(sim.r)
+    zero_crossings = np.where(np.diff(np.signbit(dr)))[0]
+    times_of_apsis = sim.times_header[zero_crossings]
+    period_peri = times_of_apsis[2] - times_of_apsis[0]
+    return period_peri * gadget_time_units.in_units('Gyr')
+
+
+def compute_radial_period(rp, ra, pot=None):
+    """Compute radial period around a spherical potential
+    Parameters
+    ----------
+    rp : float
+        Pericenter in kpc.
+    ra : float
+        Apocenter in kpc.
+    pot : Potential
+        Potential around which to compute the orbit. Default: NFWPotential(1e14, 0.0)
+
+    Returns
+    -------
+    T_r : float
+        Radial period in Gyr.
+    quad_err : float
+        An estimate of the absolute error in the result.
+    """
+    if nfw is None:
+        M_h = 1e14
+        pot = NFWPotential(M_h, 0.0)
+    rp, ra, r = np.array(parse_simname(sim_name))*kpc_in_km
+    E, J = turnp2mom(rp, ra, pot.V0, pot.dV0dr)
+    T_r, quad_error = radial_period(rp, ra, E, pot.V0, J)
+    print("Radial period:    {:.5} Gyr".format(T_r))
+    return T_r, quad_error
