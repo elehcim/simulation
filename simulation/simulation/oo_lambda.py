@@ -15,7 +15,7 @@ from photutils import EllipticalAnnulus
 from simulation.units import gadget_time_units
 from simulation.lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D, create_apertures
 from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
-from simulation.util import setup_logger
+from simulation.util import setup_logger, get_sim_name
 from simulation.angmom import faceon, sideon
 
 logger = setup_logger('__name__', logger_level='INFO')
@@ -131,7 +131,7 @@ class Imaging:
 
 
 class Snap:
-    def __init__(self, snap_name, sphere_edge):
+    def __init__(self, snap_name, sphere_edge, derot_param=None):
         logger.info("Opening file {}".format(snap_name))
         s = pynbody.load(snap_name)
         self._snap = s
@@ -142,11 +142,25 @@ class Snap:
         self.time_gyr = s.properties['time'].in_units('Gyr')
         logger.info("{:.2f} Gyr".format(self.time))
 
+
+        if derot_param is not None:
+            logger.info("Derotating...")
+            logger.info("omega: {}".format(derot_param['omega']))
+            logger.info("pivot: {}".format(derot_param['pivot']))
+            s['vel'] -= np.cross(derot_param['omega'], s['pos'] - derot_param['pivot'])
+
         logger.info("Centering on stars")
-        pynbody.analysis.halo.center(s.s)  # , vel=False)
+        # vcen = pynbody.analysis.halo.vel_center(s, retcen=True)
+        # logger.info("Original velocity center:", vcen)
+
+        pynbody.analysis.halo.center(s.s, vel=False)
+
+        vcen_new = pynbody.analysis.halo.vel_center(s, retcen=True)
+        logger.info("New velocity center: {}".format(vcen_new))
 
         # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
         self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(sphere_edge))]
+
 
     def sideon(self):
         logger.info("Rotating sideon")
@@ -277,9 +291,14 @@ def _insert_subdir(path, subdir):
 
 
 def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0,
-                     sb_range=(18, 29), v_los_range=(-15, 15), sigma_range=(10, 40), **kwargs):
+                     sb_range=(18, 29), v_los_range=(-15, 15), sigma_range=(10, 40), omega=None, pivot=None, **kwargs):
 
-    snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER)
+    if omega is None or pivot is None:
+        derot_param = None
+    else:
+        derot_param = {'omega': omega, 'pivot': pivot}
+
+    snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER, derot_param=derot_param)
 
     if side and face:
         print("Option 'side' and 'face' are mutually exclusive", file=sys.stderr)
@@ -326,12 +345,27 @@ def simulation_ssam(sim_path, args):
 
     n, ell, theta = N_0, ELLIP_0, THETA_0
 
+    if os.path.isdir(os.path.expanduser(args.omega_dir)):
+        omega_dir = os.path.expanduser(args.omega_dir)
+        omega_file = os.path.join(omega_dir, get_sim_name(sim_path)+'_omega.fits')
+        logger.debug('Reading omega table: {}'.format(omega_file))
+        omega_arr = Table.read(omega_file)['omega'].data
+    else:
+        logger.warning('Cannot find omega table, not derotating...')
+        omega_arr = np.ones((len(snap_list), 3))
+
+    pivot = np.array(args.pivot.split(), dtype=np.float64)
+
+    assert len(omega_arr) == len(snap_list)
+
     result_list = list()
     profile_list = list()
 
     img_dir = 'maps_img'
 
     d = args.__dict__.copy()
+    del d['omega']
+    del d['pivot']
     d['snap_name'] = 'data'
     data_out_name = get_outname(**d)
     maps_dict = dict(vlos=list(), sig=list(), mag=list())
@@ -343,7 +377,10 @@ def simulation_ssam(sim_path, args):
         p.write('# time lambda_r_profile {}\n'.format(args.n_annuli))
 
     for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
+
         time = pynbody.load(snap_name).header.time
+        omega = omega_arr[i, :]
+
         try:
             d['snap_name'] = snap_name
 
@@ -354,6 +391,8 @@ def simulation_ssam(sim_path, args):
                                     theta=theta,
                                     out_name=out_name,
                                     subdir=img_dir,
+                                    omega=omega,
+                                    pivot=pivot,
                                     **d,
                                     )
             _, _, ell, theta, n = ssam.photometry.get_params()
@@ -413,6 +452,9 @@ def parse_args(cli=None):
     parser.add_argument("--resolution", '-r', default=400, type=int)
     parser.add_argument("--band", "-b", default='v')
     parser.add_argument("--n-annuli", default=30, help='How many annuli to use', type=int)
+    parser.add_argument("--omega-dir", default='~/sim/analysis/ng_ana/data/omega', help='Directory of precomputed moving boxes omegas')
+    parser.add_argument('--omega', help='Omega value in code units (space separated, e.g. "0 0 1.2")', type=str, default=None)
+    parser.add_argument('--pivot', help='Coordinates of the pivot point (space separated, e.g. "30 30 30")', type=str, default=None)
     parser.add_argument("--cuboid-factor", default=1.5, type=float)
     parser.add_argument("--out-dir", default=None)
     parser.add_argument('--side', action='store_true')
@@ -420,6 +462,7 @@ def parse_args(cli=None):
     parser.add_argument("--sb-range", default=(18, 29), type=tuple)
     parser.add_argument("--v-los-range", default=(-15, 15), type=tuple)
     parser.add_argument("--sigma-range", default=(10, 40), type=tuple)
+
 
     args = parser.parse_args(cli)
     return args
@@ -441,6 +484,8 @@ def main(cli=None):
                          out_name=out_name,
                          side=args.side,
                          face=args.face,
+                         omega=np.array(args.omega.split(), dtype=np.float64),
+                         pivot=np.array(args.pivot.split(), dtype=np.float64),
                          )
     elif args.sim_path is not None:
         simulation_ssam(sim_path=args.sim_path,
