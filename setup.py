@@ -15,6 +15,7 @@ setup(name='simulation',
                               'plot_trace=simulation.plot.plot_trace:main',
                               'plot_dt=simulation.plot.plot_dt:main',
                               'ssam=simulation.oo_lambda:main',
+                              'omega_write=simulation.derotating_box:main',
                               ]
                    }
       )

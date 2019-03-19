@@ -98,3 +98,38 @@ def get_snapshot_data(simulation, snap=None):
 
 def to_astropy_quantity(simarr, units=None):
     return u.Quantity(simarr.view(type=np.ndarray), unit=units if units is not None else str(simarr.units))
+
+
+def get_sim_name(sim_path):
+    """ Get the name of the simulation
+
+    Example
+    -------
+    >>> get_sim_name("/home/michele/sim/MySimulations/ng/mb.62002_p200_a800_r600/out")
+    mb.62002_p200_a800_r600
+    """
+    sim_name = os.path.basename(os.path.dirname(os.path.normpath(sim_path)))
+    return sim_name
+
+
+def get_sim_traj(sim_name):
+    """
+    Get sim name and trajectory (+ optional suffix) from the name of the simulation
+
+    Example
+    -------
+    >>> get_sim_traj(mb.62002_p200_a800_r600_no_gas)
+    (mb.62002, p200_a800_r600_no_gas)
+
+    """
+    s, t = sim_name.split('002_')
+    return s+'002', t
+
+
+if __name__ == '__main__':
+    # mega for-loop
+    print(good_sims)
+
+    for sim_name in map(os.path.basename, good_sims):
+        SIM, TRAJ = get_sim_traj(sim_name)
+        sim_path = os.path.join(SIMPATH, "{}_{}".format(SIM, TRAJ), "out")
