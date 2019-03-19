@@ -276,7 +276,8 @@ def _insert_subdir(path, subdir):
     return os.path.join(os.path.dirname(path), subdir, os.path.basename(path))
 
 
-def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0, **kwargs):
+def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0,
+                     sb_range=(18, 29), v_los_range=(-15, 15), sigma_range=(10, 40), **kwargs):
 
     snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER)
 
@@ -304,9 +305,11 @@ def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, sid
         out_name = _insert_subdir(out_name, subdir)
         os.makedirs(os.path.dirname(out_name), exist_ok=True)
 
-    ssam.plot_maps(save_fig=out_name, sb_range=(18, 29),
-                   v_los_range=(-15, 15),
-                   sigma_range=(10, 40))
+
+    ssam.plot_maps(save_fig=out_name, sb_range=sb_range,
+                                      v_los_range=v_los_range,
+                                      sigma_range=sigma_range)
+
     return ssam
 
 
@@ -392,6 +395,7 @@ def simulation_ssam(sim_path, args):
     fits_data_file = data_out_name+'.fits'
     logger.info('Writing final table {}'.format(fits_data_file))
     tbl = Table(rows=result_list, names=RESULT_COL)
+    # TODO Write a new file with profile
     col_prof = Column(profile_list)
     tbl.add_column(col_prof, name='lambda_prof')
     # TODO units?
@@ -413,6 +417,9 @@ def parse_args(cli=None):
     parser.add_argument("--out-dir", default=None)
     parser.add_argument('--side', action='store_true')
     parser.add_argument('--face', action='store_true')
+    parser.add_argument("--sb-range", default=(18, 29), type=tuple)
+    parser.add_argument("--v-los-range", default=(-15, 15), type=tuple)
+    parser.add_argument("--sigma-range", default=(10, 40), type=tuple)
 
     args = parser.parse_args(cli)
     return args
