@@ -17,11 +17,18 @@ from bokeh.resources import INLINE
 
 
 def get_maps_img(img_dir):
+    """Produce a dictionary with maps as value and index as keys.
+    To be then added to the dataframe with pd.Series(dict).
+    a typical map name is: `maps_snapshot_????_*_????.png`
+                                                 ^   ^
+                                                -8  -4
+    """
+    print("Found {} maps".format(len(maps)))
     maps = sorted(glob.glob(os.path.join(img_dir, 'maps_img', 'maps_*.png')))
     d = dict()
     for m in maps:
-        d[int(m[-7:-4])-1] = m
-    print(len(maps))
+        idx = int(m[-8:-4])-1
+        d[idx] = m
     return d
 
 
@@ -31,7 +38,6 @@ print(bokeh.__version__)
 SSAM_DIR = '/home/michele/sim/analysis/ssam/derotated/m69p2_no_vel'
 
 TBL = '/home/michele/sim/analysis/ng_ana/data/mb.69002_p200_a800_r600.fits'
-# SIM_PATH = '/home/michele/sim/MySimulations/hi_osc/mb.69002_p200_a800_r600/out'
 
 # output_file(os.path.join(SSAM_DIR, 'ssam.html'), mode='inline', title="Specific Stellar Angular Momentum - " + SSAM_DIR)
 output_file('ssam.html', mode='inline', title="Specific Stellar Angular Momentum - " + SSAM_DIR)
@@ -50,6 +56,7 @@ df = Table.read(TBL).to_pandas()
 d = get_maps_img(SSAM_DIR)
 df['maps'] = pd.Series(d)
 # df['maps'] = df['maps'].fillna('')
+# TODO if SFR is NaN fix it
 # df.sfr = np.ones(len(df))
 
 # Merge data
