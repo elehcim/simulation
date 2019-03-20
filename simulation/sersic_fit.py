@@ -4,13 +4,17 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 
-def sersic_fit(profile, r_eff, n_0, deviation_param=0.1):
+
+def order_of_magnitude(x):
+    return np.floor(np.log10(x))
+
+def sersic_fit(profile, r_eff, n_0, deviation_param=0.1, verblevel=0):
     r = profile['rbins']
     sb = profile['sb']
     idx = np.digitize(r_eff, r) - 1
     ampl = 10**(-0.4*sb)[idx]
     oom = 10**(order_of_magnitude(ampl))
-    print(oom)
+    # print(oom)
     sersic_init = models.Sersic1D(amplitude=ampl/oom, r_eff=r_eff, n=n_0,
                                   fixed={'amplitude': False,
                                          'r_eff': False,
@@ -23,13 +27,13 @@ def sersic_fit(profile, r_eff, n_0, deviation_param=0.1):
                                  )
 
     # sersic_init.amplitude.min = 1e-11
-    # sersic_init.n.min = 0.1
-    # sersic_init.n.max = 4
-    print("Bounds: ", sersic_init.bounds)
+    sersic_init.n.min = 0.1
+    sersic_init.n.max = 10
+    # print("Bounds: ", sersic_init.bounds)
     fitter = fitting.SLSQPLSQFitter()
-    s_fit = fitter(sersic_init, r, 10**(-0.4*sb)/oom)#, acc=1e-10)
+    s_fit = fitter(sersic_init, r, 10**(-0.4*sb)/oom, verblevel=verblevel)#, acc=1e-10)
     s_fit.amplitude *= oom
-    print(s_fit)
+    # print(s_fit)
     return s_fit
 
 def plot_fitted_profile(p, fit):
