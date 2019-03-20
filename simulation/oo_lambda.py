@@ -10,9 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pynbody
 from astropy.table import Table, Column
-from photutils import EllipticalAnnulus
 
-from simulation.units import gadget_time_units
 from simulation.lambda_r import print_fit_results, plot_angmom, compute_stellar_specific_angmom, plot_maps, fit_sersic_2D, create_apertures
 from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
 from simulation.util import setup_logger, get_sim_name
