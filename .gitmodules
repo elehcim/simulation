@@ -1,3 +1,4 @@
 [submodule "ng_ana"]
 	path = ng_ana
 	url = git@github.ugent.be:mmastrop/ng_ana.git
+	ignore = dirty
