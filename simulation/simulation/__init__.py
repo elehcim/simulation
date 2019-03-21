@@ -222,9 +222,12 @@ class Simulation:
         self.trace = get_trace(sim_dir)
         self.dens_trace = get_dens_trace(sim_dir)
         if self.dens_trace is not None:
-            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
-            self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
-            self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
+            # np.digitize works only if t is monotonic
+            # TODO better logic. What happens with {v, rho}_host?
+            if self.dens_trace.t.is_monotonic_increasing:
+                locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+                self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
+                self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
         else:
             self.v_host = self.rho_host = None
 
