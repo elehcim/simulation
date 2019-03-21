@@ -108,7 +108,10 @@ def get_sim_name(sim_path):
     >>> get_sim_name("/home/michele/sim/MySimulations/ng/mb.62002_p200_a800_r600/out")
     mb.62002_p200_a800_r600
     """
-    sim_name = os.path.basename(os.path.dirname(os.path.normpath(sim_path)))
+    if not(os.path.normpath(sim_path).endswith('out')) and 'MoRIA' in sim_path:
+        sim_name = os.path.basename(os.path.normpath(sim_path))
+    else:
+        sim_name = os.path.basename(os.path.dirname(os.path.normpath(sim_path)))
     return sim_name
 
 
