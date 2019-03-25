@@ -10,7 +10,7 @@ import pynbody
 from .analyze_sumfiles import get_sumfile
 from .parsers.parse_trace import parse_trace, parse_dens_trace
 from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
-from .util import np_printoptions
+from .util import np_printoptions, make_df_monotonic_again
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
@@ -19,32 +19,6 @@ from .derotating_box import get_omega_box
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
-
-
-def find_sfh(snap, bins=100):
-    """
-
-    Parameters
-    ----------
-    snap : pynbody.SimSnap
-        Input snapshot
-    bins : int
-        Number of bins for SFH plot
-    Returns
-    -------
-    sfh, sfhtimes : 2-tuple of ndarray
-        the SFH in Msol/yr and the midpoints of the bins in Gyr
-    """
-    trange = [snap.star['tform'].in_units("Gyr").min(), snap.star['tform'].in_units("Gyr").max()]
-    binnorm = 1e-9*bins / (trange[1] - trange[0])
-    tforms = snap.star['tform'].in_units('Gyr')
-    try:
-        weight = snap.star['massform'].in_units('Msol') * binnorm
-    except:
-        weight = snap.star['mass'].in_units('Msol') * binnorm
-    sfh, sfhbines = np.histogram(tforms, weights=weight, bins=bins)
-    sfhtimes = 0.5*(sfhbines[1:] + sfhbines[:-1])
-    return sfh, sfhtimes  # sfh in Msol/yr, sfhtimes in Gyr
 
 
 def mass_resolution(snap):
@@ -223,11 +197,16 @@ class Simulation:
         self.dens_trace = get_dens_trace(sim_dir)
         if self.dens_trace is not None:
             # np.digitize works only if t is monotonic
-            # TODO better logic. What happens with {v, rho}_host?
             if self.dens_trace.t.is_monotonic_increasing:
                 locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
                 self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
                 self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
+            else:
+                logger.info("dens_temp_trace.txt file is non-monotonic. Trying to recover")
+                df_mono = make_df_monotonic_again(self.dens_trace)
+                locations = np.digitize(self.times.in_units(gadget_time_units), df_mono.t, right=True)
+                self.rho_host  = pynbody.array.SimArray(df_mono.rho[locations], gadget_dens_units)
+                self.v_host = pynbody.array.SimArray(df_mono.vel[locations],  gadget_vel_units)
         else:
             self.v_host = self.rho_host = None
 
@@ -268,9 +247,17 @@ class Simulation:
         return self.snap_list[idx]
 
     def get_traj(self):
-        locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
-        x = self.trace.x[locations]
-        y = self.trace.y[locations]
+        if self.trace.t.is_monotonic_increasing:
+            locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
+            x = self.trace.x[locations]
+            y = self.trace.y[locations]
+        else:
+            logger.info("trace.txt file is non-monotonic. Trying to recover")
+            df_mono = make_df_monotonic_again(self.trace)
+            locations = np.digitize(self.times.in_units(gadget_time_units), df_mono.t, right=True)
+            x = df_mono.x[locations]
+            y = df_mono.y[locations]
+
         # z = self.trace.z[locations]
         return pynbody.array.SimArray(np.vstack([x, y]), 'kpc').T
 
@@ -347,6 +334,7 @@ class Simulation:
 
     @property
     def r(self):
+        # TODO put in the init the adjustment of traces in case they are not monotonic
         if self.is_moving_box:
             locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
             # self.r = pynbody.array.SimArray(self.trace.r[locations], 'kpc')

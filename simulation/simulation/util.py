@@ -129,6 +129,18 @@ def get_sim_traj(sim_name):
     return s+'002', t
 
 
+def make_df_monotonic_again(df, col='t'):
+    """Return a copy of the df where the non monotonic parts are cut out"""
+    diff = df.t.diff()
+    restart_points = df.t[diff <0]
+    before_restart_points = df.t.loc[restart_points.index-1]
+    end_idx = [df.query('index > {} and t > {}'.format(idx, t)).index[0] for idx, t in zip(before_restart_points.index, before_restart_points.values)]
+    na = df.copy()
+    for a, b in zip(before_restart_points.index, end_idx):
+        na = na.drop(df.index[slice(a,b)])
+    return na
+
+
 if __name__ == '__main__':
     # mega for-loop
     print(good_sims)
