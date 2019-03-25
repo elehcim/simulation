@@ -51,6 +51,9 @@ def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
                           filt.LowPass('tform', str(trange[1]) + ' Gyr'))
     tforms = simstars[trangefilt]['tform'].in_units('Gyr')
 
+    if not len(tforms):
+        raise RuntimeError("No star information in the given trange")
+
     if massform:
         try:
             weight = simstars[trangefilt]['massform'].in_units('Msol') * binnorm
