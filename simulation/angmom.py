@@ -56,4 +56,4 @@ def sideon(h, vec_to_xform=calc_sideon_matrix,
 
 
 def faceon(h, **kwargs):
-    return mysideon(h, vec_to_xform=calc_faceon_matrix, **kwargs)
+    return sideon(h, vec_to_xform=calc_faceon_matrix, **kwargs)
