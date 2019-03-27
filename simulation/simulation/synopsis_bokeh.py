@@ -23,8 +23,8 @@ def get_maps_img(img_dir):
                                                  ^   ^
                                                 -8  -4
     """
-    print("Found {} maps".format(len(maps)))
     maps = sorted(glob.glob(os.path.join(img_dir, 'maps_img', 'maps_*.png')))
+    print("Found {} maps".format(len(maps)))
     d = dict()
     for m in maps:
         idx = int(m[-8:-4])-1
@@ -40,9 +40,10 @@ SSAM_DIR = '/home/michele/sim/analysis/ssam/derotated/m69p2_no_vel'
 TBL = '/home/michele/sim/analysis/ng_ana/data/mb.69002_p200_a800_r600.fits'
 
 # output_file(os.path.join(SSAM_DIR, 'ssam.html'), mode='inline', title="Specific Stellar Angular Momentum - " + SSAM_DIR)
-output_file('ssam.html', mode='inline', title="Specific Stellar Angular Momentum - " + SSAM_DIR)
+output_file(OUTNAME, mode='inline', title="Specific Stellar Angular Momentum - " + SSAM_DIR)
 
-WINDOW=20
+WINDOW = 20
+STD = 5
 TOOLS='pan,wheel_zoom,reset,hover'
 
 # get_data
@@ -68,7 +69,7 @@ for col in ('time', 'r_eff_kpc', 'r_eff_kpc3d', 'lambda_r', 'ellip', 'theta', 'n
 # df['lambda_r_mean'] = df.lambda_r.rolling(window=WINDOW).agg(np.mean)
 # df['ellip_mean'] = df.ellip.rolling(window=WINDOW).agg(np.mean)
 for col in ('lambda_r', 'ellip', 'n'):
-    df[col+'_mean'] = df[col].rolling(window=WINDOW, win_type='gaussian', center=True).mean(std=5)
+    df[col+'_mean'] = df[col].rolling(window=WINDOW, win_type='gaussian', center=True).mean(std=STD)
 
 
 print(df.head())

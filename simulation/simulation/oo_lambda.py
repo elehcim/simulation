@@ -5,6 +5,7 @@ import sys
 from copy import deepcopy
 from pprint import pprint
 import tqdm
+import gc
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -346,15 +347,21 @@ def simulation_ssam(sim_path, args):
     if os.path.isdir(os.path.expanduser(args.omega_dir)):
         omega_dir = os.path.expanduser(args.omega_dir)
         omega_file = os.path.join(omega_dir, get_sim_name(sim_path)+'_omega.fits')
-        logger.debug('Reading omega table: {}'.format(omega_file))
+    else:
+        omega_file = None
+
+    if os.path.isfile(omega_file):
+        logger.info('Reading omega table: {}'.format(omega_file))
         omega_arr = Table.read(omega_file)['omega'].data
+        assert len(omega_arr) == len(snap_list)
     else:
         logger.warning('Cannot find omega table, not derotating...')
-        omega_arr = np.ones((len(snap_list), 3))
-
-    pivot = np.array(args.pivot.split(), dtype=np.float64)
-
-    assert len(omega_arr) == len(snap_list)
+        omega_arr = None
+    if args.pivot is not None:
+        pivot = np.array(args.pivot.split(), dtype=np.float64)
+    else:
+        logger.info('No pivot provided, not derotating...')
+        pivot = None
 
     result_list = list()
     profile_list = list()
@@ -365,6 +372,12 @@ def simulation_ssam(sim_path, args):
     del d['omega']
     del d['pivot']
     d['snap_name'] = 'data'
+
+    sim_name = get_sim_name(sim_path)
+    print(sim_name)
+    if d['out_dir'] is None:
+        d['out_dir'] = sim_name
+
     data_out_name = get_outname(**d)
     maps_dict = dict(vlos=list(), sig=list(), mag=list())
     # data_out_name = os.path.join(args.out_dir if args.out_dir else '.', 'data')
@@ -376,8 +389,12 @@ def simulation_ssam(sim_path, args):
 
     for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
 
-        time = pynbody.load(snap_name).header.time
-        omega = omega_arr[i, :]
+        snap = pynbody.load(snap_name)
+        time = snap.header.time
+        if omega_arr is not None:
+            omega = omega_arr[i, :]
+        else:
+            omega = None
 
         try:
             d['snap_name'] = snap_name
@@ -428,6 +445,10 @@ def simulation_ssam(sim_path, args):
             with open(data_out_name + '_prof.dat', mode='a') as p:
                 p.write('{:.5f}\n'.format(time))
                 p.flush()
+
+        del snap
+        if i % 5 == 0:
+            gc.collect()
 
     fits_data_file = data_out_name+'.fits'
     logger.info('Writing final table {}'.format(fits_data_file))
