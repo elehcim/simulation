@@ -14,8 +14,10 @@ setup(name='simulation',
                               'plot_sfh=simulation.plot.plot_sfh:main',
                               'plot_trace=simulation.plot.plot_trace:main',
                               'plot_dt=simulation.plot.plot_dt:main',
+                              'plot_adhoc=simulation.plot.plot_adhoc:main',
                               'ssam=simulation.oo_lambda:main',
                               'omega_write=simulation.derotating_box:main',
+                              # 'synopsis=simulation.derotating_box:main',
                               ]
                    }
       )
