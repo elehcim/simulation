@@ -2,35 +2,45 @@ import sys
 import pandas as pd
 import numpy as np
 
+COLUMNS_FORMAT = {
+1 : ['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax_adhoc', 'ay_adhoc', 'az_adhoc'],
+2 : ['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax_adhoc', 'ay_adhoc', 'az_adhoc',
+     'ax', 'ay', 'az', 'omega_x', 'omega_y', 'omega_z', 'phi', 'step', 'dt', 'redshift']
+}
+
+HEADER_LINES = {1: 3, 2: 4}
+
 def parse_dens_trace(fname='dens_temp_trace.txt'):
     df = pd.read_csv(fname, delim_whitespace=True, header=1, names=['step', 't', 'vel', 'x','y','z','rho','temp'])
     df['r'] = np.sqrt(df.x**2 + df.y**2 + df.z**2)
     return df
 
-def parse_trace(fname='trace.txt', trace_version=1):
-    # All.TracePos[0],All.TracePos[1],All.TracePos[2],
-          # All.TraceVel[0],All.TraceVel[1],All.TraceVel[2],
-          # All.AdhocAcc[0],All.AdhocAcc[1],All.AdhocAcc[2]);
+
+def get_trace_version(fname):
+    with open(fname) as fp:
+        for i, line in enumerate(fp):
+            if i == 4:
+                break
+    if 'TraceAcc' in line:
+        return 2
+    else:
+        return 1
+
+
+def parse_trace(fname='trace.txt', force_trace_version=None):
+    if force_trace_version is not None:
+        trace_version = force_trace_version
+    else:
+        trace_version = get_trace_version(fname)
     print('Parsing a version {} trace file'.format(trace_version))
-    if trace_version==1:
-        df = pt_v1(fname)
-    elif trace_version==2:
-        df = pt_v2(fname)
+    df = pd.read_csv(fname, delim_whitespace=True,
+                            header=HEADER_LINES[trace_version],
+                            names=COLUMNS_FORMAT[trace_version])
 
     df['r'] = np.sqrt(df.x**2 + df.y**2 + df.z**2)
     df['v'] = np.sqrt(df.vx**2 + df.vy**2 + df.vz**2)
-    df['a'] = np.sqrt(df.ax**2 + df.ay**2 + df.az**2)
+    df['a_adhoc'] = np.sqrt(df.ax_adhoc**2 + df.ay_adhoc**2 + df.az_adhoc**2)
     return df
-
-def pt_v1(fname):
-    return pd.read_csv(fname, delim_whitespace=True, header=4,
-        names=['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax', 'ay', 'az'])
-
-
-def pt_v2(fname):
-    return pd.read_csv(fname, delim_whitespace=True, header=4,
-        names=['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax_adhoc', 'ay_adhoc', 'az_adhoc',
-               'ax', 'ay', 'az', 'omega_x', 'omega_y', 'omega_z', 'phi', 'step', 'dt', 'redshift'])
 
 
 if __name__ == '__main__':
