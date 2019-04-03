@@ -129,6 +129,10 @@ def get_sim_traj(sim_name):
     return s+'002', t
 
 
+def contains_duplicates(X):
+    return len(np.unique(X)) != len(X)
+
+
 def make_df_monotonic_again(df, col='t'):
     """Return a copy of the df where the non monotonic parts are cut out"""
     diff = df.t.diff()
@@ -139,6 +143,39 @@ def make_df_monotonic_again(df, col='t'):
     for a, b in zip(before_restart_points.index, end_idx):
         na = na.drop(df.index[slice(a,b)])
     return na
+
+
+def get_no_gti_intervals(info):
+    diff = info.step.diff()
+    restart_points = info.step[diff < 0]
+    idx_restart = [idx - ((info.step.loc[idx - 1]) - v + 1) for idx, v in zip(restart_points.index, restart_points.values)]
+    return idx_restart, restart_points
+
+
+def prune_no_gti(df, idx_restart, restart_points):
+    na = df.copy()
+    for a, b in zip(idx_restart, restart_points.index):
+        na = na.drop(df.index[slice(a,b)])
+    return na
+
+
+def make_info_monotonic_again(info):
+    diff = info.step.diff()
+    restart_points = info.step[diff < 0]
+    idx_restart = [idx - ((info.step.loc[idx - 1]) - v + 1) for idx, v in zip(restart_points.index, restart_points.values)]
+
+    na = info.copy()
+    for a, b in zip(idx_restart, restart_points.index):
+        na = na.drop(info.index[slice(a,b)])
+    return na
+
+
+def make_df_monotonic_again_using info(df, info):
+    # FIXME not tested
+    assert len(df) == len(info), "I can use this function only if df is the same length as info"
+    idx_restart, restart_points = get_no_gti_intervals(info)
+    new_df = prune_no_gti(df, idx_restart, restart_points)
+    return new_df
 
 
 if __name__ == '__main__':

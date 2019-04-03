@@ -194,20 +194,29 @@ class Simulation:
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
         self.trace = get_trace(sim_dir)
+        if self.trace is not None:
+            # FIXME logic, too many ifs
+            # np.digitize works only if t is monotonic
+            if not self.trace.t.is_monotonic_increasing:
+                logger.info("trace.txt file is non-monotonic. Trying to recover")
+                # FIXME use info: util.make_df_monotonic_again_using_info
+                df_mono = make_df_monotonic_again(self.trace)
+                # locations = np.digitize(self.times.in_units(gadget_time_units), df_mono.t, right=True)
+                self._trace_orig = self.trace.copy()
+                self.trace = df_mono
 
         self.dens_trace = get_dens_trace(sim_dir)
         if self.dens_trace is not None:
             # np.digitize works only if t is monotonic
-            if self.dens_trace.t.is_monotonic_increasing:
-                locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
-                self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
-                self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
-            else:
+            if not self.dens_trace.t.is_monotonic_increasing:
                 logger.info("dens_temp_trace.txt file is non-monotonic. Trying to recover")
                 df_mono = make_df_monotonic_again(self.dens_trace)
-                locations = np.digitize(self.times.in_units(gadget_time_units), df_mono.t, right=True)
-                self.rho_host  = pynbody.array.SimArray(df_mono.rho[locations], gadget_dens_units)
-                self.v_host = pynbody.array.SimArray(df_mono.vel[locations],  gadget_vel_units)
+                self._dens_trace_orig = self.dens_trace.copy()
+                self.dens_trace = df_mono
+
+            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+            self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
+            self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
         else:
             self.v_host = self.rho_host = None
 
