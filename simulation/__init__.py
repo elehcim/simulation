@@ -110,14 +110,14 @@ def get_dens_trace(path):
         return None
     return df
 
-def get_trace(path, trace_version=1):
+def get_trace(path):
     path = os.path.expanduser(path)
     if os.path.isdir(path):
         path = os.path.join(path, 'trace.txt')
     else:
         return None
     try:
-        df = parse_trace(path, trace_version)
+        df = parse_trace(path)
         logger.info("Found trace file")
     except FileNotFoundError:
         return None
@@ -162,7 +162,7 @@ class Simulation:
     cog = None
     _computed_cog = False
 
-    def __init__(self, sim_dir, snap_indexes=None, sim_id=None, force_cosmo=False, trace_version=1):
+    def __init__(self, sim_dir, snap_indexes=None, sim_id=None, force_cosmo=False):
         """
         Initialize a Simulation.
 
@@ -193,7 +193,7 @@ class Simulation:
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
-        self.trace = get_trace(sim_dir, trace_version)
+        self.trace = get_trace(sim_dir)
 
         self.dens_trace = get_dens_trace(sim_dir)
         if self.dens_trace is not None:
