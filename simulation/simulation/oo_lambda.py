@@ -23,6 +23,11 @@ logger = setup_logger('__name__', logger_level='INFO')
 R_EFF_BORDER = 10  # Same as hyplot
 
 
+class Fitter:
+    def __init__(self):
+        pass
+
+
 class Photometry:
     sersic1D = None
     sersic2D = None
@@ -152,6 +157,7 @@ class Snap:
         # vcen = pynbody.analysis.halo.vel_center(s, retcen=True)
         # logger.info("Original velocity center:", vcen)
 
+        # FIXME wrong
         pynbody.analysis.halo.center(s.s, vel=False)
 
         vcen_new = pynbody.analysis.halo.vel_center(s, retcen=True)
@@ -289,7 +295,7 @@ def _insert_subdir(path, subdir):
     return os.path.join(os.path.dirname(path), subdir, os.path.basename(path))
 
 
-def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, side, face, n=1, ell=0, theta=0,
+def single_snap_ssam(snap_name, width, resolution, out_name=None, n_annuli=30, band='v', side=True, face=None, n=1, ell=0, theta=0,
                      sb_range=(18, 29), v_los_range=(-15, 15), sigma_range=(10, 40), omega=None, pivot=None, **kwargs):
 
     if omega is None or pivot is None:
@@ -318,10 +324,12 @@ def single_snap_ssam(snap_name, width, resolution, n_annuli, band, out_name, sid
 
     print(result)
 
-    if 'subdir' in kwargs:
-        subdir = kwargs['subdir']
-        out_name = _insert_subdir(out_name, subdir)
-        os.makedirs(os.path.dirname(out_name), exist_ok=True)
+    # This is needed only in case we want really to save the figures
+    if out_name is not None:
+        if 'subdir' in kwargs:
+            subdir = kwargs['subdir']
+            out_name = _insert_subdir(out_name, subdir)
+            os.makedirs(os.path.dirname(out_name), exist_ok=True)
 
 
     ssam.plot_maps(save_fig=out_name, sb_range=sb_range,
@@ -371,6 +379,7 @@ def simulation_ssam(sim_path, args):
     d = args.__dict__.copy()
     del d['omega']
     del d['pivot']
+    # TODO remove this line and add the snap_name parameter for get_outname
     d['snap_name'] = 'data'
 
     sim_name = get_sim_name(sim_path)
@@ -498,9 +507,9 @@ def main(cli=None):
         ssam = single_snap_ssam(snap_name=args.snap_name,
                          width=args.width,
                          resolution=args.resolution,
+                         out_name=out_name,
                          n_annuli=args.n_annuli,
                          band=args.band,
-                         out_name=out_name,
                          side=args.side,
                          face=args.face,
                          omega=np.array(args.omega.split(), dtype=np.float64),
