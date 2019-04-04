@@ -170,7 +170,7 @@ def make_info_monotonic_again(info):
     return na
 
 
-def make_df_monotonic_again_using info(df, info):
+def make_df_monotonic_again_using_info(df, info):
     # FIXME not tested
     assert len(df) == len(info), "I can use this function only if df is the same length as info"
     idx_restart, restart_points = get_no_gti_intervals(info)
