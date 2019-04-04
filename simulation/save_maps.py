@@ -149,7 +149,7 @@ def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=Non
     return im
 
 
-COLUMNS_UNITS = dict(time=u.kpc*u.s*u.km**-1, vlos=u.km/u.s, sig=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
+COLUMNS_UNITS = dict(vlos=u.km/u.s, sig=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
 
 
 def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None, omega_dir=None, pivot=None,
@@ -180,12 +180,12 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
         logger.info('No pivot provided, not derotating...')
         pivot = None
 
-    nan_arr = np.empty((resolution, resolution))
+    nan_arr = np.empty((resolution, resolution), dtype=np.float32)
     nan_arr[:] = np.nan
 
     sim_name = get_sim_name(sim_path)
 
-    maps_dict = dict(time=list(), vlos=list(), sig=list(), mag=list(), lum=list())
+    maps_dict = dict(vlos=list(), sig=list(), mag=list(), lum=list())
 
     data_out_name = get_outname('data', out_dir=sim_name, band=band, width=width, resolution=resolution)
     print(data_out_name)
@@ -222,7 +222,6 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
             mag = im.sb_mag()
             lum = im.sb_lum()
             # Map saving
-            maps_dict['time'].append(time)
             maps_dict['vlos'].append(vlos)
             maps_dict['sig'].append(sig)
             maps_dict['mag'].append(mag)
@@ -239,9 +238,7 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
             logger.error(e)
 
             for k, v in maps_dict.items():
-                if k not in ['time']:
-                    v.append(nan_arr)
-            maps_dict['time'].append(np.nan)
+                v.append(nan_arr)
 
         del snap
         if i % 5 == 0:
