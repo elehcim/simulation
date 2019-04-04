@@ -97,7 +97,7 @@ def get_snapshot_data(simulation, snap=None):
 
 
 def to_astropy_quantity(simarr, units=None):
-    return u.Quantity(simarr.view(type=np.ndarray), unit=units if units is not None else str(simarr.units))
+    return u.Quantity(simarr.view(type=np.ndarray), unit=units if units is not None else str(simarr.units), dtype=simarr.dtype)
 
 
 def get_sim_name(sim_path):
