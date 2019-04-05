@@ -136,13 +136,12 @@ def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=Non
 
     snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER, derot_param=derot_param)
 
-    if side and face:
-        print("Option 'side' and 'face' are mutually exclusive", file=sys.stderr)
-        sys.exit(2)
-    elif side:
+    if side:
         snap.sideon()
     elif face:
         snap.faceon()
+    else:
+        logger.warning('No sideon or faceon indications: not rotating snap')
 
     im = Imaging(snap.subsnap, width=width, resolution=resolution)
 
@@ -190,7 +189,7 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
     data_out_name = get_outname('data', out_dir=sim_name, band=band, width=width, resolution=resolution)
     print(data_out_name)
 
-    for i, snap_name in enumerate(tqdm.tqdm(snap_list[:4])):
+    for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
 
         snap = pynbody.load(snap_name)
         time = snap.header.time
@@ -255,6 +254,7 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
 def parse_args(cli=None):
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
+    angmom_group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument("--snap", dest='snap_name', help="Path to the simulation snapshot")
     group.add_argument("--sim", "-s", dest='sim_path', help="Path to the simulation snapshot")
     parser.add_argument("--width", '-w', default=10, type=float, help='In kpc')
@@ -264,8 +264,8 @@ def parse_args(cli=None):
     parser.add_argument('--omega', help='Omega value in code units (space separated, e.g. "0 0 1.2")', type=str, default=None)
     parser.add_argument('--pivot', help='Coordinates of the pivot point (space separated, e.g. "30 30 30")', type=str, default=None)
     parser.add_argument("--out-dir", default=None)
-    parser.add_argument('--side', action='store_true')
-    parser.add_argument('--face', action='store_true')
+    angmom_group.add_argument('--side', action='store_true')
+    angmom_group.add_argument('--face', action='store_true')
     parser.add_argument("--sb-range", default=(18, 29), type=tuple)
     parser.add_argument("--v-los-range", default=(-15, 15), type=tuple)
     parser.add_argument("--sigma-range", default=(10, 40), type=tuple)
