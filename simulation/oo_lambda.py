@@ -1,3 +1,4 @@
+# DEPRECATED
 import argparse
 import functools
 import os
