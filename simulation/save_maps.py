@@ -126,8 +126,7 @@ def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_o
     return out_name
 
 
-def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=None, omega=None, pivot=None,
-                     sb_range=(18, 29), v_los_range=(-15, 15), sigma_range=(10, 40)):
+def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=None, omega=None, pivot=None):
 
     if omega is None or pivot is None:
         derot_param = None
@@ -151,8 +150,7 @@ def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=Non
 COLUMNS_UNITS = dict(vlos=u.km/u.s, sig=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
 
 
-def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None, omega_dir=None, pivot=None,
-                     sb_range=(18, 29), v_los_range=(-15, 15), sigma_range=(10, 40)):
+def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None, omega_dir=None, pivot=None):
 
     if not os.path.isdir(sim_path):
         raise RuntimeError('Simulation path should be a directory')
@@ -206,9 +204,6 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
                                   band=band,
                                   side=side,
                                   face=face,
-                                  sb_range=sb_range,
-                                  v_los_range=v_los_range,
-                                  sigma_range=sigma_range,
                                   omega=omega,
                                   pivot=pivot,
                                   )
@@ -266,10 +261,6 @@ def parse_args(cli=None):
     parser.add_argument("--out-dir", default=None)
     angmom_group.add_argument('--side', action='store_true')
     angmom_group.add_argument('--face', action='store_true')
-    parser.add_argument("--sb-range", default=(18, 29), type=tuple)
-    parser.add_argument("--v-los-range", default=(-15, 15), type=tuple)
-    parser.add_argument("--sigma-range", default=(10, 40), type=tuple)
-
 
     args = parser.parse_args(cli)
     return args
@@ -290,10 +281,7 @@ def main(cli=None):
                               face=args.face,
                               omega=np.array(args.omega.split(), dtype=np.float64),
                               pivot=np.array(args.pivot.split(), dtype=np.float64),
-                              sb_range=args.sb_range,
-                              v_los_range=args.v_los_range,
-                              sigma_range=args.sigma_range,
-                         )
+                              )
     elif args.sim_path is not None:
         simulation_maps(sim_path=args.sim_path,
                         width=args.width,
@@ -303,9 +291,6 @@ def main(cli=None):
                         face=args.face,
                         omega_dir=args.omega_dir,
                         pivot=args.pivot,
-                        sb_range=args.sb_range,
-                        v_los_range=args.v_los_range,
-                        sigma_range=args.sigma_range,
                         )
 
     return im
