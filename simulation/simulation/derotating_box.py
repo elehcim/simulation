@@ -32,8 +32,8 @@ def get_omega_box(sim):
     # Finite difference
     num = v_all[1:]-v_all[0:-1]
     # den = (t[1:]-t[0:-1])[:, np.newaxis]
-    # the first difference correspond to idx=2 (third) dt
-    den = dt[2:, np.newaxis]
+    # the first difference correspond to idx=1 (second) dt
+    den = dt[1:, np.newaxis]
     a_all = num/den
 
     locations_a = np.digitize(sim.times_header, sim.trace.t[1:], right=True)
