@@ -382,6 +382,11 @@ class Simulation:
             self.get_times()
         return self._times.min(), self._times.max()
 
+    def is_id_duplicated(self):
+        """For each snapshot return True if some IDs (iord) are duplicated"""
+        is_dup = [contains_duplicated(snap['iord']) for snap in self.snap_list]
+        return np.array(is_dup, dtype=bool)
+
     # def create_profiles(self, **kwargs):
     #     '''Create profiles objects'''
     #     self.profiles = list() #[None] * len(self)
