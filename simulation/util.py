@@ -178,6 +178,39 @@ def make_df_monotonic_again_using_info(df, info):
     return new_df
 
 
+def get_omega(sim_name, omega_dir='~/sim/analysis/ng_ana/data/omega'):
+    if os.path.isdir(os.path.expanduser(omega_dir)):
+        omega_dir = os.path.expanduser(omega_dir)
+        omega_file = os.path.join(omega_dir, sim_name+'_omega.fits')
+    else:
+        omega_file = None
+
+    if os.path.isfile(omega_file):
+        logger.info('Reading omega table: {}'.format(omega_file))
+        omega_arr = Table.read(omega_file)['omega'].data
+    else:
+        logger.warning('Cannot find omega table, not derotating...')
+        omega_arr = None
+    return omega_arr
+
+
+def get_pivot(sim_name,
+              pivot_file='~/sim/MySimulations/ng/pivot.json',
+              raise_if_cannot_derotate=True):
+    try:
+        with open(os.path.expanduser(pivot_file), 'r') as f:
+            d = json.load(f)['pivot']
+        pivot = np.array(d[sim_name].split(), dtype=np.float64)
+    except Exception as e:
+        if raise_if_cannot_derotate:
+            raise e
+        else:
+            print(e)
+            logger.warning('Cannot find pivot table, not derotating...')
+            pivot = None
+    return pivot
+
+
 if __name__ == '__main__':
     # mega for-loop
     print(good_sims)
