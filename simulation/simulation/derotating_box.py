@@ -15,8 +15,9 @@ def Omega(v, a):
     return np.cross(v, a)/((np.linalg.norm(v, axis=1)**2)[:, np.newaxis])
 
 
-def get_omega_box(sim):
-    """ Compute angular velocity of the box
+def get_omega_box(sim, just_snapshots=True):
+    """ Compute angular velocity of the box using Nichols (2) and estimating
+    the pivot acceleration with a finite difference method
 
     Returns:
     -------
@@ -36,7 +37,11 @@ def get_omega_box(sim):
     den = dt[1:, np.newaxis]
     a_all = num/den
 
+    if not just_snapshots:
+        return Omega(v_all, a_all)
+
     locations_a = np.digitize(sim.times_header, sim.trace.t[1:], right=True)
+    # TODO check if I do the other way around? First compute Omega and then get the locations.
     v = v_all[locations_a]
     a = a_all[locations_a]
     om = Omega(v, a)
