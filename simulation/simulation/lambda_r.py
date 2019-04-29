@@ -75,7 +75,6 @@ def ss_angmom(flux, r, v_los, v_disp):
     r_mid = r + np.diff(r)[0]  # add half an interval to all the bins
     return np.sum(flux * r_mid * np.abs(v_los)) / np.sum(flux * r_mid * np.sqrt(v_los**2 + v_disp**2))
 
-# -2.5*np.log10(arcsec2_over_pc2_at_10pc) == 21.572
 
 def sb_profile(snap, band):
     binning='equaln' # contain equal numbers of particles
@@ -83,6 +82,7 @@ def sb_profile(snap, band):
     ps = pynbody.analysis.profile.Profile(snap.s, type=binning, max=4*r_eff_kpc, bin=100)
     r = ps['rbins'].in_units('kpc')
     # sbp = 10**(0.4*(sun_abs_mag - 2.5*np.log10(arcsec2_over_pc2_at_10pc) - ps['sb,' + band] ))
+    # -2.5*np.log10(arcsec2_over_pc2_at_10pc) == 21.572
     sbp = 10**(0.4*(sun_mag + 21.572 - ps['sb,' + band] ))
     return r, sbp
 
@@ -116,10 +116,12 @@ def fit_sersic_2D(sb, r_eff, n, resolution, ellip, theta, show=SHOW, fixed=None)
     # notnans = np.isfinite(img)
     # sersic = fit_s(s_init, x[notnans], y[notnans], img[notnans])
     with np.errstate(**NP_ERRSTATE):
-        sersic = fit_s(s_init, x, y, sb, verblevel=FIT_VERB)#, weights=weights_norm, maxiter=200)
+        sersic = fit_s(s_init, x, y, sb, verblevel=FIT_VERB , maxiter=1000)#, weights=weights_norm, maxiter=200)
     if show:
         plot_fit(sb, sersic)
         plt.show()
+    print(fit_s.fit_info)
+    # TODO compute error (rms)
     return sersic
 
 
@@ -166,10 +168,10 @@ def create_apertures(center, smajax, ellip, theta):
         apertures.append(EllipticalAnnulus(center, a_in=a, a_out=a+a_delta, b_out=b, theta=theta))
     return apertures
 
-def plot_annuli(data, apertures):
+def plot_annuli(data, apertures, **kwargs):
     my_img = plt.imshow(data, origin='lower')
     for ann in apertures:
-        ann.plot(color='white')
+        ann.plot(color='white', **kwargs)
     plt.colorbar(my_img)
     plt.show()
 
