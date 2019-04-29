@@ -3,6 +3,7 @@ import glob
 import contextlib
 import numpy as np
 import logging
+import json
 import astropy.units as u
 
 def setup_logger(logger_name=None, logger_level='DEBUG'):
