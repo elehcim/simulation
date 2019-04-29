@@ -695,13 +695,13 @@ class MoriaSim(Simulation):
     _sf_tidal_folder = "/home/michele/sim/MySimulations/Moria8Gyr_tidal/results/sumfiles/"
     _sf_moria = "/home/michele/sim/MoRIA/results/sumfiles/"
 
-    def __init__(self, sim_id, kicked=False):
+    def __init__(self, sim_id, kicked=False, snap_indexes=None):
         self.sim_id = str(sim_id)
         self.kicked = kicked
 
         # self.snap_list = load_kicked(sim_id) if kicked else load_moria(sim_id)
         # super(MoriaSim, self).__init__(sim_id)
-        self._load()
+        self._load(snap_indexes)
         sumfile_path = os.path.join(self._sf_moria, self.sim_id + ".dat")
         if os.path.isfile(sumfile_path):
             logger.info("Getting sumfile: {}".format(sumfile_path))
@@ -710,8 +710,13 @@ class MoriaSim(Simulation):
             logger.info("No sumfile found")
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
-    def _load(self):
+    def _load(self, snap_indexes=None):
+        #FIXME implement snap_indexes also here
         logger.info("loading simulation: {}".format(self.sim_id))
+        if snap_indexes is not None:
+            snap_name_list = snap_name_list[snap_indexes]
+            logger.info("Taking {} snapshots ({})".format(len(snap_name_list), snap_indexes))
+
         self.snap_list = load_kicked(self.sim_id) if self.kicked else load_moria(self.sim_id)
         self._sim_dir = make_snaps_path(self.sim_id, self.kicked)
 
