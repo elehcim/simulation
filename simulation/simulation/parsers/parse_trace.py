@@ -5,10 +5,15 @@ import numpy as np
 COLUMNS_FORMAT = {
 1 : ['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax_adhoc', 'ay_adhoc', 'az_adhoc'],
 2 : ['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax_adhoc', 'ay_adhoc', 'az_adhoc',
-     'ax', 'ay', 'az', 'omega_x', 'omega_y', 'omega_z', 'phi', 'step', 'dt', 'redshift']
+     'ax', 'ay', 'az', 'omega_x', 'omega_y', 'omega_z', 'phi', 'step', 'dt', 'redshift'],
+3 : ['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'ax_adhoc', 'ay_adhoc', 'az_adhoc',
+     'ax', 'ay', 'az', 'omega_x', 'omega_y', 'omega_z',
+     'omega_mb_x', 'omega_mb_y', 'omega_mb_z', 'omega_mb_w',
+     'quat_x', 'quat_y', 'quat_z', 'quat_w',
+     'phi', 'step', 'dt', 'redshift'],
 }
 
-HEADER_LINES = {1: 3, 2: 4}
+HEADER_LINES = {1: 3, 2: 4, 3: 4}
 
 def parse_dens_trace(fname='dens_temp_trace.txt'):
     df = pd.read_csv(fname, delim_whitespace=True, header=1, names=['step', 't', 'vel', 'x','y','z','rho','temp'])
@@ -21,7 +26,10 @@ def get_trace_version(fname):
         for i, line in enumerate(fp):
             if i == 4:
                 break
-    if 'TraceAcc' in line:
+
+    if 'TraceQuat' in line:
+        return 3
+    elif 'TraceAcc' in line:
         return 2
     else:
         return 1
