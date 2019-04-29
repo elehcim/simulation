@@ -6,6 +6,7 @@ from multiprocessing import Process, Queue
 
 import matplotlib.pylab as plt
 import numpy as np
+import pandas as pd
 import pynbody
 from .analyze_sumfiles import get_sumfile
 from .parsers.parse_trace import parse_trace, parse_dens_trace
@@ -107,19 +108,27 @@ def get_dens_trace(path):
         df = parse_dens_trace(path)
         logger.info("Found dens_temp_trace file")
     except FileNotFoundError:
+        logger.warning("dens_temp_trace file not found: {}. But continuing".format(e))
         return None
     return df
+
 
 def get_trace(path):
     path = os.path.expanduser(path)
     if os.path.isdir(path):
-        path = os.path.join(path, 'trace.txt')
+        if os.path.isfile(os.path.join(path, 'trace.pkl')):
+            logger.info("Found cached trace file")
+            return pd.read_pickle(os.path.join(path, 'trace.pkl'))
+        else:
+            path = os.path.join(path, 'trace.txt')
     else:
         return None
+
     try:
         df = parse_trace(path)
         logger.info("Found trace file")
     except FileNotFoundError:
+        logger.warning("trace file not found: {}. But continuing".format(e))
         return None
     return df
 
@@ -193,9 +202,9 @@ class Simulation:
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
+
         self.trace = get_trace(sim_dir)
         if self.trace is not None:
-            # FIXME logic, too many ifs
             # np.digitize works only if t is monotonic
             if not self.trace.t.is_monotonic_increasing:
                 logger.info("trace.txt file is non-monotonic. Trying to recover")
