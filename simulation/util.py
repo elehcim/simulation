@@ -195,6 +195,22 @@ def get_omega(sim_name, omega_dir='~/sim/analysis/ng_ana/data/omega'):
     return omega_arr
 
 
+def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
+    if os.path.isdir(os.path.expanduser(quat_dir)):
+        quat_dir = os.path.expanduser(quat_dir)
+        quat_file = os.path.join(quat_dir, sim_name+'_omega.fits')
+    else:
+        quat_file = None
+
+    if os.path.isfile(quat_file):
+        logger.info('Reading quaternion table: {}'.format(quat_file))
+        quat_arr = Table.read(quat_file)['quat'].data
+    else:
+        logger.warning('Cannot find quaternion table, not derotating...')
+        quat_arr = None
+    return quat_arr
+
+
 def get_pivot(sim_name,
               pivot_file='~/sim/MySimulations/ng/pivot.json',
               raise_if_cannot_derotate=True):
