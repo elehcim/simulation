@@ -8,12 +8,13 @@ from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
+import quaternion
 import pynbody
 from astropy.table import Table, Column
 from astropy import units as u
 
 from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
-from simulation.util import setup_logger, get_sim_name, to_astropy_quantity
+from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot
 from simulation.angmom import faceon, sideon
 
 R_EFF_BORDER = 10
@@ -50,10 +51,27 @@ class Imaging:
     def from_fits(cls):
         pass
 
+def rotate_vec(vec, quat):
+    """Rotate a numpy array of 3-vectors `vec` given a quaternion `quat`"""
+    v = np.hstack([np.zeros((len(vec), 1)), vec])
+    vq = quaternion.as_quat_array(v)
+    new_vec = quat * vq * quat.conj()
+
+    # Rotate 90deg more
+    quat_90deg = quaternion.as_quat_array(0.5*np.sqrt(2) * np.array([1, 0, 0, -1]))
+    new_vec = quat_90deg * new_vec * quat_90deg.conj()
+    # remove w component
+    return quaternion.as_float_array(new_vec)[:, 1:]
 
 
+def derotate_snap():
+    pass
 
 class Snap:
+    """
+    The main reason for this class is to have a uniform preprocessing.
+    In particular the selection and the orientation should be well defined
+    """
     def __init__(self, snap_name, sphere_edge, derot_param=None):
         logger.info("Opening file {}".format(snap_name))
         s = pynbody.load(snap_name)
@@ -65,17 +83,23 @@ class Snap:
         self.time_gyr = s.properties['time'].in_units('Gyr')
         logger.info("{:.2f} Gyr".format(self.time))
 
-
         if derot_param is not None:
+            quat = np.quaternion(*derot_param['quat'])
             logger.info("Derotating...")
-            logger.info("omega: {}".format(derot_param['omega']))
+
+            logger.info("quat: {}".format(quat))
             logger.info("pivot: {}".format(derot_param['pivot']))
-            s['vel'] -= np.cross(derot_param['omega'], s['pos'] - derot_param['pivot'])
+
+            s['pos'] = rotate_vec(s['pos'] - derot_param['pivot'], quat)
+            s['vel'] = rotate_vec(s['vel'], quat)
+
+            # s['vel'] -= np.cross(derot_param['omega'], s['pos'] - derot_param['pivot'])
 
         logger.info("Centering on stars")
         # vcen = pynbody.analysis.halo.vel_center(s, retcen=True)
         # logger.info("Original velocity center:", vcen)
 
+        # FIXME Maybe this is not necessary
         pynbody.analysis.halo.center(s.s, vel=True)
 
         vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
@@ -114,7 +138,7 @@ class Snap:
         return pynbody.analysis.luminosity.halo_mag(self.subsnap.s, band=band)
 
 
-def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_out = 'maps_'):
+def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_out='maps_'):
     out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}'.format(band, width, resolution)
     out_name = os.path.join(os.path.expanduser(out_dir), out_name)
     if not os.path.isdir(out_name):
@@ -126,21 +150,33 @@ def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_o
     return out_name
 
 
-def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=None, omega=None, pivot=None):
+def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=None, rotation=None, quat=None, pivot=None):
 
-    if omega is None or pivot is None:
+    """
+    Parameters
+    ----------
+    rotation: pynbody.transformation
+        The rotation
+    quat: np.array
+    pivot: np.array
+
+    """
+    if quat is None or pivot is None:
         derot_param = None
     else:
-        derot_param = {'omega': omega, 'pivot': pivot}
+        derot_param = {'quat': quat, 'pivot': pivot}
 
     snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER, derot_param=derot_param)
 
-    if side:
-        snap.sideon()
-    elif face:
-        snap.faceon()
+    if rotation is not None:
+        rotation.apply(snap)
     else:
-        logger.warning('No sideon or faceon indications: not rotating snap')
+        if side:
+            snap.sideon()
+        elif face:
+            snap.faceon()
+        else:
+            logger.warning('No sideon or faceon indications: not rotating snap')
 
     im = Imaging(snap.subsnap, width=width, resolution=resolution)
 
@@ -150,7 +186,7 @@ def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=Non
 COLUMNS_UNITS = dict(vlos=u.km/u.s, sig=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
 
 
-def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None, omega_dir=None, pivot=None):
+def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None, quat_dir=None, pivot=None):
 
     if not os.path.isdir(sim_path):
         raise RuntimeError('Simulation path should be a directory')
@@ -158,19 +194,20 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
     from simulation.util import snapshot_list
     snap_list = snapshot_list(sim_path, include_dir=True)
 
-    if os.path.isdir(os.path.expanduser(omega_dir)):
-        omega_dir = os.path.expanduser(omega_dir)
-        omega_file = os.path.join(omega_dir, get_sim_name(sim_path)+'_omega.fits')
+    if os.path.isdir(os.path.expanduser(quat_dir)):
+        quat_dir = os.path.expanduser(quat_dir)
+        quat_file = os.path.join(quat_dir, get_sim_name(sim_path)+'_quat.fits')
     else:
-        omega_file = None
+        quat_file = None
 
-    if os.path.isfile(omega_file):
-        logger.info('Reading omega table: {}'.format(omega_file))
-        omega_arr = Table.read(omega_file)['omega'].data
-        assert len(omega_arr) == len(snap_list)
+    if os.path.isfile(quat_file):
+        logger.info('Reading quaternion table: {}'.format(quat_file))
+        tbl = quat_arr = Table.read(quat_file)
+        quat_arr = np.array([tbl["quat_w"], tbl["quat_x"], tbl["quat_y"], tbl["quat_z"]]).T
+        assert len(quat_arr) == len(snap_list)
     else:
-        logger.warning('Cannot find omega table, not derotating...')
-        omega_arr = None
+        logger.warning('Cannot find quaternion table, not derotating...')
+        quat_arr = None
     if pivot is not None:
         pivot = np.array(pivot.split(), dtype=np.float64)
     else:
@@ -191,10 +228,10 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
 
         snap = pynbody.load(snap_name)
         time = snap.header.time
-        if omega_arr is not None:
-            omega = omega_arr[i, :]
+        if quat_arr is not None:
+            quat = quat_arr[i, :]
         else:
-            omega = None
+            quat = None
 
         try:
 
@@ -204,7 +241,7 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
                                   band=band,
                                   side=side,
                                   face=face,
-                                  omega=omega,
+                                  quat=quat,
                                   pivot=pivot,
                                   )
             # vlos = to_astropy_quantity(im.v_los_map())
@@ -255,8 +292,8 @@ def parse_args(cli=None):
     parser.add_argument("--width", '-w', default=10, type=float, help='In kpc')
     parser.add_argument("--resolution", '-r', default=400, type=int)
     parser.add_argument("--band", "-b", default='v')
-    parser.add_argument("--omega-dir", default='~/sim/analysis/ng_ana/data/omega', help='Directory of precomputed moving boxes omegas')
-    parser.add_argument('--omega', help='Omega value in code units (space separated, e.g. "0 0 1.2")', type=str, default=None)
+    parser.add_argument("--quat-dir", default='~/sim/analysis/ng_ana/data/quat', help='Directory of precomputed moving boxes quaternions')
+    parser.add_argument('--quat', help='Quaternion value (space separated, e.g. "1 0 0 1.2")', type=str, default=None)
     parser.add_argument('--pivot', help='Coordinates of the pivot point (space separated, e.g. "30 30 30")', type=str, default=None)
     parser.add_argument("--out-dir", default=None)
     angmom_group.add_argument('--side', action='store_true')
@@ -279,7 +316,7 @@ def main(cli=None):
                               band=args.band,
                               side=args.side,
                               face=args.face,
-                              omega=np.array(args.omega.split(), dtype=np.float64),
+                              quat=np.array(args.quat.split(), dtype=np.float64),
                               pivot=np.array(args.pivot.split(), dtype=np.float64),
                               )
     elif args.sim_path is not None:
@@ -289,7 +326,7 @@ def main(cli=None):
                         band=args.band,
                         side=args.side,
                         face=args.face,
-                        omega_dir=args.omega_dir,
+                        quat_dir=args.quat_dir,
                         pivot=args.pivot,
                         )
 
