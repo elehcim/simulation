@@ -17,6 +17,7 @@ setup(name='simulation',
                               'plot_adhoc=simulation.plot.plot_adhoc:main',
                               'ssam=simulation.oo_lambda:main',
                               'omega_write=simulation.derotating_box:main',
+                              'save_maps=simulation.save_maps:main',
                               # 'synopsis=simulation.derotating_box:main',
                               ]
                    }
