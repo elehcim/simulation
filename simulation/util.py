@@ -5,6 +5,7 @@ import numpy as np
 import logging
 import json
 import astropy.units as u
+from astropy.table import Table
 
 def setup_logger(logger_name=None, logger_level='DEBUG'):
 
@@ -196,15 +197,18 @@ def get_omega(sim_name, omega_dir='~/sim/analysis/ng_ana/data/omega'):
 
 
 def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
+    """Return a numpy array reading the table in `quat_dir`"""
+    logger = setup_logger('get_quat', logger_level='INFO')
     if os.path.isdir(os.path.expanduser(quat_dir)):
         quat_dir = os.path.expanduser(quat_dir)
-        quat_file = os.path.join(quat_dir, sim_name+'_omega.fits')
+        quat_file = os.path.join(quat_dir, sim_name+'_quat.fits')
     else:
         quat_file = None
 
     if os.path.isfile(quat_file):
         logger.info('Reading quaternion table: {}'.format(quat_file))
-        quat_arr = Table.read(quat_file)['quat'].data
+        tbl = quat_arr = Table.read(quat_file)
+        quat_arr = np.array([tbl["q_w"], tbl["q_x"], tbl["q_y"], tbl["q_z"]]).T
     else:
         logger.warning('Cannot find quaternion table, not derotating...')
         quat_arr = None
@@ -214,6 +218,7 @@ def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
 def get_pivot(sim_name,
               pivot_file='~/sim/MySimulations/ng/pivot.json',
               raise_if_cannot_derotate=True):
+    logger = setup_logger('get_pivot', logger_level='INFO')
     try:
         with open(os.path.expanduser(pivot_file), 'r') as f:
             d = json.load(f)['pivot']
