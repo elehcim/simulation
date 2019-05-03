@@ -233,6 +233,15 @@ def get_pivot(sim_name,
     return pivot
 
 
+def get_quat_pivot(sim_name,
+                   quat_dir='~/sim/analysis/ng_ana/data/quat',
+                   pivot_file='~/sim/MySimulations/ng/pivot.json',
+                   raise_if_cannot_derotate=True):
+
+    quat_arr = get_quat(sim_name, quat_dir)
+    pivot = get_pivot(sim_name, pivot_file, raise_if_cannot_derotate)
+    return quat_arr, pivot
+
 if __name__ == '__main__':
     # mega for-loop
     print(good_sims)
