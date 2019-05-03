@@ -14,12 +14,12 @@ from astropy.table import Table, Column
 from astropy import units as u
 
 from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
-from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot
+from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot, get_quat
 from simulation.angmom import faceon, sideon
 
 R_EFF_BORDER = 10
 
-logger = setup_logger('__name__', logger_level='INFO')
+logger = setup_logger('save_maps', logger_level='INFO')
 
 class Imaging:
     def __init__(self, snap, width, resolution):
@@ -194,30 +194,20 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
     from simulation.util import snapshot_list
     snap_list = snapshot_list(sim_path, include_dir=True)
 
-    if os.path.isdir(os.path.expanduser(quat_dir)):
-        quat_dir = os.path.expanduser(quat_dir)
-        quat_file = os.path.join(quat_dir, get_sim_name(sim_path)+'_quat.fits')
-    else:
-        quat_file = None
+    sim_name = get_sim_name(sim_path)
 
-    if os.path.isfile(quat_file):
-        logger.info('Reading quaternion table: {}'.format(quat_file))
-        tbl = quat_arr = Table.read(quat_file)
-        quat_arr = np.array([tbl["quat_w"], tbl["quat_x"], tbl["quat_y"], tbl["quat_z"]]).T
-        assert len(quat_arr) == len(snap_list)
-    else:
-        logger.warning('Cannot find quaternion table, not derotating...')
-        quat_arr = None
-    if pivot is not None:
-        pivot = np.array(pivot.split(), dtype=np.float64)
-    else:
-        logger.info('No pivot provided, not derotating...')
-        pivot = None
+    quat_arr = get_quat(sim_name, quat_dir)
+    if quat_arr is None:
+        raise RuntimeError('Cannot find quaternion. First save it using save_quat.py')
+
+    assert len(quat_arr) == len(snap_list)
+
+    if pivot is None:
+        pivot = get_pivot(sim_name)
 
     nan_arr = np.empty((resolution, resolution), dtype=np.float32)
     nan_arr[:] = np.nan
 
-    sim_name = get_sim_name(sim_path)
 
     maps_dict = dict(vlos=list(), sig=list(), mag=list(), lum=list())
 
