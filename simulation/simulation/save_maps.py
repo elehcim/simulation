@@ -14,8 +14,9 @@ from astropy.table import Table, Column
 from astropy import units as u
 
 from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
-from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot, get_quat
+from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot, get_quat, get_omega_mb
 from simulation.angmom import faceon, sideon
+from simulation.derotate_simulation import derotate_pos_and_vel
 
 R_EFF_BORDER = 10
 
@@ -51,18 +52,6 @@ class Imaging:
     def from_fits(cls):
         pass
 
-def rotate_vec(vec, quat):
-    """Rotate a numpy array of 3-vectors `vec` given a quaternion `quat`"""
-    v = np.hstack([np.zeros((len(vec), 1)), vec])
-    vq = quaternion.as_quat_array(v)
-    new_vec = quat * vq * quat.conj()
-
-    # remove w component
-    return quaternion.as_float_array(new_vec)[:, 1:]
-
-
-def derotate_snap():
-    pass
 
 class Snap:
     """
@@ -82,13 +71,16 @@ class Snap:
 
         if derot_param is not None:
             quat = np.quaternion(*derot_param['quat'])
+            omega_mb = derot_param['omega_mb']
+            pivot = derot_param['pivot']
             logger.info("Derotating...")
 
-            logger.info("quat: {}".format(quat))
-            logger.info("pivot: {}".format(derot_param['pivot']))
-
-            s['pos'] = rotate_vec(s['pos'] - derot_param['pivot'], quat)
-            s['vel'] = rotate_vec(s['vel'], quat)
+            logger.info("quat:     {}".format(quat))
+            logger.info("omega_mb: {}".format(omega_mb))
+            logger.info("pivot:    {}".format(pivot))
+            new_pos, new_vel = derotate_pos_and_vel(s['pos'], s['vel'], quat, omega_mb, pivot)
+            s['pos'] = new_pos
+            s['vel'] = new_vel
 
             # s['vel'] -= np.cross(derot_param['omega'], s['pos'] - derot_param['pivot'])
 
@@ -147,7 +139,7 @@ def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_o
     return out_name
 
 
-def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=None, rotation=None, quat=None, pivot=None):
+def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=None, rotation=None, quat=None, omega_mb=None, pivot=None):
 
     """
     Parameters
@@ -158,10 +150,10 @@ def single_snap_maps(snap_name, width, resolution, band='v', side=True, face=Non
     pivot: np.array
 
     """
-    if quat is None or pivot is None:
+    if quat is None or omega_mb is None or pivot is None:
         derot_param = None
     else:
-        derot_param = {'quat': quat, 'pivot': pivot}
+        derot_param = {'quat': quat, 'omega_mb': omega_mb, 'pivot': pivot}
 
     snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER, derot_param=derot_param)
 
@@ -202,9 +194,12 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
     if pivot is None:
         pivot = get_pivot(sim_name)
 
+    omega_mb_arr = get_omega_mb(sim_name, quat_dir)
+    if omega_mb_arr is None:
+        raise RuntimeError('Cannot find omega_mb. First save it using save_quat.py')
+
     nan_arr = np.empty((resolution, resolution), dtype=np.float32)
     nan_arr[:] = np.nan
-
 
     maps_dict = dict(vlos=list(), sig=list(), mag=list(), lum=list())
 
@@ -215,13 +210,10 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
 
         snap = pynbody.load(snap_name)
         time = snap.header.time
-        if quat_arr is not None:
-            quat = quat_arr[i, :]
-        else:
-            quat = None
+        quat = quat_arr[i, :] if quat_arr is not None else None
+        omega_mb = omega_mb_arr[i, :] if omega_mb_arr is not None else None
 
         try:
-
             im = single_snap_maps(snap_name=snap_name,
                                   width=width,
                                   resolution=resolution,
@@ -229,6 +221,7 @@ def simulation_maps(sim_path, width, resolution, band='v', side=True, face=None,
                                   side=side,
                                   face=face,
                                   quat=quat,
+                                  omega_mb=omega_mb,
                                   pivot=pivot,
                                   )
             # vlos = to_astropy_quantity(im.v_los_map())
