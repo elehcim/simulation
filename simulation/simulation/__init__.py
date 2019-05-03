@@ -107,7 +107,7 @@ def get_dens_trace(path):
     try:
         df = parse_dens_trace(path)
         logger.info("Found dens_temp_trace file")
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         logger.warning("dens_temp_trace file not found: {}. But continuing".format(e))
         return None
     return df
@@ -127,7 +127,7 @@ def get_trace(path):
     try:
         df = parse_trace(path)
         logger.info("Found trace file")
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         logger.warning("trace file not found: {}. But continuing".format(e))
         return None
     return df
