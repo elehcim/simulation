@@ -180,21 +180,23 @@ def make_df_monotonic_again_using_info(df, info):
     return new_df
 
 
-def get_omega(sim_name, omega_dir='~/sim/analysis/ng_ana/data/omega'):
+def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
+    """Return a numpy array reading the omega_mb table in `quat_dir`"""
+    logger = setup_logger('get_omega_mb', logger_level='INFO')
     if os.path.isdir(os.path.expanduser(omega_dir)):
         omega_dir = os.path.expanduser(omega_dir)
-        omega_file = os.path.join(omega_dir, sim_name+'_omega.fits')
+        omega_file = os.path.join(omega_dir, sim_name+'_quat.fits')
     else:
         omega_file = None
 
     if os.path.isfile(omega_file):
-        logger.info('Reading omega table: {}'.format(omega_file))
-        omega_arr = Table.read(omega_file)['omega'].data
+        logger.info('Reading omega_mb table: {}'.format(omega_file))
+        tbl = Table.read(omega_file)
+        omega_mb_arr = np.array([tbl["omega_mb_x"], tbl["omega_mb_y"], tbl["omega_mb_z"]]).T
     else:
-        logger.warning('Cannot find omega table, not derotating...')
-        omega_arr = None
-    return omega_arr
-
+        logger.warning('Cannot find omega_mb table...')
+        omega_mb_arr = None
+    return omega_mb_arr
 
 def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
     """Return a numpy array reading the table in `quat_dir`"""
@@ -207,10 +209,10 @@ def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
 
     if os.path.isfile(quat_file):
         logger.info('Reading quaternion table: {}'.format(quat_file))
-        tbl = quat_arr = Table.read(quat_file)
+        tbl = Table.read(quat_file)
         quat_arr = np.array([tbl["q_w"], tbl["q_x"], tbl["q_y"], tbl["q_z"]]).T
     else:
-        logger.warning('Cannot find quaternion table, not derotating...')
+        logger.warning('Cannot find quaternion table...')
         quat_arr = None
     return quat_arr
 
@@ -228,7 +230,7 @@ def get_pivot(sim_name,
             raise e
         else:
             print(e)
-            logger.warning('Cannot find pivot table, not derotating...')
+            logger.warning('Cannot find pivot table...')
             pivot = None
     return pivot
 
@@ -241,6 +243,18 @@ def get_quat_pivot(sim_name,
     quat_arr = get_quat(sim_name, quat_dir)
     pivot = get_pivot(sim_name, pivot_file, raise_if_cannot_derotate)
     return quat_arr, pivot
+
+
+def get_quat_omega_pivot(sim_name,
+                   quat_dir='~/sim/analysis/ng_ana/data/quat',
+                   pivot_file='~/sim/MySimulations/ng/pivot.json',
+                   raise_if_cannot_derotate=True):
+
+    quat_arr = get_quat(sim_name, quat_dir)
+    omega_mb_arr = get_omega_mb(sim_name, quat_dir)
+    pivot = get_pivot(sim_name, pivot_file, raise_if_cannot_derotate)
+    return quat_arr, omega_mb_arr, pivot
+
 
 if __name__ == '__main__':
     # mega for-loop
