@@ -16,7 +16,9 @@ COLUMNS_FORMAT = {
 HEADER_LINES = {1: 3, 2: 4, 3: 4}
 
 def parse_dens_trace(fname='dens_temp_trace.txt'):
-    df = pd.read_csv(fname, delim_whitespace=True, header=1, names=['step', 't', 'vel', 'x','y','z','rho','temp'])
+    # The skip rows is necessary because the header starts with a `#` and a white space
+    # so if I use header=0, the wrong number of column is inferred (9 instead of 8).
+    df = pd.read_csv(fname, delim_whitespace=True, skiprows=1, names=['step', 't', 'vel', 'x','y','z','rho','temp'])
     df['r'] = np.sqrt(df.x**2 + df.y**2 + df.z**2)
     return df
 
