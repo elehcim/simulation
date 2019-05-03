@@ -270,7 +270,7 @@ def parse_args(cli=None):
     group.add_argument("--snap", dest='snap_name', help="Path to the single snapshot to analyze")
     group.add_argument("--sim", "-s", dest='sim_path', help="Path to the simulation snapshot")
     parser.add_argument("--width", '-w', default=10, type=float, help='In kpc')
-    parser.add_argument("--resolution", '-r', default=400, type=int)
+    parser.add_argument("--resolution", '-r', default=200, type=int)
     parser.add_argument("--band", "-b", default='v')
     parser.add_argument("--quat-dir", default='~/sim/analysis/ng_ana/data/quat', help='Directory of precomputed moving boxes quaternions')
     parser.add_argument('--quat', help='Quaternion value (space separated, e.g. "1 0 0 1.2")', type=str, default=None)
