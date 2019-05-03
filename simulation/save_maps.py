@@ -57,9 +57,6 @@ def rotate_vec(vec, quat):
     vq = quaternion.as_quat_array(v)
     new_vec = quat * vq * quat.conj()
 
-    # Rotate 90deg more
-    quat_90deg = quaternion.as_quat_array(0.5*np.sqrt(2) * np.array([1, 0, 0, -1]))
-    new_vec = quat_90deg * new_vec * quat_90deg.conj()
     # remove w component
     return quaternion.as_float_array(new_vec)[:, 1:]
 
