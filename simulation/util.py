@@ -207,10 +207,10 @@ def make_info_monotonic_again(info):
     return na
 
 
-def make_df_monotonic_again_using_info(df, info):
+def make_df_monotonic_again_using_reference_df(df, ref):
     # FIXME not tested
-    assert len(df) == len(info), "I can use this function only if df is the same length as info (df:{}, info:{})".format(len(df), len(info))
-    idx_restart, restart_points = get_no_gti_intervals(info)
+    assert len(df) == len(ref), "I can use this function only if df is the same length as reference df (df:{}, ref:{})".format(len(df), len(ref))
+    idx_restart, restart_points = get_no_gti_intervals(ref)
     new_df = prune_no_gti(df, idx_restart, restart_points)
     return new_df
 
