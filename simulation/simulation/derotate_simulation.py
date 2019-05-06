@@ -61,10 +61,10 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, offset=None):
     new_pos, new_vel = derotate_pos_and_vel(s['pos'], s['vel'], quat, omega_mb, pivot)
 
     del s['pos']
-    s['pos'] = new_pos.astype(f['pos'].dtype)
+    s['pos'] = pynbody.array.SimArray(new_pos.astype(f['pos'].dtype), f['pos'].units)
 
     del s['vel']
-    s['vel'] = new_vel.astype(f['vel'].dtype)
+    s['vel'] = pynbody.array.SimArray(new_vel.astype(f['vel'].dtype), f['vel'].units)
 
     # print(f.properties)
 
