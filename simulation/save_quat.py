@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from simulation.parsers.parse_info import parse_info
 from simulation.units import gadget_time_units
-from simulation.util import get_sim_name
+from simulation.util import get_sim_name, make_info_monotonic_again
 from simulation.derotate_simulation import rotate_vec
 from astropy.table import Table
 import matplotlib.pyplot as plt
@@ -70,9 +70,14 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
             q = quaternion.as_quat_array(np.vstack([sim.trace.quat_w, sim.trace.quat_x, sim.trace.quat_y, sim.trace.quat_z]).T)
     else:
         print("Recovering quaternion...")
+        # I need dt which is in info.txt
         info = parse_info(os.path.join(sim_path, "info.txt"))
+        if not info.step.is_monotonic_increasing:
+            print("Adjusting info...")
+            info_orig = info.copy()
+            info = make_info_monotonic_again(info_orig)
         # print(info.head())
-        assert len(info) == len(sim.trace)
+        assert len(info) == len(sim.trace), (len(info), len(sim.trace))
 
         q = compute_quaternion(sim.trace, info.dt)
 
@@ -80,6 +85,7 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
         outname = get_sim_name(sim_path) + "_quat_fullsim.fits"
         location = slice(None) # TODO check
     else:
+        # Skipping the first row because the first time is duplicated? FIXME
         locations = np.digitize(sim.times_header, sim.trace.t[1:], right=True)
         q = q[locations]
         outname = get_sim_name(sim_path) + "_quat.fits"
@@ -135,7 +141,7 @@ def parse_args(cli=None):
 
 def main(cli=None):
     args = parse_args(cli)
-    return compute_and_write_quaternion(args.sim_path, args.full_sim, args.force_recovery)
+    compute_and_write_quaternion(args.sim_path, args.full_sim, args.force_recovery)
 
 
 if __name__ == '__main__':
