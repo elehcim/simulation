@@ -10,8 +10,9 @@ import pandas as pd
 import pynbody
 from .analyze_sumfiles import get_sumfile
 from .parsers.parse_trace import parse_trace, parse_dens_trace
+from .parsers.parse_info import parse_info
 from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
-from .util import np_printoptions, make_df_monotonic_again
+from .util import np_printoptions, make_df_monotonic_again_using_info
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
@@ -131,6 +132,24 @@ def get_trace(path):
         return None
     return df
 
+def get_info(path):
+    path = os.path.expanduser(path)
+    if os.path.isdir(path):
+        if os.path.isfile(os.path.join(path, 'info.pkl')):
+            logger.info("Found cached info file")
+            return pd.read_pickle(os.path.join(path, 'info.pkl'))
+        else:
+            path = os.path.join(path, 'info.txt')
+    else:
+        return None
+
+    try:
+        df = parse_info(path)
+        logger.info("Found info file")
+    except FileNotFoundError as e:
+        logger.warning("info file not found: {}. But continuing".format(e))
+        return None
+    return df
 
 def get_compiler_options(path):
     path = os.path.expanduser(path)
@@ -201,24 +220,29 @@ class Simulation:
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
-
+        _cache = {}
         self.trace = get_trace(sim_dir)
         if self.trace is not None:
             # np.digitize works only if t is monotonic
             if not self.trace.t.is_monotonic_increasing:
                 logger.info("trace.txt file is non-monotonic. Trying to recover")
-                # FIXME use info: util.make_df_monotonic_again_using_info
-                df_mono = make_df_monotonic_again(self.trace)
+                if 'info' in _cache:
+                    info = _cache['info']
+                else:
+                    _cache['info'] = get_info(sim_dir)
+                    info = _cache['info']
+                df_mono = make_df_monotonic_again_using_info(self.trace, info)
                 # locations = np.digitize(self.times.in_units(gadget_time_units), df_mono.t, right=True)
                 self._trace_orig = self.trace.copy()
                 self.trace = df_mono
 
         self.dens_trace = get_dens_trace(sim_dir)
         if self.dens_trace is not None:
-            # np.digitize works only if t is monotonic
+            # np.digitize works only if it is monotonic
             if not self.dens_trace.t.is_monotonic_increasing:
                 logger.info("dens_temp_trace.txt file is non-monotonic. Trying to recover")
-                df_mono = make_df_monotonic_again(self.dens_trace)
+                info = _cache.get('info', get_info(sim_dir))
+                df_mono = make_df_monotonic_again_using_info(self.dens_trace, info)
                 self._dens_trace_orig = self.dens_trace.copy()
                 self.dens_trace = df_mono
 
