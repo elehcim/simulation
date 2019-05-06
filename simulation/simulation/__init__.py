@@ -12,7 +12,7 @@ from .analyze_sumfiles import get_sumfile
 from .parsers.parse_trace import parse_trace, parse_dens_trace
 from .parsers.parse_info import parse_info
 from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
-from .util import np_printoptions, make_df_monotonic_again_using_info
+from .util import np_printoptions, make_df_monotonic_again_using_reference_df
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
@@ -220,37 +220,26 @@ class Simulation:
 
         self._centered = np.zeros(len(self.snap_list), dtype=bool)
 
-        _cache = {}
-        self.trace = get_trace(sim_dir)
-        if self.trace is not None:
-            # np.digitize works only if t is monotonic
-            if not self.trace.t.is_monotonic_increasing:
-                logger.info("trace.txt file is non-monotonic. Trying to recover")
-                if 'info' in _cache:
-                    info = _cache['info']
-                else:
-                    _cache['info'] = get_info(sim_dir)
-                    info = _cache['info']
-                df_mono = make_df_monotonic_again_using_info(self.trace, info)
-                # locations = np.digitize(self.times.in_units(gadget_time_units), df_mono.t, right=True)
-                self._trace_orig = self.trace.copy()
-                self.trace = df_mono
-
+        # I do this first because I need it (non monotonic version) for the trace.txt
         self.dens_trace = get_dens_trace(sim_dir)
         if self.dens_trace is not None:
             # np.digitize works only if it is monotonic
             if not self.dens_trace.t.is_monotonic_increasing:
                 logger.info("dens_temp_trace.txt file is non-monotonic. Trying to recover")
-                info = _cache.get('info', get_info(sim_dir))
-                df_mono = make_df_monotonic_again_using_info(self.dens_trace, info)
+                df_mono = make_df_monotonic_again_using_reference_df(self.dens_trace, self.dens_trace)
                 self._dens_trace_orig = self.dens_trace.copy()
                 self.dens_trace = df_mono
 
-            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
-            self.rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
-            self.v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
-        else:
-            self.v_host = self.rho_host = None
+        self.trace = get_trace(sim_dir)
+        if self.trace is not None:
+            # np.digitize works only if t is monotonic
+            if not self.trace.t.is_monotonic_increasing:
+                logger.info("trace.txt file is non-monotonic. Trying to recover")
+                # I assume that if this is non-monotonic also dens_trace is, so that I have a _dens_trace_orig version
+                df_mono = make_df_monotonic_again_using_reference_df(self.trace, self._dens_trace_orig)
+                self._trace_orig = self.trace.copy()
+                self.trace = df_mono
+            assert self.trace.t.is_monotonic_increasing, "trace is still non monotonically increasing"
 
     def _load(self, sim_id, force_cosmo=False, snap_indexes=None):
         snap_name_list = snapshot_file_list(os.path.expanduser(sim_id), include_dir=True)
@@ -289,19 +278,25 @@ class Simulation:
         return self.snap_list[idx]
 
     def get_traj(self):
-        if self.trace.t.is_monotonic_increasing:
-            locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
-            x = self.trace.x[locations]
-            y = self.trace.y[locations]
-        else:
-            logger.info("trace.txt file is non-monotonic. Trying to recover")
-            df_mono = make_df_monotonic_again(self.trace)
-            locations = np.digitize(self.times.in_units(gadget_time_units), df_mono.t, right=True)
-            x = df_mono.x[locations]
-            y = df_mono.y[locations]
-
+        if not self.trace.t.is_monotonic_increasing:
+            logger.error("trace.txt file is non-monotonic. Cannot get trajectory")
+            raise RuntimeError("trace.txt file is non-monotonic. Cannot get trajectory")
+        # self.trace should be monotonic here
+        locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
+        x = self.trace.x[locations]
+        y = self.trace.y[locations]
         # z = self.trace.z[locations]
         return pynbody.array.SimArray(np.vstack([x, y]), 'kpc').T
+
+    def get_rv_host(self):
+        if self.dens_trace is not None:
+            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+            rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
+            v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
+        else:
+            rho_host = v_host = None
+        return rho_host, v_host
+
 
     # def get_omega(self):
     #     omega = None
