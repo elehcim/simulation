@@ -12,6 +12,7 @@ from pyquaternion import Quaternion
 import tqdm
 import quaternion
 import argparse
+import gc
 
 # SIM_PATH = '/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected/mb.69002_p200_a800_r600_out_quat/out/'
 # NTH = 1
@@ -154,7 +155,10 @@ def derotate_simulation(sim_path, new_path, snap_indexes=slice(None, None, None)
         assert s_rot['vel'].dtype == np.float32
 
         write_rotated_snap(s_rot, os.path.join(new_path, os.path.basename(snap._filename)))
-
+        del snap
+        sim.snap_list[i] = None  # destroying references to the snap and the list
+        if i % 10 == 0:
+            gc.collect()
 
 def parse_args(cli=None):
     parser = argparse.ArgumentParser()
