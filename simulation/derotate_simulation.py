@@ -38,6 +38,14 @@ def rotate_simarray(vec, quat):
     return pynbody.array.SimArray(new_vec, vec.units)
 
 
+def rotate_on_orbit_plane(pos, vel):
+    # Rotation of -90deg around x axis
+    orbit_plane_quat = 1/np.sqrt(2) * np.quaternion(1, -1, 0, 0)
+    new_pos = rotate_simarray(pos, orbit_plane_quat)
+    new_vel = rotate_simarray(vel, orbit_plane_quat)
+    return new_pos, new_vel
+
+
 def get_all_keys(snap):
     """return all the (non derived) keys for all the families"""
     ak = set()
@@ -67,9 +75,7 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, offset=None, on_orbit_plane=F
     new_pos, new_vel = derotate_pos_and_vel(f['pos'], f['vel'], quat, omega_mb, pivot)
 
     if on_orbit_plane:
-        orbit_plane_quat = 1/np.sqrt(2) * np.quaternion(1, -1, 0, 0)
-        new_pos = rotate_simarray(new_pos, orbit_plane_quat)
-        new_vel = rotate_simarray(new_vel, orbit_plane_quat)
+        new_pos, new_vel = rotate_on_orbit_plane(new_pos, new_vel)
 
     del s['pos']
     s['pos'] = new_pos.astype(f['pos'].dtype)
