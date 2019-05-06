@@ -75,6 +75,7 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, offset=None, on_orbit_plane=F
     new_pos, new_vel = derotate_pos_and_vel(f['pos'], f['vel'], quat, omega_mb, pivot)
 
     if on_orbit_plane:
+        print("Rotating on the plane of the orbit...")
         new_pos, new_vel = rotate_on_orbit_plane(new_pos, new_vel)
 
     del s['pos']
