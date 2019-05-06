@@ -19,7 +19,6 @@ setup(name='simulation',
                               'omega_write=simulation.derotating_box:main',
                               'save_maps=simulation.save_maps:main',
                               'derotate_simulation=simulation.derotate_simulation:main',
-                              # 'synopsis=simulation.derotating_box:main',
                               ]
                    }
       )

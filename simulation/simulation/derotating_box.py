@@ -1,3 +1,9 @@
+# DEPRECATED
+# See derotate_simulation
+import warnings
+warnings.simplefilter('always', DeprecationWarning)
+warnings.warn("derotating_box.py is deprecated", DeprecationWarning, stacklevel=2)
+
 import os
 import simulation
 from simulation.util import get_sim_name
@@ -8,8 +14,9 @@ from astropy.table import Table
 import tqdm
 import argparse
 import astropy.units as u
-
 from simulation.parsers.parse_info import parse_info
+
+
 
 def Omega(v, a):
     return np.cross(v, a)/((np.linalg.norm(v, axis=1)**2)[:, np.newaxis])
