@@ -15,7 +15,6 @@ from .util import np_printoptions, make_df_monotonic_again
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
-from .derotating_box import get_omega_box
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -280,12 +279,12 @@ class Simulation:
         # z = self.trace.z[locations]
         return pynbody.array.SimArray(np.vstack([x, y]), 'kpc').T
 
-    def get_omega(self):
-        omega = None
-        if self.is_moving_box:
-            omega_arr = get_omega_box(self)
-            omega = pynbody.array.SimArray(omega_arr, 1/gadget_time_units)
-        return omega
+    # def get_omega(self):
+    #     omega = None
+    #     if self.is_moving_box:
+    #         omega_arr = get_omega_box(self)
+    #         omega = pynbody.array.SimArray(omega_arr, 1/gadget_time_units)
+    #     return omega
 
     @property
     def peri(self):
