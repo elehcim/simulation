@@ -148,6 +148,41 @@ def make_df_monotonic_again(df, col='t'):
 
 
 def get_no_gti_intervals(info):
+    """
+    Get intervals which can then be eliminated with something like:
+
+    for a, b in zip(idx_restart, restart_points.index):
+        new_df = new_df.drop(df.index[slice(a,b)])
+
+    Return:
+    ------
+    idx_restart: list
+        left index of the intervals to be removed.
+    restart_points: pd.Series
+        the index is the right index of the intervals to be removed.
+        are the value of the index in correspondance of the first value of the restarted run
+
+    Example:
+    -------
+    >>> test_info = pd.DataFrame({'step': [0, 1, 2, 1, 2, 3, 4, 5, 3, 4, 5, 6, 7]})
+    >>> idx_restart, restart_point = sget_no_gti_intervals(test_info)
+    >>> idx_restart
+        [1, 5]
+    >>> restart_point.index
+        [3, 8]
+
+    # To have a monotonic I should remove from index 1 to index 3 and then from 5 to 8 (keeping the right one)
+
+      idx:          0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12
+      step:         0, 1, 2, 1, 2, 3, 4, 5, 3, 4, 5, 6, 7
+      to be removed:   |--|<       |-----|<
+
+      result:       0,       1, 2,          3, 4, 5, 6, 7
+
+    # After calling also `prune_no_gti`
+      idx:          0,       3, 4,          8, 9,10,11,12
+      step:         0,       1, 2,          3, 4, 5, 6, 7
+    """
     diff = info.step.diff()
     restart_points = info.step[diff < 0]
     idx_restart = [idx - ((info.step.loc[idx - 1]) - v + 1) for idx, v in zip(restart_points.index, restart_points.values)]
@@ -174,7 +209,7 @@ def make_info_monotonic_again(info):
 
 def make_df_monotonic_again_using_info(df, info):
     # FIXME not tested
-    assert len(df) == len(info), "I can use this function only if df is the same length as info"
+    assert len(df) == len(info), "I can use this function only if df is the same length as info (df:{}, info:{})".format(len(df), len(info))
     idx_restart, restart_points = get_no_gti_intervals(info)
     new_df = prune_no_gti(df, idx_restart, restart_points)
     return new_df
