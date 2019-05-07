@@ -179,7 +179,7 @@ def main(cli=None):
         new_path = sim_name + "_derot"
     else:
         new_path = args.outpath
-    derotate_simulation(args.sim_path, new_path, slice(args.start, args.stop, args.n))
+    derotate_simulation(args.sim_path, new_path, slice(args.start, args.stop, args.n), on_orbit_plane=args.on_orbit_plane)
 
 
 if __name__ == '__main__':
