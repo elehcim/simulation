@@ -3,6 +3,7 @@ import simulation
 import numpy as np
 import pandas as pd
 from simulation.parsers.parse_info import parse_info
+from simulation.parsers.parse_trace import get_trace_version
 from simulation.units import gadget_time_units
 from simulation.util import get_sim_name, make_info_monotonic_again
 from simulation.derotate_simulation import rotate_vec
@@ -60,7 +61,8 @@ def compute_quaternion(trace, dt):
 def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False):
     sim = simulation.Simulation(sim_path)
     # print(sim.trace.head())
-    if 'quat_w' in sim.trace:
+    trace_version = get_trace_version(os.path.join(sim_path, 'trace.txt'))
+    if trace_version == 1:  # 'quat_w' in sim.trace:
         if force_recovery:
             print("Recomputing quaternion even if I already have it in the trace file...")
             q = compute_quaternion(sim.trace, sim.trace.dt)
@@ -68,6 +70,10 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
         else:
             print("Quaternion already there, just saving it...")
             q = quaternion.as_quat_array(np.vstack([sim.trace.quat_w, sim.trace.quat_x, sim.trace.quat_y, sim.trace.quat_z]).T)
+    elif trace_version == 2:
+        print("Using the omega present in trace.txt...")
+        omega = np.vstack([sim.trace.omega_x, sim.trace.omega_y, sim.trace.omega_z]).T
+        q = evolve_quaternion_q(omega, sim.trace.dt)
     else:
         print("Recovering quaternion...")
         # I need dt which is in info.txt
