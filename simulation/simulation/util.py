@@ -2,6 +2,7 @@ import os
 import glob
 import contextlib
 import numpy as np
+import pandas as pd
 import logging
 import json
 import astropy.units as u
@@ -289,6 +290,19 @@ def get_quat_omega_pivot(sim_name,
     omega_mb_arr = get_omega_mb(sim_name, quat_dir)
     pivot = get_pivot(sim_name, pivot_file, raise_if_cannot_derotate)
     return quat_arr, omega_mb_arr, pivot
+
+
+
+def make_lowess(series, **kwargs):
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    endog = series.values
+    exog = series.index.values
+
+    smooth = lowess(endog, exog, **kwargs)
+    index, data = np.transpose(smooth)
+
+    return pd.Series(data, index=pd.to_datetime(index))
+
 
 
 if __name__ == '__main__':
