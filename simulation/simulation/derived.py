@@ -150,3 +150,17 @@ def dt_courant(self, courant=0.1):
 # @pynbody.derived_array
 # def dt_acc(self, errtol=0.05, softening=0.03):
 #     return (np.sqrt(2 * errtol * softening / self['acce_norm'] * pynbody.units.kpc)).in_units('kpc km**-1 s')
+
+from .interp.gas_emission import get_HI_vec
+@pynbody.derived_array
+def HI(snap):
+    if snap._unifamily is not pynbody.family.gas:
+        raise RuntimeError("Derived array 'HI' is available only for family gas")
+
+    hi = get_HI_vec(snap['temp'],
+            snap['feh'],
+            snap['mgfe'],
+            snap.ancestor.header.redshift,
+            snap['rho'])
+    return hi
+
