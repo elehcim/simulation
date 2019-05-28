@@ -110,7 +110,7 @@ class MagnitudeSersic1D(Fittable1DModel):
                             ('mu_e', outputs_unit['y'])])
 
 
-def sersic_fit(sb_profile, r_eff, n_0, deviation_param=0.2, verblevel=0):
+def sersic_fit(sb_profile, r_eff, n_0, deviation_relative_r_eff=0.2, deviation_abs_n=0.5, verblevel=0):
     r = sb_profile['rbins'].view(np.ndarray)
     sb = sb_profile['sb'].view(np.ndarray)
     idx = np.digitize(r_eff, r) - 1
@@ -121,9 +121,9 @@ def sersic_fit(sb_profile, r_eff, n_0, deviation_param=0.2, verblevel=0):
                                     'n': False,
                                     },
                                     # Allow wobbling a bit
-                                    bounds={'r_eff':(r_eff*(1-deviation_param), r_eff*(1+deviation_param)),
+                                    bounds={'r_eff':(r_eff*(1-deviation_relative_r_eff ), r_eff*(1+deviation_relative_r_eff)),
                                     #'mu_e':(mu_e_init*(1-deviation_param), mu_e_init*(1+deviation_param)),
-                                    'n':(max(n_0-5, 0), n_0+5),  # That's the trick. I'm assuming something more or less continuos
+                                    'n':(max(n_0-deviation_abs_n, 0), n_0+deviation_abs_n),  # That's the trick. I'm assuming something more or less continuos
                                     },
                                    )
 
