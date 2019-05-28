@@ -294,6 +294,7 @@ def get_quat_omega_pivot(sim_name,
 
 
 def make_lowess(series, **kwargs):
+    """Adapted from here: https://www.allendowney.com/blog/2019/04/01/local-regression-in-python/"""
     from statsmodels.nonparametric.smoothers_lowess import lowess
     endog = series.values
     exog = series.index.values
@@ -301,7 +302,7 @@ def make_lowess(series, **kwargs):
     smooth = lowess(endog, exog, **kwargs)
     index, data = np.transpose(smooth)
 
-    return pd.Series(data, index=pd.to_datetime(index))
+    return pd.Series(data, index=index)
 
 
 
