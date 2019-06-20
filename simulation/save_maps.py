@@ -39,13 +39,13 @@ class Imaging:
                                       resolution=self.resolution, noplot=True, log=False)
 
     @functools.lru_cache(1)
-    def sb_lum(self):
-        return surface_brightness(self._snap.s, width=self.width, resolution=self.resolution,
+    def sb_lum(self, band='v'):
+        return surface_brightness(self._snap.s, band=band, width=self.width, resolution=self.resolution,
                                   lum_pc2=True, noplot=True)
 
     @functools.lru_cache(1)
-    def sb_mag(self):
-        return surface_brightness(self._snap.s, width=self.width, resolution=self.resolution,
+    def sb_mag(self, band='v'):
+        return surface_brightness(self._snap.s, band=band, width=self.width, resolution=self.resolution,
                                   lum_pc2=False, noplot=True)
 
     @classmethod
@@ -58,7 +58,7 @@ class Snap:
     The main reason for this class is to have a uniform preprocessing.
     In particular the selection and the orientation should be well defined
     """
-    def __init__(self, snap_name, sphere_edge, derot_param=None, on_orbit_plane=False):
+    def __init__(self, snap_name, sphere_edge, derot_param=None, on_orbit_plane=False, center_velocity=True):
         logger.info("Opening file {}".format(snap_name))
         s = pynbody.load(snap_name)
         self._snap = s
@@ -94,7 +94,7 @@ class Snap:
         # logger.info("Original velocity center:", vcen)
 
         # FIXME Maybe this is not necessary
-        pynbody.analysis.halo.center(s.s, vel=True)
+        pynbody.analysis.halo.center(s.s, vel=center_velocity)
 
         vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
         logger.info("New velocity center: {}".format(vcen_new))
@@ -146,7 +146,7 @@ def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_o
 
 def single_snap_maps(snap_name, width, resolution,
                      band='v', side=True, face=None,
-                     quat=None, omega_mb=None, pivot=None, derotate=True, on_orbit_plane=False):
+                     quat=None, omega_mb=None, pivot=None, derotate=True, on_orbit_plane=False, center_velocity=True):
 
     """
     Parameters
@@ -162,7 +162,8 @@ def single_snap_maps(snap_name, width, resolution,
     else:
         derot_param = {'quat': quat, 'omega_mb': omega_mb, 'pivot': pivot}
 
-    snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER, derot_param=derot_param, on_orbit_plane=on_orbit_plane)
+    snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER,
+                derot_param=derot_param, on_orbit_plane=on_orbit_plane, center_velocity=center_velocity)
 
     if side:
         snap.sideon()
@@ -227,7 +228,6 @@ def simulation_maps(sim_path, width, resolution,
             im = single_snap_maps(snap_name=snap_name,
                                   width=width,
                                   resolution=resolution,
-                                  band=band,
                                   side=side,
                                   face=face,
                                   quat=quat,
@@ -241,8 +241,8 @@ def simulation_maps(sim_path, width, resolution,
             # lum = im.sb_lum() * u.solLum * u.pc**-2
             vlos = im.v_los_map()
             sig = im.v_disp_map()
-            mag = im.sb_mag()
-            lum = im.sb_lum()
+            mag = im.sb_mag(band)
+            lum = im.sb_lum(band)
             # Map saving
             maps_dict['vlos'].append(vlos)
             maps_dict['sig'].append(sig)
@@ -309,7 +309,6 @@ def main(cli=None):
         im = single_snap_maps(snap_name=args.snap_name,
                               width=args.width,
                               resolution=args.resolution,
-                              band=args.band,
                               side=args.side,
                               face=args.face,
                               quat=np.array(args.quat.split(), dtype=np.float64),
