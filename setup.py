@@ -18,6 +18,7 @@ setup(name='simulation',
                               'ssam=simulation.oo_lambda:main',
                               'omega_write=simulation.derotating_box:main',
                               'save_maps=simulation.save_maps:main',
+                              'save_maps_all_bands=simulation.save_maps_all_bands:main',
                               'save_quat=simulation.save_quat:main',
                               'derotate_simulation=simulation.derotate_simulation:main',
                               ]
