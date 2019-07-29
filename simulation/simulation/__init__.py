@@ -245,7 +245,10 @@ class Simulation:
         snap_name_list = snapshot_file_list(os.path.expanduser(sim_id), include_dir=True)
         logger.info("Found {} snapshots".format(len(snap_name_list)))
         if snap_indexes is not None:
-            snap_name_list = snap_name_list[snap_indexes]
+            if isinstance(snap_indexes, (list, tuple)):
+                snap_name_list = np.array(snap_name_list)[snap_indexes]
+            else:
+                snap_name_list = snap_name_list[snap_indexes]
             logger.info("Taking {} snapshots ({})".format(len(snap_name_list), snap_indexes))
 
         snap_list = list(pynbody.load(snap) for snap in snap_name_list)
