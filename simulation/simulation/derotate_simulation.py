@@ -135,10 +135,11 @@ def derotate_simulation(sim_path, new_path, snap_indexes=slice(None, None, None)
     offset = (np.vstack([sim.trace.x, sim.trace.y, sim.trace.z]).T)[locations]
 
     os.makedirs(new_path, exist_ok=True)
-
+    assert len(loc_quat) == len(sim)
     for i, (snap, q, om_mb) in enumerate(tqdm.tqdm(zip(sim, loc_quat, loc_omega_mb), total=len(sim))):
         # print(snap)
-        # print(quat)
+        # print(q)
+        # print(pivot)
         s_rot = rotate_snap(snap, q, om_mb, pivot, offset[i], on_orbit_plane)
         # This requires a change in source code of pynbody since it seems not possible
         # to set the dtype of the initial arrays as created by new()
@@ -160,6 +161,7 @@ def parse_args(cli=None):
     parser.add_argument('--start', help="First snap index", default=None, type=int)
     parser.add_argument('--stop', help="Last snap index", default=None, type=int)
     parser.add_argument('-n', help="Take one every n snapshots", default=None, type=int)
+    parser.add_argument('--snap_idxs', nargs='+', help="Take these snapshots", default=None, type=int)
     args = parser.parse_args(cli)
     return args
 
@@ -171,7 +173,11 @@ def main(cli=None):
         new_path = sim_name + "_derot"
     else:
         new_path = args.outpath
-    derotate_simulation(args.sim_path, new_path, slice(args.start, args.stop, args.n), on_orbit_plane=args.on_orbit_plane)
+    if args.snap_idxs is not None:
+        print("Getting snapshots: ", args.snap_idxs)
+        derotate_simulation(args.sim_path, new_path, args.snap_idxs, on_orbit_plane=args.on_orbit_plane)
+    else:
+        derotate_simulation(args.sim_path, new_path, slice(args.start, args.stop, args.n), on_orbit_plane=args.on_orbit_plane)
 
 
 if __name__ == '__main__':
