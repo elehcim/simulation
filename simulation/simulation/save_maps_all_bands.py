@@ -18,12 +18,11 @@ from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get
 from simulation.angmom import faceon, sideon
 from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane
 
-R_EFF_BORDER = 10
 BANDS_AVAILABLE = ['u', 'b', 'v', 'r', 'i', 'j', 'h', 'k']
 
 logger = setup_logger('save_maps_all_bands', logger_level='INFO')
 
-from simulation.save_maps import Imaging, Snap, get_outname, single_snap_maps, parse_args
+from simulation.save_maps import get_outname, single_snap_maps, parse_args
 
 
 COLUMNS_UNITS = dict(vlos=u.km/u.s, sig=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
@@ -89,7 +88,7 @@ def simulation_maps(sim_path, width, resolution,
                                   omega_mb=omega_mb,
                                   pivot=pivot,
                                   on_orbit_plane=on_orbit_plane,
-                                  center_velocity=False,
+                                  center_velocity=False,  # For imaging I do not need to center velocity.
                                   )
             # vlos = to_astropy_quantity(im.v_los_map())
             # sig = to_astropy_quantity(im.v_disp_map())
@@ -106,12 +105,18 @@ def simulation_maps(sim_path, width, resolution,
             # maps_dict['mag'].append(mag)
             # maps_dict['lum'].append(lum)
 
-            # if save_single_image:
-            #     mtbl_loc = Table([vlos, sig, mag, lum], names=['vlos','sig','mag', 'lum'], meta={'time':time, 'time_u': str(u.kpc*u.s*u.km**-1)})
-            #     for col_name, col in mtbl_loc.columns.items():
-            #         col.unit = COLUMNS_UNITS[col_name]
+            if save_single_image:
+                mag_list = ['mag_{}'.format(band) for band in BANDS_AVAILABLE]
+                lum_list = ['lum_{}'.format(band) for band in BANDS_AVAILABLE]
+                mdict_loc = {'mag_{}'.format(band) : im.sb_mag(band) for band in BANDS_AVAILABLE}
+                mdict_loc_lum = {'lum_{}'.format(band) : im.sb_lum(band) for band in BANDS_AVAILABLE}
+                mdict_loc.update(mdict_loc_lum)
 
-            #     mtbl_loc.write(os.path.join(data_out_name, 'maps{}_img.fits.gz'.format(snap_name[-4:])), overwrite=True)
+                mtbl_loc = Table(mdict_loc, meta={'time':time, 'time_u': str(u.kpc*u.s*u.km**-1)})
+                for col_name, col in mtbl_loc.columns.items():
+                    col.unit = COLUMNS_UNITS[col_name]
+
+                mtbl_loc.write(os.path.join(data_out_name, 'maps{}_img.fits.gz'.format(snap_name[-4:])), overwrite=True)
 
         except ValueError as e:
             # Usually is 'Insufficient particles around center to get velocity'
@@ -122,6 +127,7 @@ def simulation_maps(sim_path, width, resolution,
                 v.append(nan_arr)
 
         del snap
+        snap_list[i]=None
         if i % 5 == 0:
             gc.collect()
 

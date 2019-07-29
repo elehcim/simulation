@@ -93,11 +93,10 @@ class Snap:
         # vcen = pynbody.analysis.halo.vel_center(s, retcen=True)
         # logger.info("Original velocity center:", vcen)
 
-        # FIXME Maybe this is not necessary
         pynbody.analysis.halo.center(s.s, vel=center_velocity)
-
-        vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
-        logger.info("New velocity center: {}".format(vcen_new))
+        if center_velocity:
+            vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
+            logger.info("New velocity center: {}".format(vcen_new))
 
         # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
         self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(sphere_edge))]
@@ -132,15 +131,21 @@ class Snap:
         return pynbody.analysis.luminosity.halo_mag(self.subsnap.s, band=band)
 
 
-def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_out='maps_'):
+# Version with suffix, I don't remember why it was needed
+# def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_out='maps_'):
+#     out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}'.format(band, width, resolution)
+#     out_name = os.path.join(os.path.expanduser(out_dir), out_name)
+#     if not os.path.isdir(out_name):
+#         logger.info('Creating folder {}'.format(out_name))
+#         os.makedirs(out_name, exist_ok=True)
+
+#     if suffix:
+#         out_name += suffix
+#     return out_name
+
+def get_outname(snap_name, out_dir, band, width, resolution, stem_out='maps_'):
     out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}'.format(band, width, resolution)
     out_name = os.path.join(os.path.expanduser(out_dir), out_name)
-    if not os.path.isdir(out_name):
-        logger.info('Creating folder {}'.format(out_name))
-        os.makedirs(out_name, exist_ok=True)
-
-    if suffix:
-        out_name += suffix
     return out_name
 
 
@@ -250,9 +255,14 @@ def simulation_maps(sim_path, width, resolution,
             maps_dict['lum'].append(lum)
 
             if save_single_image:
+
                 mtbl_loc = Table([vlos, sig, mag, lum], names=['vlos','sig','mag', 'lum'], meta={'time':time, 'time_u': str(u.kpc*u.s*u.km**-1)})
                 for col_name, col in mtbl_loc.columns.items():
                     col.unit = COLUMNS_UNITS[col_name]
+
+                if i==0 and not os.path.isdir(data_out_name):
+                    logger.info('Creating folder {}'.format(data_out_name))
+                    os.makedirs(data_out_name, exist_ok=True)
 
                 mtbl_loc.write(os.path.join(data_out_name, 'maps{}_img.fits.gz'.format(snap_name[-4:])), overwrite=True)
 
