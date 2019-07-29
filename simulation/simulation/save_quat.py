@@ -9,7 +9,6 @@ from simulation.util import get_sim_name, make_info_monotonic_again
 from simulation.derotate_simulation import rotate_vec
 from astropy.table import Table
 import matplotlib.pyplot as plt
-from pyquaternion import Quaternion
 import tqdm
 import quaternion
 from simulation.NFW2acc import nfw
@@ -17,6 +16,7 @@ import argparse
 
 
 def Omega(v, a):
+    """Equation (5) in Nichols 2015"""
     return np.cross(v, a)/((np.linalg.norm(v, axis=1)**2)[:, np.newaxis])
 
 
@@ -30,6 +30,7 @@ def get_acceleration(trace, nfw=nfw):
 
 
 def get_Omega(trace, nfw=nfw):
+    """Get Ome from equation (5) in Nichols 2015"""
     acc = get_acceleration(trace, nfw)
     v_all = np.vstack([trace.vx, trace.vy, trace.vz]).T
     return Omega(v_all, acc)
@@ -41,7 +42,7 @@ def get_quaternions(trace):
 
 
 def evolve_quaternion_q(omega, timesteps, q0=np.quaternion(1,0,0,0)):
-    """Evolve quaternion. Return quaternion"""
+    """Evolve quaternion from equation (6) in Nichols 2015. Return quaternion"""
     q_list = list()
     q1 = q0
     for i, dt in enumerate(tqdm.tqdm(timesteps[1:])):
@@ -52,7 +53,7 @@ def evolve_quaternion_q(omega, timesteps, q0=np.quaternion(1,0,0,0)):
 
 
 def compute_quaternion(trace, dt):
-    """Return quaternion"""
+    """Return quaternion given the trace ad the timesteps"""
     omega = get_Omega(trace)
     q = evolve_quaternion_q(omega, dt)
     return q
@@ -70,11 +71,11 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
         else:
             print("Quaternion already there, just saving it...")
             q = quaternion.as_quat_array(np.vstack([sim.trace.quat_w, sim.trace.quat_x, sim.trace.quat_y, sim.trace.quat_z]).T)
-    elif trace_version == 2:
+    elif trace_version == 2:  # Evolving quaternion using omega.
         print("Using the omega present in trace.txt...")
         omega = np.vstack([sim.trace.omega_x, sim.trace.omega_y, sim.trace.omega_z]).T
         q = evolve_quaternion_q(omega, sim.trace.dt)
-    else:
+    else:  # Getting omega from the acceleration and then evolving the quaternion
         print("Recovering quaternion...")
         # I need dt which is in info.txt
         info = parse_info(os.path.join(sim_path, "info.txt"))
