@@ -14,14 +14,6 @@ import quaternion
 import argparse
 import gc
 
-# SIM_PATH = '/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected/mb.69002_p200_a800_r600_out_quat/out/'
-# NTH = 1
-
-
-# SIM_PATH = '/home/michele/sim/MySimulations/ng/mb.71002_p100_a800_r600/out/'
-# SIM_PATH = '/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected/mb.71002_p100_a800_r600/out/'
-# NTH = 1
-
 
 def rotate_vec(vec, quat):
     """Rotate a numpy array of 3-vectors `vec` given a quaternion `quat`"""
@@ -91,7 +83,7 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, offset=None, on_orbit_plane=F
 
     s.properties = f.properties.copy()
     s.properties['z'] = f.properties['z']
-    s.properties['boxsize'] = 60 * pynbody.units.kpc
+    s.properties['boxsize'] = 60 * pynbody.units.kpc  ## FIXME why not copying boxsize of f
     # print(s.properties)
     return s
 
