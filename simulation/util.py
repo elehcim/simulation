@@ -305,6 +305,16 @@ def make_lowess(series, **kwargs):
     return pd.Series(data, index=index)
 
 
+def parse_simname(name):
+    i = name.find('_p')
+    j = name.find('_a')
+    k = name.find('_r')
+    p  = int(name[i+2:j])
+    a  = int(name[j+2:k])
+    r  = int(name[k+2:k+5])  # Assuming 3 digits
+    return p, a, r
+
+
 
 if __name__ == '__main__':
     # mega for-loop
