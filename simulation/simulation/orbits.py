@@ -229,6 +229,7 @@ def plot_integrand(rp, ra, E, V0, J):
 
 
 def measure_radial_period(sim):
+    """Measure the orbital period taking the interval between apsis"""
     dr = np.diff(sim.r)
     zero_crossings = np.where(np.diff(np.signbit(dr)))[0]
     times_of_apsis = sim.times_header[zero_crossings]
@@ -254,11 +255,12 @@ def compute_radial_period(rp, ra, pot=None):
     quad_err : float
         An estimate of the absolute error in the result.
     """
-    if nfw is None:
+    if pot is None:
         M_h = 1e14
         pot = NFWPotential(M_h, 0.0)
-    rp, ra, r = np.array(parse_simname(sim_name))*kpc_in_km
-    E, J = turnp2mom(rp, ra, pot.V0, pot.dV0dr)
-    T_r, quad_error = radial_period(rp, ra, E, pot.V0, J)
+    # rp, ra, r = np.array(parse_simname(sim_name))*kpc_in_km
+    rp_km, ra_km = rp*kpc_in_km, ra*kpc_in_km
+    E, J = turnp2mom(rp_km, ra_km, pot.V0, pot.dV0dr)
+    T_r, quad_error = radial_period(rp_km, ra_km, E, pot.V0, J)
     print("Radial period:    {:.5} Gyr".format(T_r))
     return T_r, quad_error
