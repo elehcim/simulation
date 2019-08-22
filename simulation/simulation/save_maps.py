@@ -283,6 +283,8 @@ def simulation_maps(sim_path, width, resolution,
     mtbl = Table(maps_dict)
     for col_name, col in mtbl.columns.items():
         col.unit = COLUMNS_UNITS[col_name]
+
+    os.makedirs(os.path.dirname(fits_data_file), exist_ok=True)
     mtbl.write(fits_data_file, overwrite=True)
 
 
