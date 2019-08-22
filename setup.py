@@ -20,6 +20,7 @@ setup(name='simulation',
                               'save_maps=simulation.save_maps:main',
                               'save_maps_all_bands=simulation.save_maps_all_bands:main',
                               'save_quat=simulation.save_quat:main',
+                              'save_center=simulation.save_center:main',
                               'derotate_simulation=simulation.derotate_simulation:main',
                               ]
                    }
