@@ -288,7 +288,13 @@ def get_quat_omega_pivot(sim_name,
 
     quat_arr = get_quat(sim_name, quat_dir)
     omega_mb_arr = get_omega_mb(sim_name, quat_dir)
+    if quat_arr is None or omega_mb_arr is None:
+        if raise_if_cannot_derotate:
+            raise RuntimeException('Cannot derotate')
+        else:
+            logger.warning("I don't have all the ingredients to derotate...")
     pivot = get_pivot(sim_name, pivot_file, raise_if_cannot_derotate)
+
     return quat_arr, omega_mb_arr, pivot
 
 
