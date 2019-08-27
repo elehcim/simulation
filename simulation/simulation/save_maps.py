@@ -13,7 +13,7 @@ import pynbody
 from astropy.table import Table, Column
 from astropy import units as u
 
-from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
+from simulation.luminosity import surface_brightness, convert_to_mag_arcsec2
 from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot, get_quat, get_omega_mb
 from simulation.angmom import faceon, sideon
 from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane
@@ -29,16 +29,16 @@ class Imaging:
         self.resolution = resolution
         self._snap = snap
 
-    @functools.lru_cache(1)
+    # @functools.lru_cache(1)
     def v_los_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='vz', av_z=True, width=self.width,
                                       resolution=self.resolution, noplot=True, log=False)
 
-    @functools.lru_cache(1)
+    # @functools.lru_cache(1)
     def v_disp_norm_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='v_disp', av_z=True, width=self.width,
                                       resolution=self.resolution, noplot=True, log=False)
-    @functools.lru_cache(1)
+    # @functools.lru_cache(1)
     def v_disp_los_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='vz_disp', av_z=True, width=self.width,
                                       resolution=self.resolution, noplot=True, log=False)
@@ -48,10 +48,20 @@ class Imaging:
         return surface_brightness(self._snap.s, band=band, width=self.width, resolution=self.resolution,
                                   lum_pc2=True, noplot=True)
 
-    @functools.lru_cache(1)
+    # @functools.lru_cache(1)
     def sb_mag(self, band='v'):
-        return surface_brightness(self._snap.s, band=band, width=self.width, resolution=self.resolution,
-                                  lum_pc2=False, noplot=True)
+        pc2 = self.sb_lum(band=band)
+        sb = convert_to_mag_arcsec2(pc2, band)
+        return sb
+        # return surface_brightness(self._snap.s, band=band, width=self.width, resolution=self.resolution,
+        #                           lum_pc2=False, noplot=True)
+
+    # Faster
+    def sb(self, band='v'):
+        lum = surface_brightness(self._snap.s, band=band, width=self.width, resolution=self.resolution,
+                                  lum_pc2=True, noplot=True)
+        mag = convert_to_mag_arcsec2(lum, band)
+        return lum, mag
 
     @classmethod
     def from_fits(cls):
@@ -248,8 +258,9 @@ def simulation_maps(sim_path, width, resolution,
             vlos = im.v_los_map()
             sig_norm = im.v_disp_norm_map()
             sig_los = im.v_disp_los_map()
-            mag = im.sb_mag(band)
-            lum = im.sb_lum(band)
+            # lum = im.sb_lum(band)
+            # mag = im.sb_mag(band)
+            lum, mag = im.sb(band)
             # Map saving
             maps_dict['vlos'].append(vlos)
             maps_dict['sig_norm'].append(sig_norm)
