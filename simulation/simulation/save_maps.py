@@ -220,7 +220,7 @@ def simulation_maps(sim_path, width, resolution,
     nan_arr = np.empty((resolution, resolution), dtype=np.float32)
     nan_arr[:] = np.nan
     # TODO Use list of dicts. Use a separate function to write the table given that it requires a dict of list.
-    maps_dict = dict(vlos=list(), sig=list(), mag=list(), lum=list())
+    maps_dict = dict(vlos=list(), sig_norm=list(), sig_los=list(), mag=list(), lum=list())
 
     data_out_name = get_outname('data', out_dir=sim_name, band=band, width=width, resolution=resolution)
     print(data_out_name)
