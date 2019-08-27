@@ -176,8 +176,8 @@ def vz_disp(self):
     nsmooth = pynbody.config['sph']['smooth-particles']
     self['rho']
 
-    logger.info(
-        'Calculating velocity dispersion with %d nearest neighbours' % nsmooth)
+    # logger.info(
+    #     'Calculating velocity dispersion with %d nearest neighbours' % nsmooth)
 
     sm = pynbody.array.SimArray(np.empty(len(self['vz']),dtype=self['vz'].dtype),
                         self['vz'].units)
@@ -192,6 +192,6 @@ def vz_disp(self):
     self.kdtree.populate('qty_disp',nsmooth)
     end = time.time()
 
-    logger.info('Velocity dispersion done in %5.3g s' % (end - start))
+    # logger.info('Velocity dispersion done in %5.3g s' % (end - start))
 
     return sm
