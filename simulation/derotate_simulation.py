@@ -24,11 +24,21 @@ def rotate_vec(vec, quat):
     """
 
     assert isinstance(quat, np.quaternion), "Please provide a np.quaternion as input to rotate_vec"
+    return quaternion.rotate_vectors(quat, vec)
+
+def rotate_vec_old(vec, quat):
+    """Rotate a numpy array of 3-vectors `vec` given a quaternion `quat`
+    Since I need to get the position (X*) in the absolute reference frame from the position in the box (x*),
+    the formula is X* = q  x*  q^-1 (the inverse of eq. (1) in Nichols 2015).
+    This is because their quaternion is to go from the fixed (a.k.a. "inertial", "host") galaxy frame to the periodic box.
+    My quaternion is to rotate a vector in the box to the one in the fixed frame.
+    """
+
+    assert isinstance(quat, np.quaternion), "Please provide a np.quaternion as input to rotate_vec"
     v = np.hstack([np.zeros((len(vec), 1)), vec])
     vq = quaternion.as_quat_array(v)
     new_vec = quat * vq * quat.conj()
 
-    # TODO use quaternion.rotate_vectors(quat, vec)
     # In test_quaternion.py I verified that the above rotation quat * vq * quat.conj() is equivalent to quaternion.rotate_vectors(quat, vec)
 
     # remove w component
