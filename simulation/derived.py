@@ -2,6 +2,10 @@ import pynbody
 from pynbody import filt
 from .units import gadget_time_units, gadget_acc_units
 import numpy as np
+import logging
+import time
+
+logger = logging.getLogger('simulation.derived')
 
 ######################
 ## HYPLOT CODE  (hyplot/src/CParticle)
@@ -164,3 +168,30 @@ def HI(snap):
             snap['rho'])
     return hi
 
+
+@pynbody.derived_array
+def vz_disp(self):
+    """SPH-smoothed local line-of-sigth velocity dispersion"""
+    pynbody.sph.build_tree(self)
+    nsmooth = pynbody.config['sph']['smooth-particles']
+    self['rho']
+
+    logger.info(
+        'Calculating velocity dispersion with %d nearest neighbours' % nsmooth)
+
+    sm = pynbody.array.SimArray(np.empty(len(self['vz']),dtype=self['vz'].dtype),
+                        self['vz'].units)
+
+    self.kdtree.set_array_ref('rho',self['rho'])
+    self.kdtree.set_array_ref('smooth',self['smooth'])
+    self.kdtree.set_array_ref('mass',self['mass'])
+    self.kdtree.set_array_ref('qty',self['vz'])
+    self.kdtree.set_array_ref('qty_sm',sm)
+
+    start = time.time()
+    self.kdtree.populate('qty_disp',nsmooth)
+    end = time.time()
+
+    logger.info('Velocity dispersion done in %5.3g s' % (end - start))
+
+    return sm
