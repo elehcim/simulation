@@ -1,5 +1,6 @@
 import csv
 import logging
+import pickle
 import os
 from functools import lru_cache
 from multiprocessing import Process, Queue
@@ -276,6 +277,11 @@ class Simulation:
         pos = snap['pos']
         tot_mass = mass.sum()
         return np.sum(mass * pos.transpose(), axis=1) / tot_mass
+
+    def _save_trace_cache(self):
+        trace_name = 'trace.pkl'
+        logger.info("Saving  cached trace file")
+        self.trace.to_pickle(os.path.join(self._sim_dir, trace_name))
 
     def snap(self, idx):
         return self.snap_list[idx]
