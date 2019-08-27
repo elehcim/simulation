@@ -17,6 +17,7 @@ from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
 from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot, get_quat, get_omega_mb
 from simulation.angmom import faceon, sideon
 from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane
+from simulation.derived import vz_disp
 
 R_EFF_BORDER = 10
 
@@ -34,8 +35,12 @@ class Imaging:
                                       resolution=self.resolution, noplot=True, log=False)
 
     @functools.lru_cache(1)
-    def v_disp_map(self):
+    def v_disp_norm_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='v_disp', av_z=True, width=self.width,
+                                      resolution=self.resolution, noplot=True, log=False)
+    @functools.lru_cache(1)
+    def v_disp_los_map(self):
+        return pynbody.plot.sph.image(self._snap.s, qty='vz_disp', av_z=True, width=self.width,
                                       resolution=self.resolution, noplot=True, log=False)
 
     @functools.lru_cache(1)
@@ -87,16 +92,14 @@ class Snap:
             s['pos'] = new_pos
             s['vel'] = new_vel
 
-            # s['vel'] -= np.cross(derot_param['omega'], s['pos'] - derot_param['pivot'])
-
         logger.info("Centering on stars")
         # vcen = pynbody.analysis.halo.vel_center(s, retcen=True)
         # logger.info("Original velocity center:", vcen)
 
         pynbody.analysis.halo.center(s.s, vel=center_velocity)
-        if center_velocity:
-            vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
-            logger.info("New velocity center: {}".format(vcen_new))
+        # if center_velocity:
+        #     vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
+        #     logger.info("New velocity center: {}".format(vcen_new))
 
         # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
         self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(sphere_edge))]
@@ -182,13 +185,13 @@ def single_snap_maps(snap_name, width, resolution,
     return im
 
 
-COLUMNS_UNITS = dict(vlos=u.km/u.s, sig=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
+COLUMNS_UNITS = dict(vlos=u.km/u.s, sig_norm=u.km/u.s, sig_los=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
 
 
 def simulation_maps(sim_path, width, resolution,
                     band='v', side=True, face=None,
                     quat_dir=None, pivot=None, derotate=True, on_orbit_plane=False,
-                    save_single_image=False):
+                    save_single_image=False, center_velocity=True):
 
     if not os.path.isdir(sim_path):
         raise RuntimeError('Simulation path should be a directory')
@@ -216,7 +219,7 @@ def simulation_maps(sim_path, width, resolution,
 
     nan_arr = np.empty((resolution, resolution), dtype=np.float32)
     nan_arr[:] = np.nan
-
+    # TODO Use list of dicts. Use a separate function to write the table given that it requires a dict of list.
     maps_dict = dict(vlos=list(), sig=list(), mag=list(), lum=list())
 
     data_out_name = get_outname('data', out_dir=sim_name, band=band, width=width, resolution=resolution)
@@ -239,24 +242,23 @@ def simulation_maps(sim_path, width, resolution,
                                   omega_mb=omega_mb,
                                   pivot=pivot,
                                   on_orbit_plane=on_orbit_plane,
+                                  center_velocity=center_velocity,
                                   )
-            # vlos = to_astropy_quantity(im.v_los_map())
-            # sig = to_astropy_quantity(im.v_disp_map())
-            # mag = im.sb_mag() * u.mag * u.arcsec**-2
-            # lum = im.sb_lum() * u.solLum * u.pc**-2
+            # TODO factor out this part of the code.
             vlos = im.v_los_map()
-            sig = im.v_disp_map()
+            sig_norm = im.v_disp_norm_map()
+            sig_los = im.v_disp_los_map()
             mag = im.sb_mag(band)
             lum = im.sb_lum(band)
             # Map saving
             maps_dict['vlos'].append(vlos)
-            maps_dict['sig'].append(sig)
+            maps_dict['sig_norm'].append(sig_norm)
+            maps_dict['sig_los'].append(sig_los)
             maps_dict['mag'].append(mag)
             maps_dict['lum'].append(lum)
 
             if save_single_image:
-
-                mtbl_loc = Table([vlos, sig, mag, lum], names=['vlos','sig','mag', 'lum'], meta={'time':time, 'time_u': str(u.kpc*u.s*u.km**-1)})
+                mtbl_loc = Table([vlos, sig_norm, sig_los, mag, lum], names=['vlos','sig_norm','sig_los','mag', 'lum'], meta={'time':time, 'time_u': str(u.kpc*u.s*u.km**-1), 'band':band})
                 for col_name, col in mtbl_loc.columns.items():
                     col.unit = COLUMNS_UNITS[col_name]
 
@@ -280,7 +282,7 @@ def simulation_maps(sim_path, width, resolution,
 
     fits_data_file = data_out_name+'_img.fits'
     logger.info("Writing fits with all the maps... ({}) ".format(fits_data_file))
-    mtbl = Table(maps_dict)
+    mtbl = Table(maps_dict, meta={'band':band})
     for col_name, col in mtbl.columns.items():
         col.unit = COLUMNS_UNITS[col_name]
 
@@ -304,6 +306,7 @@ def parse_args(cli=None):
     parser.add_argument('--on-orbit-plane', action='store_true', help='Put snapshot on orbit plane')
     parser.add_argument("--out-dir", default=None)
     parser.add_argument("--save-single-image", help="Save also single images in dedicated fits files", action='store_true')
+    parser.add_argument("--center-velocity", help="Center velocity when center snapshots", action='store_true')
     angmom_group.add_argument('--side', action='store_true')
     angmom_group.add_argument('--face', action='store_true')
 
@@ -326,6 +329,7 @@ def main(cli=None):
                               quat=np.array(args.quat.split(), dtype=np.float64),
                               pivot=np.array(args.pivot.split(), dtype=np.float64),
                               derotate=args.no_derot,
+                              center_velocity=args.center_velocity,
                               )
     elif args.sim_path is not None:
         simulation_maps(sim_path=args.sim_path,
@@ -339,6 +343,7 @@ def main(cli=None):
                         derotate=args.no_derot,
                         on_orbit_plane=args.on_orbit_plane,
                         save_single_image=args.save_single_image,
+                        center_velocity=args.center_velocity,
                         )
 
     return im
