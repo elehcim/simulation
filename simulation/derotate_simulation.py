@@ -21,12 +21,17 @@ def rotate_vec(vec, quat):
     the formula is X* = q  x*  q^-1 (the inverse of eq. (1) in Nichols 2015).
     This is because their quaternion is to go from the fixed (a.k.a. "inertial", "host") galaxy frame to the periodic box.
     My quaternion is to rotate a vector in the box to the one in the fixed frame.
+
+    Note that this returns a vector with shape vec.shape + quat.shape, i.e. all the vec rows are rotated by all the quat rows.
+    If you want to rotate each vec row for each corresponding quat row (needless to say that len(vec) == len(quat)), you want
+    to use the rotate_vec_by_quat_array function. FIXME, there should be a way to do it in one shot.
+
     """
 
-    assert isinstance(quat, np.quaternion), "Please provide a np.quaternion as input to rotate_vec"
+    assert quat.dtype == np.quaternion, "Please provide a np.quaternion as input to rotate_vec"
     return quaternion.rotate_vectors(quat, vec)
 
-def rotate_vec_old(vec, quat):
+def rotate_vec_by_quat_array(vec, quat):
     """Rotate a numpy array of 3-vectors `vec` given a quaternion `quat`
     Since I need to get the position (X*) in the absolute reference frame from the position in the box (x*),
     the formula is X* = q  x*  q^-1 (the inverse of eq. (1) in Nichols 2015).
@@ -34,7 +39,7 @@ def rotate_vec_old(vec, quat):
     My quaternion is to rotate a vector in the box to the one in the fixed frame.
     """
 
-    assert isinstance(quat, np.quaternion), "Please provide a np.quaternion as input to rotate_vec"
+    assert quat.dtype == np.quaternion, "Please provide a np.quaternion as input to rotate_vec"
     v = np.hstack([np.zeros((len(vec), 1)), vec])
     vq = quaternion.as_quat_array(v)
     new_vec = quat * vq * quat.conj()
