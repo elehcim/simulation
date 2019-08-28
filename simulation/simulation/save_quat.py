@@ -6,7 +6,7 @@ from simulation.parsers.parse_info import parse_info
 from simulation.parsers.parse_trace import get_trace_version
 from simulation.units import gadget_time_units
 from simulation.util import get_sim_name, make_info_monotonic_again
-from simulation.derotate_simulation import rotate_vec
+from simulation.derotate_simulation import rotate_vec, rotate_vec_by_quat_array
 from astropy.table import Table
 import matplotlib.pyplot as plt
 import tqdm
@@ -120,10 +120,15 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
 
     # Get omega_mb
     if 'omega_mb_x' not in sim.trace or force_recovery:
-        omega_mb = rotate_vec(Omega, q_code.conj())  # This is what is done in the code. I doubt it is correct
+
+        # I can't use rotate_vec because all the array rows are rotates by all quaternion rows.
+        # Resort to the good old quaternion rotation formula
+        omega_mb = rotate_vec_by_quat_array(Omega, q_code.conj())  # using the conjugate is because it's what is done in the Gadget/Gear code and what it is written in Nichols 2015 article.
+                                                         # I doubt it is correct, the rotation should be with the q_code directly, but since I don't want to
+                                                         # increase problems I stick with the Nichols 2015 article.
+
     else:
         omega_mb = np.hstack([sim.trace[['omega_mb_x', 'omega_mb_y', 'omega_mb_z']]])[locations]
-        # omega_mb = rotate_vec(omega_mb, quat_vp0)
 
     # Rotate also these by the initial quaternion
     Omega = rotate_vec(Omega, quat_vp0)
