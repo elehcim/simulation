@@ -201,10 +201,10 @@ COLUMNS_UNITS = dict(vlos=u.km/u.s, sig_norm=u.km/u.s, sig_los=u.km/u.s, mag=u.m
 def simulation_maps(sim_path, width, resolution,
                     band='v', side=True, face=None,
                     quat_dir=None, pivot=None, derotate=True, on_orbit_plane=False,
-                    save_single_image=False, center_velocity=True):
+                    save_single_image=False, center_velocity=True, overwrite=False):
 
     if not os.path.isdir(sim_path):
-        raise RuntimeError('Simulation path should be a directory')
+        raise RuntimeError(f'Simulation path ({sim_path}) should be a directory')
 
     from simulation.util import snapshot_list
     snap_list = snapshot_list(sim_path, include_dir=True)
@@ -233,7 +233,12 @@ def simulation_maps(sim_path, width, resolution,
     maps_dict = dict(vlos=list(), sig_norm=list(), sig_los=list(), mag=list(), lum=list())
 
     data_out_name = get_outname('data', out_dir=sim_name, band=band, width=width, resolution=resolution)
-    print(data_out_name)
+
+    appendix = "" if not on_orbit_plane else "_orbit_sideon"
+    out_name = sim_name + appendix + '_maps.fits'
+
+    if os.path.isfile(out_name) and not overwrite:
+        raise RuntimeError(f'File {out_name} already esist')
 
     for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
 
@@ -291,14 +296,14 @@ def simulation_maps(sim_path, width, resolution,
         if i % 5 == 0:
             gc.collect()
 
-    fits_data_file = data_out_name+'_img.fits'
-    logger.info("Writing fits with all the maps... ({}) ".format(fits_data_file))
-    mtbl = Table(maps_dict, meta={'band':band})
+    # out_name = data_out_name+'_img.fits'
+    logger.info("Writing fits with all the maps... ({}) ".format(out_name))
+    mtbl = Table(maps_dict, meta={'band':band, 'resol':resolution, 'width':width, 'vcen':center_velocity})
     for col_name, col in mtbl.columns.items():
         col.unit = COLUMNS_UNITS[col_name]
 
-    os.makedirs(os.path.dirname(fits_data_file), exist_ok=True)
-    mtbl.write(fits_data_file, overwrite=True)
+    # os.makedirs(os.path.dirname(out_name), exist_ok=True)
+    mtbl.write(out_name, overwrite=overwrite)
 
 
 def parse_args(cli=None):
@@ -318,6 +323,7 @@ def parse_args(cli=None):
     parser.add_argument("--out-dir", default=None)
     parser.add_argument("--save-single-image", help="Save also single images in dedicated fits files", action='store_true')
     parser.add_argument("--center-velocity", help="Center velocity when center snapshots", action='store_true')
+    parser.add_argument("--overwrite", help="Overwrite result file", action='store_true')
     angmom_group.add_argument('--side', action='store_true')
     angmom_group.add_argument('--face', action='store_true')
 
