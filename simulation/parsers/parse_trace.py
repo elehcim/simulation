@@ -24,6 +24,12 @@ def parse_dens_trace(fname='dens_temp_trace.txt'):
 
 
 def get_trace_version(fname):
+    """Get the fourth line of the trace file, parse it looking for column names.
+
+    If I have the quaternion already in the trace file, 'TraceQuat' column is there and return format 3
+    If I have the acceleration return 2
+    If I don't have anything return 1
+    """
     with open(fname) as fp:
         for i, line in enumerate(fp):
             if i == 4:
