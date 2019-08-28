@@ -20,18 +20,20 @@ def Omega(v, a):
     return np.cross(v, a)/((np.linalg.norm(v, axis=1)**2)[:, np.newaxis])
 
 
-def get_acceleration(trace, nfw=nfw):
+def get_acceleration(trace, pot=nfw):
+    print("Computing acceleration from potential...")
     pos = np.vstack([trace.x, trace.y, trace.z]).T
-    acc_rec = nfw.acc(pos)
+    acc_rec = pot.acc(pos)
     adhoc = np.vstack([trace.ax_adhoc, trace.ay_adhoc, trace.az_adhoc]).T
     real_adhoc = adhoc * np.linalg.norm(acc_rec, axis=1)[:, np.newaxis]
+    print("Adding adhoc acceleration...")
     tot_acc = acc_rec + real_adhoc
     return tot_acc
 
 
-def get_Omega(trace, nfw=nfw):
-    """Get Ome from equation (5) in Nichols 2015"""
-    acc = get_acceleration(trace, nfw)
+def get_Omega(trace, pot=nfw):
+    """Get Omega from equation (5) in Nichols 2015 using the provided potential"""
+    acc = get_acceleration(trace, pot)
     v_all = np.vstack([trace.vx, trace.vy, trace.vz]).T
     return Omega(v_all, acc)
 
@@ -63,7 +65,7 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
     sim = simulation.Simulation(sim_path)
     # print(sim.trace.head())
     trace_version = get_trace_version(os.path.join(sim_path, 'trace.txt'))
-    if trace_version == 1:  # 'quat_w' in sim.trace:
+    if trace_version == 3:  # 'quat_w' in sim.trace:
         if force_recovery:
             print("Recomputing quaternion even if I already have it in the trace file...")
             q = compute_quaternion(sim.trace, sim.trace.dt)
@@ -110,6 +112,7 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
 
     # Get Omega
     if 'omega_x' not in sim.trace or force_recovery:
+        print("Computing Omega...")
         Omega = get_Omega(sim.trace)
     else:
         Omega = np.hstack([sim.trace[['omega_x', 'omega_y', 'omega_z']]])
@@ -122,6 +125,7 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
         omega_mb = np.hstack([sim.trace[['omega_mb_x', 'omega_mb_y', 'omega_mb_z']]])[locations]
         # omega_mb = rotate_vec(omega_mb, quat_vp0)
 
+    # Rotate also these by the initial quaternion
     Omega = rotate_vec(Omega, quat_vp0)
     omega_mb = rotate_vec(omega_mb, quat_vp0)
 
