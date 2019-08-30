@@ -1,37 +1,29 @@
 import argparse
 import functools
 import os
-import sys
 import tqdm
 import gc
 from pprint import pprint
 
-import matplotlib.pyplot as plt
 import numpy as np
-import quaternion
 import pynbody
 from astropy.table import Table, Column
 from astropy import units as u
 
-from simulation.luminosity import surface_brightness, kpc2pix, pix2kpc
-from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot, get_quat, get_omega_mb
-from simulation.angmom import faceon, sideon
-from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane
+from simulation.util import setup_logger, get_sim_name
+from simulation.save_maps import get_outname, single_snap_maps, parse_args, get_derotation_parameters, write_out_table
 
 BANDS_AVAILABLE = ['u', 'b', 'v', 'r', 'i', 'j', 'h', 'k']
 
 logger = setup_logger('save_maps_all_bands', logger_level='INFO')
 
-from simulation.save_maps import get_outname, single_snap_maps, parse_args
-
-
-COLUMNS_UNITS = dict(vlos=u.km/u.s, sig=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
+COLUMNS_UNITS = dict()
 
 
 def simulation_maps(sim_path, width, resolution,
                     side=True, face=None,
                     quat_dir=None, pivot=None, derotate=True, on_orbit_plane=False,
-                    save_single_image=False):
+                    save_single_image=False, overwrite=False):
 
     if not os.path.isdir(sim_path):
         raise RuntimeError('Simulation path should be a directory')
@@ -42,18 +34,7 @@ def simulation_maps(sim_path, width, resolution,
     sim_name = get_sim_name(sim_path)
 
     if derotate:
-        quat_arr = get_quat(sim_name, quat_dir)
-        if quat_arr is None:
-            raise RuntimeError('Cannot find quaternion. First save it using save_quat.py')
-
-        assert len(quat_arr) == len(snap_list)
-
-        if pivot is None:
-            pivot = get_pivot(sim_name)
-
-        omega_mb_arr = get_omega_mb(sim_name, quat_dir)
-        if omega_mb_arr is None:
-            raise RuntimeError('Cannot find omega_mb. First save it using save_quat.py')
+        quat_arr, omega_mb_arr, pivot = get_derotation_parameters(sim_name, quat_dir, pivot, snap_list)
     else:
         quat_arr = omega_mb_arr = pivot = None
 
@@ -67,9 +48,13 @@ def simulation_maps(sim_path, width, resolution,
         COLUMNS_UNITS['mag_{}'.format(band)] = u.mag * u.arcsec**-2
         COLUMNS_UNITS['lum_{}'.format(band)] = u.solLum * u.pc**-2
 
-
     data_out_name = get_outname('data', out_dir=sim_name, band='all', width=width, resolution=resolution)
-    print(data_out_name)
+
+    appendix = "" if not on_orbit_plane else "_orbit_sideon"
+    out_name = sim_name + appendix + '_maps_allbands.fits'
+
+    if os.path.isfile(out_name) and not overwrite:
+        raise RuntimeError(f'File {out_name} already esist')
 
     for i, snap_name in enumerate(tqdm.tqdm(snap_list)):
 
@@ -90,24 +75,13 @@ def simulation_maps(sim_path, width, resolution,
                                   on_orbit_plane=on_orbit_plane,
                                   center_velocity=False,  # For imaging I do not need to center velocity.
                                   )
-            # vlos = to_astropy_quantity(im.v_los_map())
-            # sig = to_astropy_quantity(im.v_disp_map())
-            # mag = im.sb_mag() * u.mag * u.arcsec**-2
-            # lum = im.sb_lum() * u.solLum * u.pc**-2
-            # vlos = im.v_los_map()
-            # sig = im.v_disp_map()
+
             for band in BANDS_AVAILABLE:
-                maps_dict['mag_{}'.format(band)].append(im.sb_mag(band))
-                maps_dict['lum_{}'.format(band)].append(im.sb_lum(band))
-            # Map saving
-            # maps_dict['vlos'].append(vlos)
-            # maps_dict['sig'].append(sig)
-            # maps_dict['mag'].append(mag)
-            # maps_dict['lum'].append(lum)
+                lum, mag = im.sb(band)
+                maps_dict['mag_{}'.format(band)].append(mag)
+                maps_dict['lum_{}'.format(band)].append(lum)
 
             if save_single_image:
-                mag_list = ['mag_{}'.format(band) for band in BANDS_AVAILABLE]
-                lum_list = ['lum_{}'.format(band) for band in BANDS_AVAILABLE]
                 mdict_loc = {'mag_{}'.format(band) : im.sb_mag(band) for band in BANDS_AVAILABLE}
                 mdict_loc_lum = {'lum_{}'.format(band) : im.sb_lum(band) for band in BANDS_AVAILABLE}
                 mdict_loc.update(mdict_loc_lum)
@@ -131,14 +105,8 @@ def simulation_maps(sim_path, width, resolution,
         if i % 5 == 0:
             gc.collect()
 
-    fits_data_file = data_out_name+'_img.fits'
-    logger.info("Writing fits with all the maps... ({}) ".format(fits_data_file))
-    mtbl = Table(maps_dict, meta=dict(BANDS=''.join(BANDS_AVAILABLE)))
-    for col_name, col in mtbl.columns.items():
-        col.unit = COLUMNS_UNITS[col_name]
-
-    os.makedirs(os.path.dirname(fits_data_file), exist_ok=True)
-    mtbl.write(fits_data_file, overwrite=True)
+    meta = dict(BANDS=''.join(BANDS_AVAILABLE), resol=resolution, width=width)
+    write_out_table(maps_dict, out_name, meta=meta, column_units=COLUMNS_UNITS, overwrite=overwrite)
 
 
 
@@ -169,6 +137,7 @@ def main(cli=None):
                         derotate=args.no_derot,
                         on_orbit_plane=args.on_orbit_plane,
                         save_single_image=args.save_single_image,
+                        overwrite=args.overwrite,
                         )
 
     return im

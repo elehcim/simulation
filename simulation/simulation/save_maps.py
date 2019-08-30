@@ -198,6 +198,34 @@ def single_snap_maps(snap_name, width, resolution,
 COLUMNS_UNITS = dict(vlos=u.km/u.s, sig_norm=u.km/u.s, sig_los=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
 
 
+def get_derotation_parameters(sim_name, quat_dir, pivot, snap_list=None):
+    quat_arr = get_quat(sim_name, quat_dir)
+    if quat_arr is None:
+        raise RuntimeError('Cannot find quaternion. First save it using save_quat.py')
+
+    if snap_list is not None:
+        assert len(quat_arr) == len(snap_list)
+    else:
+        logger.info(f"Cannot check length of arrays quat_arr ({len(quat_arr)})")
+
+    if pivot is None:
+        pivot = get_pivot(sim_name)
+
+    omega_mb_arr = get_omega_mb(sim_name, quat_dir)
+    if omega_mb_arr is None:
+        raise RuntimeError('Cannot find omega_mb. First save it using save_quat.py')
+    return quat_arr, omega_mb_arr, pivot
+
+
+def write_out_table(maps_dict, out_name, meta, column_units, overwrite):
+    logger.info("Writing fits with all the maps... ({}) ".format(out_name))
+    mtbl = Table(maps_dict, meta=meta)
+    for col_name, col in mtbl.columns.items():
+        col.unit = column_units[col_name]
+
+    mtbl.write(out_name, overwrite=overwrite)
+
+
 def simulation_maps(sim_path, width, resolution,
                     band='v', side=True, face=None,
                     quat_dir=None, pivot=None, derotate=True, on_orbit_plane=False,
@@ -212,18 +240,7 @@ def simulation_maps(sim_path, width, resolution,
     sim_name = get_sim_name(sim_path)
 
     if derotate:
-        quat_arr = get_quat(sim_name, quat_dir)
-        if quat_arr is None:
-            raise RuntimeError('Cannot find quaternion. First save it using save_quat.py')
-
-        assert len(quat_arr) == len(snap_list)
-
-        if pivot is None:
-            pivot = get_pivot(sim_name)
-
-        omega_mb_arr = get_omega_mb(sim_name, quat_dir)
-        if omega_mb_arr is None:
-            raise RuntimeError('Cannot find omega_mb. First save it using save_quat.py')
+        quat_arr, omega_mb_arr, pivot = get_derotation_parameters(sim_name, quat_dir, pivot, snap_list)
     else:
         quat_arr = omega_mb_arr = pivot = None
 
@@ -296,14 +313,8 @@ def simulation_maps(sim_path, width, resolution,
         if i % 5 == 0:
             gc.collect()
 
-    # out_name = data_out_name+'_img.fits'
-    logger.info("Writing fits with all the maps... ({}) ".format(out_name))
-    mtbl = Table(maps_dict, meta={'band':band, 'resol':resolution, 'width':width, 'vcen':center_velocity})
-    for col_name, col in mtbl.columns.items():
-        col.unit = COLUMNS_UNITS[col_name]
-
-    # os.makedirs(os.path.dirname(out_name), exist_ok=True)
-    mtbl.write(out_name, overwrite=overwrite)
+    meta = {'band': band, 'resol': resolution, 'width': width, 'vcen': center_velocity}
+    write_out_table(maps_dict, out_name, meta=meta, column_units=COLUMNS_UNITS, overwrite=overwrite)
 
 
 def parse_args(cli=None):
@@ -317,7 +328,7 @@ def parse_args(cli=None):
     parser.add_argument("--band", "-b", default='v')
     parser.add_argument("--quat-dir", default='~/sim/analysis/ng_ana/data/quat', help='Directory of precomputed moving boxes quaternions')
     parser.add_argument('--quat', help='Quaternion value (space separated, e.g. "1 0 0 1.2")', type=str, default=None)
-    parser.add_argument('--pivot', help='Coordinates of the pivot point (space separated, e.g. "30 30 30")', type=str, default=None)
+    parser.add_argument('--pivot', help='Coordinates of the pivot point (space separated, e.g. "30 30 30"). If None, it is automatically retrieved from a database', type=str, default=None)
     parser.add_argument('-n', "--no-derot", action='store_false', help='Do not derotate')
     parser.add_argument('--on-orbit-plane', action='store_true', help='Put snapshot on orbit plane')
     parser.add_argument("--out-dir", default=None)
@@ -361,6 +372,7 @@ def main(cli=None):
                         on_orbit_plane=args.on_orbit_plane,
                         save_single_image=args.save_single_image,
                         center_velocity=args.center_velocity,
+                        overwrite=args.overwrite,
                         )
 
     return im
