@@ -46,8 +46,11 @@ class Slit(Filter):
 # sim_name = simulation.util.get_sim_name(simpath)
 
 
-def get_vlos_map(sim_name):
-    tbl = Table.read(os.path.join(data_path, 'maps_orbit_sideon_sig_los', sim_name+'_orbit_sideon_maps.fits'))
+def get_vlos_map(sim_name, orbit_sideon):
+    if orbit_sideon:
+        tbl = Table.read(os.path.join(data_path, 'maps_orbit_sideon_sig_los', sim_name+'_maps.fits'))
+    else:
+        tbl = Table.read(os.path.join(data_path, 'maps_orbit_faceon_sig_los', sim_name+'_maps.fits'))
     vlos_map = tbl['vlos']
     return vlos_map
 
@@ -63,6 +66,7 @@ def plot_maps(vlos_map, idx):
 
 
 def compute_profile(vlos_map):
+    #TODO do an average on some pixels around center
     res = vlos_map.shape[1]
     prof = profile_line(vlos_map.transpose(1,2,0), (res//2,0), (res//2,res-1))
     return prof
@@ -73,10 +77,10 @@ def plot_profile(prof, ax=None):
         ax = plt
     ax.plot(np.max(np.abs(prof), axis=0))
 
-
-def get_max_vlos(sim_name):
+# Entry point function
+def get_max_vlos(sim_name, orbit_sideon=True):
     """Return an array of the maximum v_los as computed from the middle horizontal slice of the vlos_map"""
-    vlos_map = get_vlos_map(sim_name)
+    vlos_map = get_vlos_map(sim_name, orbit_sideon)
     prof = compute_profile(vlos_map)
     max_vlos = np.max(np.abs(prof), axis=0)
     return max_vlos
