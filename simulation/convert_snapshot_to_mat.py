@@ -14,8 +14,9 @@ def convert_snapshot_to_mat(snap_name, density_threshold, outfile_name):
 
     pos = gas[filt]['pos'].view(np.ndarray)
     ids = gas[filt]['iord'].view(np.ndarray)
+    rho = gas[filt]['rho'].view(np.ndarray)
 
-    data = dict(x=pos[:,0], y=pos[:,1], z=pos[:,2], id=ids)
+    data = dict(x=pos[:,0], y=pos[:,1], z=pos[:,2], id=ids, rho=rho)
     print('output file', outfile_name)
     savemat(outfile_name, data)
     return pos
