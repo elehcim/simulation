@@ -1,14 +1,12 @@
 import os
 import glob
 import pynbody
-import logging
+from .util import setup_logger
 
 MORIA_PATH = '/home/michele/sim/MoRIA/'
 KICKED_PATH = '/home/michele/sim/MySimulations/Moria8Gyr_tidal'
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler())
+logger = setup_logger('snap_io', logger_level='INFO')
 
 
 def make_snaps_path(sim_number, kicked):
@@ -30,10 +28,16 @@ def snapshot_file_list(dirname, stem="snapshot_", fillwidth=4, include_dir=False
     return filelist
 
 
-def load_sim(snap_dir):
+def load_sim(snap_dir, snap_indexes=None):
     """Return a list of pynbody.SimSnap contained in the directory `snap_dir`"""
     snap_name_list = snapshot_file_list(os.path.expanduser(snap_dir), include_dir=True)
     logger.info("Found {} snapshots".format(len(snap_name_list)))
+    if snap_indexes is not None:
+        if isinstance(snap_indexes, (list, tuple)):
+            snap_name_list = np.array(snap_name_list)[snap_indexes]
+        else:
+            snap_name_list = snap_name_list[snap_indexes]
+        logger.info("Taking {} snapshots ({})".format(len(snap_name_list), snap_indexes))
     snap_list = list(pynbody.load(snap) for snap in snap_name_list)
     return snap_list
 
@@ -52,26 +56,26 @@ def load_snap(snap_dir, snap_number):
     return pynbody.load(snap)
 
 
-def load_moria(sim_number, snap_number=None, path=None):
+def load_moria(sim_number, snap_number=None, path=None, snap_indexes=None):
     if path is None:
         sim_dir = make_snaps_path(sim_number, kicked=False)
     else:
         sim_dir = os.path.join(MORIA_PATH, 'sim{}'.format(sim_number))
 
     if snap_number is None:
-        return load_sim(sim_dir)
+        return load_sim(sim_dir, snap_indexes=snap_indexes)
     else:
         return load_snap(sim_dir, snap_number)
 
 
-def load_kicked(sim_number, snap_number=None, path=None):
+def load_kicked(sim_number, snap_number=None, path=None, snap_indexes=None):
     if path is None:
         sim_dir = make_snaps_path(sim_number, kicked=True)
     else:
         sim_dir = os.path.join(KICKED_PATH, 'sim{}'.format(sim_number), 'out')
 
     if snap_number is None:
-        return load_sim(sim_dir)
+        return load_sim(sim_dir, snap_indexes=snap_indexes)
     else:
         return load_snap(sim_dir, snap_number)
 
