@@ -8,12 +8,12 @@ import pynbody
 import tqdm
 import argparse
 from simulation.util import setup_logger, get_sim_name
-import astropy.units  as u
 import gc
 
 logger = setup_logger('save_center', logger_level='INFO')
 
 def compute_center(sim_path, vel=False, outname=None):
+    """Compute center of simulation as it is (not derotated)"""
     sim = simulation.Simulation(sim_path)# , snap_indexes=slice(1, 4))
     times = sim.times
     if outname is None:
