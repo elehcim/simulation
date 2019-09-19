@@ -14,6 +14,8 @@ import quaternion
 import argparse
 import gc
 
+ORBIT_PLANE_QUAT = 1/np.sqrt(2) * np.quaternion(1, -1, 0, 0)
+
 
 def rotate_vec(vec, quat):
     """Rotate a numpy array of 3-vectors `vec` given a quaternion `quat`
@@ -55,10 +57,18 @@ def rotate_simarray(vec, quat):
     new_vec = rotate_vec(vec, quat)
     return pynbody.array.SimArray(new_vec, vec.units)
 
-
-def rotate_on_orbit_plane(pos, vel):
+def rotate_simarray_on_orbit_plane(vec, orbit_plane_quat=ORBIT_PLANE_QUAT):
     # Rotation of -90deg around x axis
-    orbit_plane_quat = 1/np.sqrt(2) * np.quaternion(1, -1, 0, 0)
+    new_vec = rotate_simarray(vec, orbit_plane_quat)
+    return new_vec
+
+def rotate_vec_on_orbit_plane(vec, orbit_plane_quat=ORBIT_PLANE_QUAT):
+    # Rotation of -90deg around x axis
+    new_vec = rotate_vec(vec, orbit_plane_quat)
+    return new_vec
+
+def rotate_on_orbit_plane(pos, vel, orbit_plane_quat=ORBIT_PLANE_QUAT):
+    # Rotation of -90deg around x axis
     new_pos = rotate_simarray(pos, orbit_plane_quat)
     new_vel = rotate_simarray(vel, orbit_plane_quat)
     return new_pos, new_vel
