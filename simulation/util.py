@@ -234,15 +234,21 @@ def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
         omega_mb_arr = None
     return omega_mb_arr
 
-def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
-    """Return a numpy array reading the table in `quat_dir`"""
-    logger = setup_logger('get_quat', logger_level='INFO')
+
+def get_quat_file(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
+    logger = setup_logger('get_quat_file', logger_level='INFO')
     if os.path.isdir(os.path.expanduser(quat_dir)):
         quat_dir = os.path.expanduser(quat_dir)
         quat_file = os.path.join(quat_dir, sim_name+'_quat.fits')
     else:
         quat_file = None
+    return quat_file
 
+
+def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
+    """Return a numpy array reading the table in `quat_dir`"""
+    logger = setup_logger('get_quat', logger_level='INFO')
+    quat_file = get_quat_file(sim_name, quat_dir)
     if os.path.isfile(quat_file):
         logger.info('Reading quaternion table: {}'.format(quat_file))
         tbl = Table.read(quat_file)
@@ -251,6 +257,14 @@ def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
         logger.warning('Cannot find quaternion table...')
         quat_arr = None
     return quat_arr
+
+
+def get_initial_rotation(sim_name):
+    """Get initial rotation due to the choice of the axis in the moving box technique"""
+    quat_file = get_quat_file(sim_name)
+    tbl = Table.read(quat_file)
+    quat_vp0 = np.quaternion(tbl.meta['QUAT_P0W'], tbl.meta["QUAT_P0X"], tbl.meta["QUAT_P0Y"], tbl.meta["QUAT_P0Z"])
+    return quat_vp0
 
 
 def get_pivot(sim_name,

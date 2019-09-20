@@ -138,7 +138,8 @@ def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False)
     # write quaternion
     tbl = Table(np.hstack([quaternion.as_float_array(q), Omega, omega_mb]),
                 names=["q_w", "q_x", "q_y", "q_z", 'omega_x', 'omega_y', 'omega_z', 'omega_mb_x', 'omega_mb_y', 'omega_mb_z'],
-                meta={'V_P0X': sim.trace.vx[0], "V_P0X": sim.trace.vy[0], "V_P0Z": sim.trace.vz[0]})
+                meta={'V_P0X': sim.trace.vx[0], "V_P0Y": sim.trace.vy[0], "V_P0Z": sim.trace.vz[0],
+                      'QUAT_P0W': quat_vp0.w, "QUAT_P0X": quat_vp0.x, "QUAT_P0Y": quat_vp0.y, "QUAT_P0Z": quat_vp0.z})
 
     tbl.write(outname, overwrite=True)
     return sim
