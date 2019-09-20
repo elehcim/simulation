@@ -1,6 +1,19 @@
 import pynbody
 from pynbody.analysis.angmom import calc_faceon_matrix, calc_sideon_matrix
 
+from astropy import units as u
+from simulation.util import get_quat_omega_pivot, get_sim_name, setup_logger
+from simulation.derotate_simulation import (derotate_pos_and_vel, derotate_simulation,
+                                           rotate_vec_on_orbit_plane, rotate_on_orbit_plane)
+from astropy.table import Table
+import gc
+import tqdm
+import numpy as np
+import quaternion
+
+logger = setup_logger('angmom', logger_level='WARNING')
+
+
 def sideon(h, vec_to_xform=calc_sideon_matrix,
              cen=None, vcen=None, move_all=True, **kwargs):
     """
@@ -72,7 +85,7 @@ logger = setup_logger('angmom', logger_level='WARNING')
 
 def compute_angmom(sim, slicer=slice(None), derotate=True, on_orbit_plane=True, radius=10):
     """
-    Returns the angular momentum of stars and gas inside `radius`
+    Returns the angular momentum of stars and gas inside a sphere of `radius` center in the center of the stars.
 
     Side effect: the simulation snap_list will be full of None
     """
@@ -102,9 +115,6 @@ def compute_angmom(sim, slicer=slice(None), derotate=True, on_orbit_plane=True, 
                 logger.info("omega_mb: {}".format(omega_mb))
                 logger.info("pivot:    {}".format(pivot))
                 snap['pos'], snap['vel'] = derotate_pos_and_vel(snap['pos'], snap['vel'], quat, omega_mb, pivot)
-                if on_orbit_plane:
-                    logger.info("Rotating on the plane of the orbit...")
-                    snap['pos'], snap['vel'] = rotate_on_orbit_plane(snap['pos'], snap['vel'])
 
             # Here I need to center on velocity
             pynbody.analysis.halo.center(snap.s)
@@ -124,4 +134,11 @@ def compute_angmom(sim, slicer=slice(None), derotate=True, on_orbit_plane=True, 
         sim.snap_list[i] = None  # destroying references to the snap and the list
         if i % 10 == 0:
             gc.collect()
-    return np.vstack(angmom), np.vstack(angmom_g)
+
+    L, Lg = np.vstack(angmom), np.vstack(angmom_g)
+
+    if on_orbit_plane:
+        L = rotate_vec_on_orbit_plane(L)
+        Lg = rotate_vec_on_orbit_plane(Lg)
+
+    return L, Lg
