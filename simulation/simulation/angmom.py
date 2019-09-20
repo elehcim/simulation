@@ -2,8 +2,8 @@ import pynbody
 from pynbody.analysis.angmom import calc_faceon_matrix, calc_sideon_matrix
 
 from astropy import units as u
-from simulation.util import get_quat_omega_pivot, get_sim_name, setup_logger
-from simulation.derotate_simulation import (derotate_pos_and_vel, derotate_simulation,
+from simulation.util import get_initial_rotation, get_quat_omega_pivot, get_sim_name, setup_logger
+from simulation.derotate_simulation import (rotate_vec, derotate_pos_and_vel, derotate_simulation,
                                            rotate_vec_on_orbit_plane, rotate_on_orbit_plane)
 from astropy.table import Table
 import gc
@@ -105,8 +105,7 @@ class Derotator:
             snap['pos'], snap['vel'] = rotate_on_orbit_plane(snap['pos'], snap['vel'])
 
 
-
-def compute_angmom(sim, derotate=True, on_orbit_plane=True, radius=10):
+def compute_angmom(sim, derotate=True, on_orbit_plane=True, radius=10, initial_rotation_simname=""):
     """
     Returns the angular momentum of stars and gas inside a sphere of `radius` center in the center of the stars.
     Units are: 10**10*u.solMass * u.km/u.s * u.kpc
@@ -147,6 +146,13 @@ def compute_angmom(sim, derotate=True, on_orbit_plane=True, radius=10):
             gc.collect()
 
     L, Lg = np.vstack(angmom), np.vstack(angmom_g)
+
+    # This is important to compare angular momentum from Moria to MovingBox
+    # It is important to do this before the on_orbit_plane rotation
+    if initial_rotation_simname:
+        quat_vp0 = get_initial_rotation(initial_rotation_simname)
+        L = rotate_vec(L, quat_vp0)
+        Lg = rotate_vec(Lg, quat_vp0)
 
     if on_orbit_plane:
         L = rotate_vec_on_orbit_plane(L)
