@@ -215,6 +215,7 @@ class Simulation:
         logger.info("loading simulation: {}".format(sim_id))
         self.params = get_param_used(sim_dir)
         self.compiler_opts = get_compiler_options(sim_dir)
+        self._snap_indexes = snap_indexes if snap_indexes is not None else slice(None)
         self.snap_list = self._load(sim_dir, force_cosmo, snap_indexes)
         if len(self.snap_list) == 0:
             raise RuntimeError("No snaphots found in {}".format(sim_dir))

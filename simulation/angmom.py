@@ -72,15 +72,20 @@ def faceon(h, **kwargs):
     return sideon(h, vec_to_xform=calc_faceon_matrix, **kwargs)
 
 class Derotator:
-    def __init__(self, sim_name, slicer=slice(None)):
+    def __init__(self, sim):
+        sim_name = get_sim_name(sim.sim_id)
+        slicer = sim._snap_indexes
         quat_arr, omega_mb_arr, pivot = get_quat_omega_pivot(sim_name)
         self.quat_arr = quat_arr[slicer]
         self.omega_mb_arr = omega_mb_arr[slicer]
         self.pivot = pivot
 
 
-    def derotate_snap(self, snap):
-        snap['pos'], snap['vel'] = derotate_pos_and_vel(snap['pos'], snap['vel'], self.quat, self.omega_mb, self.pivot)
+    def derotate_snap(self, snap, idx_snap):
+        quat = np.quaternion(*self.quat_arr[idx_snap, :])
+        omega_mb = self.omega_mb_arr[idx_snap, :]
+
+        snap['pos'], snap['vel'] = derotate_pos_and_vel(snap['pos'], snap['vel'], quat, omega_mb, self.pivot)
         return snap
 
     def derotate_sim(self, sim, on_orbit_plane):
@@ -96,36 +101,38 @@ class Derotator:
             snap['pos'], snap['vel'] = derotate_pos_and_vel(snap['pos'], snap['vel'], quat, omega_mb, self.pivot)
 
         if on_orbit_plane:
-            logger.info("Rotating on the plane of the orbit...")
+            logger.debug("Rotating on the plane of the orbit...")
             snap['pos'], snap['vel'] = rotate_on_orbit_plane(snap['pos'], snap['vel'])
 
 
 
-def compute_angmom(sim, slicer=slice(None), derotate=True, on_orbit_plane=True, radius=10):
+def compute_angmom(sim, derotate=True, on_orbit_plane=True, radius=10):
     """
     Returns the angular momentum of stars and gas inside a sphere of `radius` center in the center of the stars.
     Units are: 10**10*u.solMass * u.km/u.s * u.kpc
     Side effect: the simulation snap_list will be full of None
     """
 
-    sim_name = get_sim_name(sim.sim_id)
     sphere = pynbody.filt.Sphere(radius * pynbody.units.kpc)
     angmom = list()
     angmom_g = list()
 
     if derotate:
-        derotator = Derotator(sim_name, slicer=slicer)
-        derotator.derotate_sim(sim, on_orbit_plane=on_orbit_plane)
+        logger.info("Rotating on the plane of the orbit...")
+        derotator = Derotator(sim)
+        # derotator.derotate_sim(sim, on_orbit_plane=on_orbit_plane)
 
     logger.info('Computing angmom...')
     for i, snap in enumerate(tqdm.tqdm(sim)):
         try:
+            if derotate:
+                snap = derotator.derotate_snap(snap, i)
             # Here I need to center on velocity
             pynbody.analysis.halo.center(snap.s)
             # sideon(snap.s[sphere])
             angmom.append(pynbody.analysis.angmom.ang_mom_vec(snap.s[sphere]))
 
-            # sideon(snap.s[sphere])
+            # sideon(snap.g[sphere])
             angmom_g.append(pynbody.analysis.angmom.ang_mom_vec(snap.g[sphere]))
 
         except ValueError as e:
