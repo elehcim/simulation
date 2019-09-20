@@ -84,8 +84,8 @@ class Derotator:
         return snap
 
     def derotate_sim(self, sim, on_orbit_plane):
-        # assert len(self.quat_arr) == len(sim)
-        # assert len(self.omega_mb_arr) == len(sim)
+        assert len(self.quat_arr) == len(sim)
+        assert len(self.omega_mb_arr) == len(sim)
         for i, snap in enumerate(tqdm.tqdm(sim)):
             quat = np.quaternion(*self.quat_arr[i, :])
             omega_mb = self.omega_mb_arr[i, :]
