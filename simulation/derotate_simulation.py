@@ -79,6 +79,7 @@ def get_all_keys(snap):
     ak = set()
     for fam in snap.families():
         ak = ak.union(snap[fam].loadable_keys()).union(snap[fam].keys()).union(snap[fam].family_keys())
+    # These are the common keys for all the families.
     ak = [k for k in ak if not k in ['pos', 'vel', 'acce', "x", "y", "z", "vx", "vy", "vz", 'acce_x', 'acce_y', 'acce_z']]
     ak.sort()
     return ak
