@@ -33,6 +33,23 @@ def get_radial_period(sim_name, data_dir=DATA_DIR):
     rperiod = d[int(peri[1:])]
     return rperiod
 
+def compute_t_period(sim_name, data_dir=DATA_DIR):
+    df = get_tables(sim_name).to_pandas()
+    if 'r' not in df.keys():
+        df['r'] = np.sqrt(df['x']**2 + df['y']**2)
+
+    radial_period = get_radial_period(sim_name)
+    zero_crossings = np.where(np.diff(np.signbit(df['r'].diff())))[0]
+    idx_peri = zero_crossings[1]  # first element is always 0, so the second is the actual pericenter
+    first_pericenter_time = df['t'][idx_peri]
+    # print(zero_crossings)
+    # print(first_pericenter_time)
+
+    # Put 0 of the scale on first pericenter
+    df['t_period'] = (df['t']-first_pericenter_time)/radial_period
+    df['orbital_phase'] = pd.cut(df['t_period'], [-0.25, 0.25, 0.75, 1.25, 1.75], labels=False)
+    return df
+
 def get_vrot_max(tbl):
     max_vrot = list()
     for prof in tbl['v_circ']:
@@ -251,3 +268,15 @@ def load_tables(file_list, orbit_sideon):
 #         print(sim_name)
         d[shorten_name(f)] = get_df(sim_name)
     return d
+
+
+def get_tables(sim_name, data_dir=DATA_DIR):
+    name = os.path.join(data_dir, "tables/{}.fits".format(sim_name))
+    print("Getting tables:{}".format(name))
+    return Table.read(name)
+
+
+def get_phot(sim_name, data_dir=DATA_DIR):
+    name = os.path.join(data_dir, "photometry/{}_photometry.fits".format(sim_name))
+    print("Getting photometry:{}".format(name))
+    return Table.read(name)
