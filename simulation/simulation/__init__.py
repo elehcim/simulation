@@ -184,7 +184,7 @@ class Simulation:
         |- sfc.dat
         |- timings.txt
         |- [trace.txt]
-        |- [dens_temp_traceinfo.txt]
+        |- [dens_temp_trace.txt]
     """
     _times = None
     cog = None

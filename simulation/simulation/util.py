@@ -8,20 +8,27 @@ import json
 import astropy.units as u
 from astropy.table import Table
 
+loggers = {}
+
 def setup_logger(logger_name=None, logger_level='DEBUG'):
+    if loggers.get(logger_name):
+        logger = loggers.get(logger_name)
+    else:
+
 
     # formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s - %(message)s')
     # log_file_handler = logging.FileHandler(os.path.join(config_logger['log_dir'], config_logger['log_file']))
     # log_file_handler.setFormatter(formatter)
 
-    stream_formatter = logging.Formatter('%(asctime)s (%(name)s) [%(levelname)-5.5s] - %(message)s')
-    log_stream_handler = logging.StreamHandler()
-    log_stream_handler.setFormatter(stream_formatter)
+        stream_formatter = logging.Formatter('%(asctime)s (%(name)s) [%(levelname)-5.5s] - %(message)s')
+        log_stream_handler = logging.StreamHandler()
+        log_stream_handler.setFormatter(stream_formatter)
 
-    logger = logging.getLogger(logger_name)
-    # logger.addHandler(log_file_handler)
-    logger.addHandler(log_stream_handler)
-    logger.setLevel(logging.getLevelName(logger_level))
+        logger = logging.getLogger(logger_name)
+        # logger.addHandler(log_file_handler)
+        logger.addHandler(log_stream_handler)
+        logger.setLevel(logging.getLevelName(logger_level))
+        loggers[logger_name] = logger
 
     return logger
 
