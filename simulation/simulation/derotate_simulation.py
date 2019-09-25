@@ -125,7 +125,7 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, offset=None, on_orbit_plane=F
 
 
 def derotate_pos_and_vel(pos, vel, quat, omega_mb, pivot, offset=None):
-
+    """Implementing Eq. 2 in Nichols 2015, the inverse of it actually with the inverse quaternion."""
     # pos
     new_pos = rotate_vec(pos - pivot, quat)
     if offset is not None:
@@ -147,7 +147,7 @@ def get_quaternions(trace):
     return quaternion.as_quat_array(quat)
 
 
-def derotate_simulation(sim_path, new_path, snap_indexes=slice(None, None, None), on_orbit_plane=False):
+def derotate_simulation(sim_path, new_path, snap_indexes=slice(None), on_orbit_plane=False):
     sim = simulation.Simulation(sim_path, snap_indexes=snap_indexes)
 
     sim_name = get_sim_name(sim_path)
