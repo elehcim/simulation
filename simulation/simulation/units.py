@@ -8,7 +8,7 @@ gadget_time_units = gadget_length_units/gadget_vel_units
 
 gadget_acc_units = gadget_vel_units/gadget_time_units
 gadget_dens_units = gadget_mass_units/gadget_length_units**3
-
+gadget_angmom_units = gadget_mass_units * gadget_vel_units * gadget_length_units
 
 amu = pynbody.units.NamedUnit("amu",1.660539e-27*pynbody.units.kg)
 
