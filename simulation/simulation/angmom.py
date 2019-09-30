@@ -5,7 +5,10 @@ from astropy import units as u
 from simulation.util import get_initial_rotation, get_quat_omega_pivot, get_sim_name, setup_logger
 from simulation.derotate_simulation import (rotate_vec, derotate_pos_and_vel, derotate_simulation,
                                            rotate_vec_on_orbit_plane, rotate_on_orbit_plane)
+from simulation.units import gadget_angmom_units
 from astropy.table import Table
+from collections import defaultdict
+
 import gc
 import tqdm
 import numpy as np
@@ -72,12 +75,14 @@ def faceon(h, **kwargs):
     return sideon(h, vec_to_xform=calc_faceon_matrix, **kwargs)
 
 class Derotator:
-    def __init__(self, sim):
+    def __init__(self, sim, sim_name=None):
         """Create sliced tables of quaternions, omega. Get pivot too
         They are sliced so that they can be indexed with an enumerate list on `sim`"""
-        sim_name = get_sim_name(sim.sim_id)
+        my_sim_name = sim_name or get_sim_name(sim.sim_id)
+        logger.info(f"Initialize derotator from {my_sim_name}...")
+
         slicer = sim._snap_indexes
-        quat_arr, omega_mb_arr, pivot = get_quat_omega_pivot(sim_name)
+        quat_arr, omega_mb_arr, pivot = get_quat_omega_pivot(my_sim_name)
 
         self.quat_arr = quat_arr[slicer]
         self.omega_mb_arr = omega_mb_arr[slicer]
@@ -125,34 +130,12 @@ class Derotator:
             snap['pos'], snap['vel'] = rotate_on_orbit_plane(snap['pos'], snap['vel'])
 
 
-class Angmom:
-    units = 1e10*u.solMass * u.km/u.s * u.kpc
 
-    def __init__(self, stars=None,  gas=None, baryon=None, dm=None, tot=None):
-        self.gas = None
-        self.baryon = None
-        self.stars = None
-        self.dm = None
-        self.tot = None
+def specific_angmom(snap):
+    return pynbody.array.SimArray(pynbody.analysis.angmom.ang_mom_vec(snap), units=gadget_angmom_units)/snap['mass'].sum()
 
 
-
-    # qL = u.Quantity(L, unit=angmom_units, dtype=np.float32)
-    # qLg = u.Quantity(Lg, unit=angmom_units, dtype=np.float32)
-    # tbl = Table({'t': np.array(times) * u.Gyr,
-    #              'Lx': qL[:,0],
-    #              'Ly': qL[:,1],
-    #              'Lz': qL[:,2],
-    #              'L':u.Quantity(np.linalg.norm(L, axis=1), unit=angmom_units, dtype=np.float32),
-    #              'Lgx': qLg[:,0],
-    #              'Lgy': qLg[:,1],
-    #              'Lgz': qLg[:,2],
-    #              'Lg':u.Quantity(np.linalg.norm(Lg, axis=1), unit=angmom_units, dtype=np.float32),
-    #              },
-    #              )
-    # return tbl
-
-def compute_angmom(sim, derotate=True, on_orbit_plane=True, radius=10, initial_rotation_simname=""):
+def compute_angmom(sim, derotator=None, on_orbit_plane=True, radius=10, initial_rotation_simname=""):
     """
     Returns the angular momentum of stars and gas inside a sphere of `radius` center in the center of the stars.
     Units are: 10**10*u.solMass * u.km/u.s * u.kpc
@@ -160,44 +143,58 @@ def compute_angmom(sim, derotate=True, on_orbit_plane=True, radius=10, initial_r
     """
 
     sphere = pynbody.filt.Sphere(radius * pynbody.units.kpc)
-    angmom = list()
-    angmom_g = list()
+    angmom = defaultdict(list)
 
-    if derotate:
-        logger.info("Initialize derotator...")
-        derotator = Derotator(sim)
-        # derotator.derotate_sim(sim, on_orbit_plane=on_orbit_plane)
+    families =  ('s', 'g', 'dm')
 
-    logger.info('Computing angmom...' + (' and derotating' if derotate else "") )
+    # if derotator is not None:
+    #     logger.info("Initialize derotator...")
+    #     derotator = Derotator(sim)
+    #     # derotator.derotate_sim(sim, on_orbit_plane=on_orbit_plane)
+
+    logger.info('Computing angmom...')
     # From this: https://stackoverflow.com/a/42731787
     # sl = sim._snap_indexes
     # snap_indexes = list(range(sl.start or 0, sl.stop or len(sim), sl.step or 1))
     for i, snap in enumerate(tqdm.tqdm(sim)):
         try:
-            if derotate:
+            if derotator is not None:
                 snap['pos'], snap['vel'] = derotator.derotate_snap(snap, i)
 
             # Here I need to center on velocity
             pynbody.analysis.halo.center(snap.s)
-            # sideon(snap.s[sphere])
-            angmom.append(pynbody.analysis.angmom.ang_mom_vec(snap.s[sphere]))
 
-            # sideon(snap.g[sphere])
-            angmom_g.append(pynbody.analysis.angmom.ang_mom_vec(snap.g[sphere]))
-            # angmom_dm.append(pynbody.analysis.angmom.ang_mom_vec(snap.dm[sphere]))
+            angmom['Ltot' + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(snap[sphere]))
+            angmom['j' + '_c'].append(specific_angmom(snap[sphere]))
+            angmom['j'].append(specific_angmom(snap))
+
+            for f in families:
+                fam = pynbody.family.get_family(f)
+                angmom['L'+ f + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(snap[fam][sphere]))
+                angmom['j'+ f + '_c'].append(specific_angmom(snap[fam][sphere]))
+                angmom['j'+ f].append(specific_angmom(snap[fam]))
+
+            baryon_snap = snap.g.union(snap.s)
+            angmom['jb'].append(specific_angmom(baryon_snap))
+            baryon_snap_sphere = baryon_snap[sphere]
+            angmom['Lb' + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(baryon_snap_sphere))
+            angmom['jb' + '_c'].append(specific_angmom(baryon_snap_sphere))
 
         except ValueError as e:
             # Usually is 'Insufficient particles around center to get velocity'
             logger.warning(f"{i} {e}")
             # Get at least the time
-            angmom.append([np.nan] * 3)
-            angmom_g.append([np.nan] * 3)
-        # del snap
-        # sim.snap_list[i] = None  # destroying references to the snap and the list
-        # if i % 10 == 0:
-        #     gc.collect()
+            for k in angmom.keys():
+                angmom[k].append([np.nan] * 3)
+        del snap
+        sim.snap_list[i] = None  # destroying references to the snap and the list
+        if i % 10 == 0:
+            gc.collect()
 
-    L, Lg = np.vstack(angmom), np.vstack(angmom_g)
+    for k, v in angmom.items():
+        angmom[k] = np.vstack(v)
+
+    # L, Lg = np.vstack(angmom), np.vstack(angmom_g)
     # print("before derotation")
     # print(L, Lg)
     # This is important in order to compare angular momentum from Moria to MovingBox
@@ -206,14 +203,18 @@ def compute_angmom(sim, derotate=True, on_orbit_plane=True, radius=10, initial_r
         logger.info('Apply initial rotation...')
         quat_vp0 = get_initial_rotation(initial_rotation_simname)
         print(quat_vp0)
-        L = rotate_vec(L, quat_vp0)
-        Lg = rotate_vec(Lg, quat_vp0)
+        for k, v in angmom.items():
+            angmom[k] = rotate_vec(v, quat_vp0)
+        # L = rotate_vec(L, quat_vp0)
+        # Lg = rotate_vec(Lg, quat_vp0)
 
     if on_orbit_plane:
         logger.info('Rotating on orbit plane...')
-        L = rotate_vec_on_orbit_plane(L)
-        Lg = rotate_vec_on_orbit_plane(Lg)
+        for k, v in angmom.items():
+            angmom[k] = rotate_vec_on_orbit_plane(v)
+        # L = rotate_vec_on_orbit_plane(L)
+        # Lg = rotate_vec_on_orbit_plane(Lg)
     # print("After derotation")
     # print(L, Lg)
 
-    return L, Lg
+    return angmom
