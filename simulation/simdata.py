@@ -33,7 +33,7 @@ def get_radial_period(sim_name, data_dir=DATA_DIR):
     rperiod = d[int(peri[1:])]
     return rperiod
 
-def compute_t_period(sim_name, data_dir=DATA_DIR):
+def compute_t_period(sim_name):
     df = get_tables(sim_name).to_pandas()
     if 'r' not in df.keys():
         df['r'] = np.sqrt(df['x']**2 + df['y']**2)
