@@ -6,6 +6,11 @@ import astropy.units as u
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
+import tqdm
+from collections import defaultdict
+from simulation.simdata import get_center
+from simulation.util import get_sim_name
+
 
 
 def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
@@ -77,7 +82,7 @@ def _pairwise(iterable):
 
 def new_stars_id(sim):
     """ Use ID (iord in pynbody) to identify the new stars"""
-    # Unfortunately for simulation with Moving Box, IDs are not unique
+    # Unfortunately for some simulations with Moving Box, IDs are not unique
     ns_idx = list()
     for (a0, a1) in _pairwise(sim):
         s0, s1 = a0.s['iord'].view(np.ndarray), a1.s['iord'].view(np.ndarray)
@@ -93,6 +98,41 @@ def new_stars_time(sim):
         is_new_star = a1.s['tform'] > a0.properties['time']
         ns_idx.append(np.where(is_new_star)[0])
     return ns_idx
+
+
+def new_stars(sim):
+    """Returns the `iord` of the new stars and the new stars indexes"""
+    empty_array = np.array([], dtype=np.int32)
+    ns = [empty_array]
+    ns_idx = [empty_array]
+    for (a0, a1) in tqdm.tqdm(_pairwise(sim), total=len(sim)-1):
+        s0, s1 = a0.s['iord'].view(np.ndarray), a1.s['iord'].view(np.ndarray)
+        new_stars = np.setdiff1d(s1, s0)
+        ns_idx.append(np.where(np.isin(s1, new_stars))[0])
+        ns.append(new_stars)
+
+    return ns, ns_idx
+
+
+def compute_new_stars_locations(sim, ns_idx, cen=None):
+    if cen is None:
+        cen = get_center(get_sim_name(sim.sim_id))
+    new_stars_locations = defaultdict(list)
+    for snap_idx in tqdm.tqdm(range(len(sim))):
+        snap = sim[snap_idx]
+        pos = snap.s[ns_idx[snap_idx]]['pos']
+        new_stars_locations['pos'].append(pos)
+        new_stars_locations['pos_c'].append(pos-cen[snap_idx])
+    return new_stars_locations
+
+
+def compute_new_stars_mass(sim, ns_idx):
+    new_stars_mass = list()
+    for snap_idx in tqdm.tqdm(range(len(sim))):
+        snap = sim[snap_idx]
+        mass = snap.s[ns_idx[snap_idx]]['mass']
+        new_stars_mass.append(mass)
+    return new_stars_mass
 
 
 def sfh(sim, selection_method='id'):
