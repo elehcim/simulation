@@ -183,10 +183,8 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     return df
 
 
-def shorten_name(filename):
-    name, peri = os.path.basename(filename).split('_')[:2]
-    return name[3:5] + peri
-
+def get_sf_pos(sim_name):
+    return pickle.load(open(os.path.join(DATA_DIR, 'sf', sim_name + "_sf_pos.pkl"), 'rb'))
 
 def shorten_name(filename):
     name, peri = os.path.basename(filename).split('_')[:2]
