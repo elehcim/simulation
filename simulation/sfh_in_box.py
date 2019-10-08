@@ -10,7 +10,7 @@ import tqdm
 from collections import defaultdict
 from simulation.simdata import get_center
 from simulation.util import get_sim_name
-
+from simulation.derived import feh, mgfe
 
 
 def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
@@ -134,6 +134,26 @@ def compute_new_stars_mass(sim, ns_idx):
         new_stars_mass.append(mass)
     return new_stars_mass
 
+def compute_new_star_props(sim, ns_idx, cen=None):
+    if cen is None:
+        cen = get_center(get_sim_name(sim.sim_id))
+    prop_list = ('pos', 'mass', 'massform','feh','mgfe','metals','fest','mgst')
+    new_stars_props = defaultdict(list)
+    for snap_idx in tqdm.tqdm(range(len(sim))):
+        snap = sim[snap_idx]
+        new_stars = snap.s[ns_idx[snap_idx]]
+        for prop in prop_list:
+            new_stars_props[prop].append(new_stars[prop])
+        new_stars_props['pos_c'].append(new_stars['pos'] - cen[snap_idx])
+    return new_stars_props
+
+
+def compute_new_stars_mass(sim, ns_idx):
+    new_stars_mass = list()
+    for snap_idx in tqdm.tqdm(range(len(sim))):
+        snap = sim[snap_idx]
+        mass = snap.s[ns_idx[snap_idx]]['mass']
+        new_stars_mass.append(mass)
 
 def sfh(sim, selection_method='id'):
     """
