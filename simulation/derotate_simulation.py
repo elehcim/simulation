@@ -8,7 +8,6 @@ from simulation.util import get_sim_name, get_pivot, get_quat, get_omega_mb
 import pynbody
 from astropy.table import Table
 import matplotlib.pyplot as plt
-from pyquaternion import Quaternion
 import tqdm
 import quaternion
 import argparse
