@@ -31,3 +31,9 @@ ssam_data/
 *.sublime-workspace
 cmake-build*
 
+*.html
+*.csv
+*.pkl
+
+snapshot_0065
+ic1e5.ic
