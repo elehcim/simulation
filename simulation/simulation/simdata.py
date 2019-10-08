@@ -2,7 +2,6 @@ import os
 import simulation
 import pynbody
 import pandas as pd
-import seaborn as sns
 import matplotlib.pylab as plt
 import matplotlib
 import numpy as np
