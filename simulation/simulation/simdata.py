@@ -241,6 +241,15 @@ def is_orbit_sideon(sim_name):
     else:
         return False
 
+def get_sim_name_list(table_list_dir=TABLE_LIST_DIR):
+    tables_list = glob.glob(os.path.join(table_list_dir, '*.fits'))
+    tables_list.sort(key=natural_keys)
+
+    # Order by mass
+    myorder = list(range(11, len(tables_list))) + list(range(3, 11)) + list(range(3))
+    tables_list = [tables_list[i] for i in myorder]
+    return tables_list
+
 def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
     if os.path.isfile(cache_file) and not force:
         print(f"Loaded cache {cache_file}")
@@ -277,3 +286,19 @@ def get_phot(sim_name, data_dir=DATA_DIR):
     name = os.path.join(data_dir, "photometry/{}_photometry.fits".format(sim_name))
     print("Getting photometry:{}".format(name))
     return Table.read(name)
+
+
+def get_maps(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    if orbit_sideon:
+        tbl = Table.read(os.path.join(data_dir, 'maps_orbit_sideon_sig_los', sim_name+'_orbit_sideon_maps.fits'))
+    else:
+        tbl = Table.read(os.path.join(data_dir, 'maps_orbit_faceon_sig_los', sim_name+'_maps.fits'))
+    return tbl
+
+
+def get_maps_all_band(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    if orbit_sideon:
+        tbl = Table.read(os.path.join(data_dir, 'maps_orbit_sideon_sig_los', sim_name+'_orbit_sideon_maps_allbands.fits'))
+    else:
+        tbl = Table.read(os.path.join(data_dir, 'maps_orbit_faceon_sig_los', sim_name+'_maps_allbands.fits'))
+    return vlos_map
