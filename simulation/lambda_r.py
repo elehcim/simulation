@@ -1,11 +1,6 @@
 import warnings
-from copy import deepcopy
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pynbody
-from astropy import units as u
-
 
 
 def lambda_r_formula(flux, r, v_los, v_disp):
@@ -54,3 +49,32 @@ def lambda_r_profile(flux, v_los, v_disp, width, bins=50):
     for r in r_arr:
         prof.append(lambda_r_r_lim(flux, v_los, v_disp, width=width, r_lim=r))
     return np.array(prof)
+
+
+if __name__ == '__main__':
+    # example usage
+    import tqdm
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from simulation.simdata import get_maps
+    sim_name = 'mb.71002_p100_a800_r600'
+    maps = get_maps(sim_name, orbit_sideon=True)
+    flux, v_los, v_disp = maps['lum'], maps['vlos'], maps['sig_los']
+    n_prof = len(flux)
+    bins = 50
+    width = maps.meta['WIDTH']
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=n_prof)
+    cmap = matplotlib.cm.get_cmap('jet', 12)
+    mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    fig, ax = plt.subplots()
+    x = np.linspace(0, width/2, bins)
+    prof_list = list()
+    for i in tqdm.tqdm(range(len(flux))):
+        prof_list.append(lambda_r_profile(flux[i], v_los[i], v_disp[i], width))
+
+    for i in range(0, len(flux), 10):
+        ax.plot(x, prof_list[i], color=mappable.to_rgba(i))
+    ax.set_ylabel('$\lambda_R$')
+    ax.set_xlabel('r [kpc]');
+    fig.colorbar(mappable)
+    plt.show()
