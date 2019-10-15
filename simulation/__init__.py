@@ -13,7 +13,7 @@ from .analyze_sumfiles import get_sumfile
 from .parsers.parse_trace import parse_trace, parse_dens_trace
 from .parsers.parse_info import parse_info
 from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
-from .util import np_printoptions, make_df_monotonic_again_using_reference_df
+from .util import np_printoptions, make_df_monotonic_again_using_reference_df, get_sim_name
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
@@ -318,9 +318,10 @@ class Simulation:
     @property
     def peri(self):
         if self.is_moving_box:
-            i = self._sim_dir.find('_p')
-            j = self._sim_dir.find('_a')
-            return self._sim_dir[i+2:j]
+            sim_name = get_sim_name(self._sim_dir)
+            i = sim_name.find('_p')
+            j = sim_name.find('_a')
+            return sim_name[i+2:j]
         else:
             return ""
 
