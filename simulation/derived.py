@@ -195,3 +195,8 @@ def vz_disp(self):
     # logger.info('Velocity dispersion done in %5.3g s' % (end - start))
 
     return sm
+
+
+@pynbody.derived_array
+def mach(self):
+    return (np.sqrt(self['v2']).in_units('km s**-1')/self['cs'].in_units('km s**-1'))
