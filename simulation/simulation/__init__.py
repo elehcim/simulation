@@ -64,6 +64,21 @@ def plot_cog(cog, ax_cog=None, cur_snap=None, **kwargs):
     return ax_cog
 
 
+def mu(temp):
+    """Mean atomic mass"""
+    x = np.empty(len(temp)).view(pynbody.array.SimArray)
+    x[np.where(temp >= 1e4)[0]] = 0.59
+    x[np.where(temp < 1e4)[0]] = 1.3
+    x.units = pynbody.units.Unit("1")
+    return x
+
+
+def cs(temp):
+    """Sound speed"""
+    _mu = mu(temp)
+    return np.sqrt(5.0 / 3.0 * pynbody.units.k * temp / _mu / pynbody.units.m_p).in_units('km s**-1')
+
+
 def get_param_used(path):
     """
     Parse the `parameters-usedvalues` files
@@ -307,6 +322,21 @@ class Simulation:
             rho_host = v_host = None
         return rho_host, v_host
 
+    def get_temp_host(self):
+        if self.dens_trace is not None:
+            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+            temp = pynbody.array.SimArray(self.dens_trace.temp[locations], 'K')
+        else:
+            temp = None
+        return temp
+
+    def cs(self):
+        temp = self.get_temp_host()
+        return cs(temp)
+
+    def mach(self):
+        _, v = self.get_rv_host()
+        return v / self.cs()
 
     # def get_omega(self):
     #     omega = None
@@ -382,7 +412,6 @@ class Simulation:
 
     @property
     def r(self):
-        # TODO put in the init the adjustment of traces in case they are not monotonic
         if self.is_moving_box:
             locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
             # self.r = pynbody.array.SimArray(self.trace.r[locations], 'kpc')
@@ -412,6 +441,7 @@ class Simulation:
         return self._times.min(), self._times.max()
 
     def is_id_duplicated(self):
+        # FIXME
         """For each snapshot return True if some IDs (iord) are duplicated"""
         is_dup = [contains_duplicated(snap['iord']) for snap in self.snap_list]
         return np.array(is_dup, dtype=bool)
