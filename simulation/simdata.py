@@ -9,7 +9,7 @@ import tqdm
 from astropy.table import Table
 from simulation.util import make_lowess
 import glob
-from simulation.derived import feh, mgfe, gas_metals, HI
+from simulation.derived import feh, mgfe, gas_metals, neutral_fraction
 import pickle
 from simulation.vlos_profiles import get_max_vlos
 
@@ -185,6 +185,11 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 def get_sf_pos(sim_name):
     return pickle.load(open(os.path.join(DATA_DIR, 'sf', sim_name + "_sf_pos.pkl"), 'rb'))
 
+def get_mach(sim_name, data_dir=DATA_DIR):
+    name = os.path.join(data_dir, f"mach/{sim_name}_mach.fits")
+    print(f"Getting Mach number table: {name}")
+    return Table.read(name)
+
 def shorten_name(filename):
     name, peri = os.path.basename(filename).split('_')[:2]
     return name[3:5] + peri
@@ -261,7 +266,7 @@ def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
         # Order by mass
         myorder = list(range(11, len(tables_list))) + list(range(3, 11)) + list(range(3))
         tables_list = [tables_list[i] for i in myorder]
-        d = load_tables(file_list, orbit_sideon)
+        d = load_tables(tables_list, orbit_sideon)
     return d
 
 def load_tables(file_list, orbit_sideon):
@@ -278,13 +283,13 @@ def load_tables(file_list, orbit_sideon):
 
 def get_tables(sim_name, data_dir=DATA_DIR):
     name = os.path.join(data_dir, "tables/{}.fits".format(sim_name))
-    print("Getting tables:{}".format(name))
+    print("Getting tables: {}".format(name))
     return Table.read(name)
 
 
 def get_phot(sim_name, data_dir=DATA_DIR):
     name = os.path.join(data_dir, "photometry/{}_photometry.fits".format(sim_name))
-    print("Getting photometry:{}".format(name))
+    print("Getting photometry: {}".format(name))
     return Table.read(name)
 
 

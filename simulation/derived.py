@@ -157,16 +157,32 @@ def dt_courant(self, courant=0.1):
 
 from .interp.gas_emission import get_HI_vec
 @pynbody.derived_array
-def HI(snap):
+def neutral_fraction(snap):
     if snap._unifamily is not pynbody.family.gas:
-        raise RuntimeError("Derived array 'HI' is available only for family gas")
+        raise RuntimeError("Derived array 'neutral_fraction' is available only for family gas")
 
     hi = get_HI_vec(snap['temp'],
             snap['feh'],
             snap['mgfe'],
             snap.ancestor.header.redshift,
             snap['rho'])
-    return hi
+    return pynbody.array.SimArray(hi, units=pynbody.units.Unit("1"))
+
+
+@pynbody.derived_array
+def mass_HI(self):
+    return self['neutral_fraction'] * self['mass']
+
+
+@pynbody.derived_array
+def rho_HI(self):
+    return self['neutral_fraction'] * self['rho']
+
+
+@pynbody.analysis.profile.Profile.profile_property
+def sigma_HI(self):
+    assert self.ndim is 2
+    return (self['mass_HI']/self._binsize).in_units('Msol pc**-2')
 
 
 @pynbody.derived_array
