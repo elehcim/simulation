@@ -7,7 +7,7 @@ import matplotlib
 import numpy as np
 import tqdm
 from astropy.table import Table
-from simulation.util import make_lowess
+from simulation.util import make_lowess, get_sim_name
 import glob
 from simulation.derived import feh, mgfe, gas_metals, neutral_fraction
 import pickle
@@ -48,6 +48,9 @@ def compute_t_period(sim_name):
     df['t_period'] = (df['t']-first_pericenter_time)/radial_period
     df['orbital_phase'] = pd.cut(df['t_period'], [-0.25, 0.25, 0.75, 1.25, 1.75], labels=False)
     return df
+
+def get_t_period(sim_name):
+    return compute_t_period(sim_name)['t_period']
 
 def get_vrot_max(tbl):
     max_vrot = list()
