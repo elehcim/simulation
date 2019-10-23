@@ -1,0 +1,62 @@
+###
+### Vrot-Vhalo RELATION THAT RECREATES OBSERVED VF OF GALAXIES  
+###
+##  version including a baryonic modification to halo VF, according to Sawala+ 2015 "bent by baryons" 
+##  (suitable for comparisons with galaxy data)
+##
+# (1)         (2)             (3)
+# vrot     vhalo_alfa     vhalo_klypin
+#
+#    (logarithmic units of km/s)
+0.78,    1.53,1.44,1.25,  1.38,1.31,1.20
+0.83,    1.54,1.46,1.30,  1.40,1.35,1.28
+0.88,    1.55,1.47,1.34,  1.43,1.38,1.33
+0.93,    1.56,1.49,1.37,  1.45,1.41,1.37
+0.98,    1.58,1.50,1.39,  1.47,1.43,1.39
+1.03,    1.59,1.52,1.42,  1.49,1.45,1.42
+1.08,    1.61,1.53,1.44,  1.51,1.48,1.44
+1.13,    1.62,1.55,1.46,  1.54,1.50,1.47
+1.18,    1.63,1.57,1.48,  1.56,1.52,1.49
+1.23,    1.65,1.58,1.50,  1.58,1.54,1.51
+1.28,    1.66,1.60,1.52,  1.60,1.56,1.53
+1.33,    1.68,1.62,1.54,  1.62,1.59,1.55
+1.38,    1.70,1.63,1.56,  1.65,1.61,1.58
+1.43,    1.72,1.65,1.58,  1.67,1.63,1.60
+1.48,    1.74,1.67,1.60,  1.70,1.66,1.62
+1.53,    1.76,1.69,1.63,  1.72,1.68,1.65
+1.58,    1.78,1.72,1.65,  1.75,1.71,1.67
+1.63,    1.80,1.74,1.68,  1.78,1.73,1.70
+1.68,    1.82,1.77,1.70,  1.80,1.76,1.73
+1.73,    1.84,1.79,1.74,  1.83,1.79,1.76
+1.78,    1.87,1.82,1.77,  1.86,1.82,1.79
+1.83,    1.89,1.85,1.80,  1.89,1.85,1.82
+1.88,    1.92,1.88,1.83,  1.91,1.88,1.85
+1.93,    1.94,1.91,1.87,  1.94,1.91,1.88
+1.98,    1.97,1.94,1.90,  1.97,1.94,1.91
+2.03,    2.01,1.97,1.94,  2.00,1.97,1.94
+2.08,    2.05,2.01,1.98,  2.04,2.01,1.98
+2.13,    2.09,2.06,2.03,  2.08,2.05,2.02
+2.18,    2.15,2.11,2.08,  2.12,2.09,2.07
+2.23,    2.21,2.17,2.14,  2.18,2.14,2.12
+2.28,    2.28,2.24,2.20,  2.23,2.20,2.17
+#(1): The rotational velocity of a galaxy, measured by the width of the HI lineprofile. The actual relation is Vrot = (W50,edge-on / 2),
+#or equivalently Vrot = W50/(2 x sini).
+#
+#
+#(2): The maximum rotational velocity of the host halo in a hydro context, Vhalo = Vhalo,max (hydro). 
+#
+#The AM relations above refer to the "baryonic" halo VF, as reported in Sawala+ 2015. In particular, we consider their "level 1" result
+#(dark blue line in right panel of their Fig. 2). The baryonic modification consists of two effects: 
+#i) For Vh,max ~ 22 - 70 km/s, there is a slight reduction of Vh,max compared to the DM-only run due to 
+#baryon depletion (i.e. blow-out of baryons) of low-mass halos. 
+#ii) Below Vh,max ~ 22 km/s, AM is not formally applicable, because reionization feedback suppresses the formation
+#of galaxies in most of these halos.
+#  
+#The three values correspond to the abundance matching results that reproduce the ALFALFA velocity function 
+#and the lower and upper error envelopes, as shown in the left panel of Fig. 2 of Papastergis+ 2015b. 
+#The abundance matching procedure assumes no scatter. 
+#
+#If the relations above are used to compare to data, Vhalo refers to the Vh,max inferred from fitting the galactic kinematics.
+#
+#(3): Same as above, but refering to the abundance matching result that recreates the velocity function of galaxies 
+#in the Local Volume, as presented in Fig. 17 of Klypin+ 2015. 
