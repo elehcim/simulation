@@ -31,7 +31,7 @@ def plot_contours(cs, width, resolution):
 
 
 def get_longest_contour(contours):
-    longest_contour = list()
+    longest_contour = np.array([])
     for seg in contours:
         if len(seg) > len(longest_contour):
             longest_contour = seg

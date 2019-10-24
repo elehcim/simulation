@@ -42,6 +42,9 @@ def get_radius_mass_hi_ellipse(rho, width, resolution, threshold=pynbody.units.U
 
     cs = find_contours(rho, threshold)
     longest_contour = get_longest_contour(cs)
+    if not longest_contour.size:
+        return m_hi, np.nan
+
     x, y = transform_contour(longest_contour, width, resolution)
     xy = np.vstack([x,y]).T
     ell = fit_ellipse_to_contour(xy)
