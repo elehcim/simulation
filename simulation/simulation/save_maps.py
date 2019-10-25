@@ -19,8 +19,7 @@ from simulation.derived import vz_disp
 
 R_EFF_BORDER = 10
 
-# logger = setup_logger('save_maps', logger_level='WARNING')
-logger = setup_logger('save_maps', logger_level='DEBUG')
+logger = setup_logger('save_maps', logger_level='WARNING')
 
 class Imaging:
     def __init__(self, snap, width, resolution):
@@ -116,18 +115,14 @@ class Snap:
         # vcen = pynbody.analysis.halo.vel_center(s, retcen=True)
         # logger.info("Original velocity center:", vcen)
 
-        print('orig       ', s.g['pos'][0])
         if center_pos is not None and not center_velocity:
             logger.debug("Using precomputed center")
-            print('center', center_pos)
             rotated_cen = rotate_vec(center_pos-pivot, quat)
             # pynbody.transformation.inverse_translate(s.ancestor, center_pos)
             pynbody.transformation.inverse_translate(s.ancestor, rotated_cen)
-            print('transformed', s.g['pos'][0])
         else:
             cen = pynbody.analysis.halo.center(s.s, vel=center_velocity, retcen=True)
             pynbody.analysis.halo.center(s.s, vel=center_velocity)
-            print('computed center:', cen)
         # if center_velocity:
         #     vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
         #     logger.info("New velocity center: {}".format(vcen_new))
@@ -140,7 +135,6 @@ class Snap:
         else:
             self.subsnap = s
 
-        print('_subsnap   ', self.subsnap.g['pos'][0])
 
     def sideon(self):
         logger.info("Rotating sideon")
@@ -170,18 +164,6 @@ class Snap:
     def magnitude(self, band):
         return pynbody.analysis.luminosity.halo_mag(self.subsnap.s, band=band)
 
-
-# Version with suffix, I don't remember why it was needed
-# def get_outname(snap_name, out_dir, band, width, resolution, suffix=None, stem_out='maps_'):
-#     out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}'.format(band, width, resolution)
-#     out_name = os.path.join(os.path.expanduser(out_dir), out_name)
-#     if not os.path.isdir(out_name):
-#         logger.info('Creating folder {}'.format(out_name))
-#         os.makedirs(out_name, exist_ok=True)
-
-#     if suffix:
-#         out_name += suffix
-#     return out_name
 
 def get_outname(snap_name, out_dir, band, width, resolution, stem_out='maps_'):
     out_name = stem_out + os.path.basename(snap_name) + '_{}_w{}_r{}'.format(band, width, resolution)
