@@ -1,5 +1,3 @@
-import argparse
-import functools
 import os
 import tqdm
 import gc
@@ -141,6 +139,7 @@ def main(cli=None):
                         )
 
     return im
+
 
 if __name__ == '__main__':
     main()
