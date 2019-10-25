@@ -19,7 +19,8 @@ from simulation.derived import vz_disp
 
 R_EFF_BORDER = 10
 
-logger = setup_logger('save_maps', logger_level='INFO')
+# logger = setup_logger('save_maps', logger_level='WARNING')
+logger = setup_logger('save_maps', logger_level='DEBUG')
 
 class Imaging:
     def __init__(self, snap, width, resolution):
@@ -63,6 +64,10 @@ class Imaging:
         mag = convert_to_mag_arcsec2(lum, band)
         return lum, mag
 
+    def sigma_hi(self):
+        return pynbody.plot.sph.image(self._snap.g, qty='rho_HI', units="Msol pc**-2", width=self.width,
+                                      resolution=self.resolution, noplot=True)
+
     @classmethod
     def from_fits(cls):
         pass
@@ -73,10 +78,15 @@ class Snap:
     The main reason for this class is to have a uniform preprocessing.
     In particular the selection and the orientation should be well defined
     """
-    def __init__(self, snap_name, sphere_edge, derot_param=None, on_orbit_plane=False, center_velocity=True):
+    def __init__(self,
+                 snap_name,
+                 sphere_edge=None,
+                 derot_param=None,
+                 on_orbit_plane=False,
+                 center_velocity=True,
+                 center_pos=None):
         logger.info("Opening file {}".format(snap_name))
         s = pynbody.load(snap_name)
-        self._snap = s
         # max_boxsize = 4000
         # s.properties['boxsize'] = pynbody.units.Unit("{} kpc".format(max_boxsize))
         # s.physical_units()
@@ -106,14 +116,31 @@ class Snap:
         # vcen = pynbody.analysis.halo.vel_center(s, retcen=True)
         # logger.info("Original velocity center:", vcen)
 
-        pynbody.analysis.halo.center(s.s, vel=center_velocity)
+        print('orig       ', s.g['pos'][0])
+        if center_pos is not None and not center_velocity:
+            logger.debug("Using precomputed center")
+            print('center', center_pos)
+            rotated_cen = rotate_vec(center_pos-pivot, quat)
+            # pynbody.transformation.inverse_translate(s.ancestor, center_pos)
+            pynbody.transformation.inverse_translate(s.ancestor, rotated_cen)
+            print('transformed', s.g['pos'][0])
+        else:
+            cen = pynbody.analysis.halo.center(s.s, vel=center_velocity, retcen=True)
+            pynbody.analysis.halo.center(s.s, vel=center_velocity)
+            print('computed center:', cen)
         # if center_velocity:
         #     vcen_new = pynbody.analysis.halo.vel_center(s.s, retcen=True)
         #     logger.info("New velocity center: {}".format(vcen_new))
 
-        # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
-        self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(sphere_edge))]
+        self._snap = s
 
+        # self.subsnap = s[pynbody.filt.Cuboid('{} kpc'.format(-cuboid_edge))]
+        if sphere_edge is not None:
+            self.subsnap = s[pynbody.filt.Sphere('{} kpc'.format(sphere_edge))]
+        else:
+            self.subsnap = s
+
+        print('_subsnap   ', self.subsnap.g['pos'][0])
 
     def sideon(self):
         logger.info("Rotating sideon")
@@ -162,9 +189,15 @@ def get_outname(snap_name, out_dir, band, width, resolution, stem_out='maps_'):
     return out_name
 
 
-def single_snap_maps(snap_name, width, resolution,
-                     band='v', side=True, face=None,
-                     quat=None, omega_mb=None, pivot=None, derotate=True, on_orbit_plane=False, center_velocity=True):
+def single_snap_maps(snap_name,
+                     width,
+                     resolution,
+                     side=True, face=None,
+                     quat=None, omega_mb=None, pivot=None,
+                     derotate=True, on_orbit_plane=False,
+                     sphere_edge=R_EFF_BORDER,
+                     center_velocity=True,
+                     center_pos=None):
 
     """
     Parameters
@@ -183,8 +216,9 @@ def single_snap_maps(snap_name, width, resolution,
     else:
         derot_param = {'quat': quat, 'omega_mb': omega_mb, 'pivot': pivot}
 
-    snap = Snap(os.path.expanduser(snap_name), sphere_edge=R_EFF_BORDER,
-                derot_param=derot_param, on_orbit_plane=on_orbit_plane, center_velocity=center_velocity)
+    snap = Snap(os.path.expanduser(snap_name), sphere_edge=sphere_edge,
+                derot_param=derot_param, on_orbit_plane=on_orbit_plane,
+                center_velocity=center_velocity, center_pos=center_pos)
 
     if side:
         snap.sideon()
