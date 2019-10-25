@@ -332,5 +332,5 @@ def get_maps_all_band(sim_name, orbit_sideon, data_dir=DATA_DIR):
 def get_maps_HI(sim_name, orbit_sideon, data_dir=DATA_DIR):
     appendix = "" if not orbit_sideon else "_orbit_sideon"
     filename = sim_name + appendix + '_HI_maps.fits'
-    tbl = Table.read(os.path.join(data_dir, filename))
+    tbl = Table.read(os.path.join(data_dir, 'hi_maps', filename))
     return tbl
