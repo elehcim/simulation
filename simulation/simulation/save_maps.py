@@ -1,22 +1,20 @@
 import argparse
 import functools
 import os
-import sys
 import tqdm
 import gc
 from pprint import pprint
 
-import matplotlib.pyplot as plt
 import numpy as np
 import quaternion
 import pynbody
-from astropy.table import Table, Column
+from astropy.table import Table
 from astropy import units as u
 
 from simulation.luminosity import surface_brightness, convert_to_mag_arcsec2
-from simulation.util import setup_logger, get_sim_name, to_astropy_quantity, get_pivot, get_quat, get_omega_mb
+from simulation.util import setup_logger, get_sim_name, get_pivot, get_quat, get_omega_mb
 from simulation.angmom import faceon, sideon
-from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane
+from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane, rotate_vec
 from simulation.derived import vz_disp
 
 R_EFF_BORDER = 10
@@ -31,17 +29,18 @@ class Imaging:
 
     # @functools.lru_cache(1)
     def v_los_map(self):
+        # noplot is useless because with noplot==True it has no effects
         return pynbody.plot.sph.image(self._snap.s, qty='vz', av_z=True, width=self.width,
-                                      resolution=self.resolution, noplot=True, log=False)
+                                      resolution=self.resolution, noplot=True)
 
     # @functools.lru_cache(1)
     def v_disp_norm_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='v_disp', av_z=True, width=self.width,
-                                      resolution=self.resolution, noplot=True, log=False)
+                                      resolution=self.resolution, noplot=True)
     # @functools.lru_cache(1)
     def v_disp_los_map(self):
         return pynbody.plot.sph.image(self._snap.s, qty='vz_disp', av_z=True, width=self.width,
-                                      resolution=self.resolution, noplot=True, log=False)
+                                      resolution=self.resolution, noplot=True)
 
     @functools.lru_cache(1)
     def sb_lum(self, band='v'):
@@ -53,6 +52,7 @@ class Imaging:
         pc2 = self.sb_lum(band=band)
         sb = convert_to_mag_arcsec2(pc2, band)
         return sb
+        # Equivalent to:
         # return surface_brightness(self._snap.s, band=band, width=self.width, resolution=self.resolution,
         #                           lum_pc2=False, noplot=True)
 
@@ -169,10 +169,13 @@ def single_snap_maps(snap_name, width, resolution,
     """
     Parameters
     ----------
-    rotation: pynbody.transformation
-        The rotation
-    quat: np.array
-    pivot: np.array
+
+
+    resolution: int
+        number of pixel per side of the map
+    quat: np.ndarray
+    omega_mb: np.ndarray
+    pivot: np.ndarray
 
     """
     if not derotate or quat is None or omega_mb is None or pivot is None:
@@ -188,7 +191,7 @@ def single_snap_maps(snap_name, width, resolution,
     elif face:
         snap.faceon()
     else:
-        logger.warning('No sideon or faceon indications: not rotating snap')
+        logger.info('No sideon or faceon indications: not rotating snap')
 
     im = Imaging(snap.subsnap, width=width, resolution=resolution)
 
@@ -329,7 +332,7 @@ def parse_args(cli=None):
     parser.add_argument("--quat-dir", default='~/sim/analysis/ng_ana/data/quat', help='Directory of precomputed moving boxes quaternions')
     parser.add_argument('--quat', help='Quaternion value (space separated, e.g. "1 0 0 1.2")', type=str, default=None)
     parser.add_argument('--pivot', help='Coordinates of the pivot point (space separated, e.g. "30 30 30"). If None, it is automatically retrieved from a database', type=str, default=None)
-    parser.add_argument('-n', "--no-derot", action='store_false', help='Do not derotate')
+    parser.add_argument('-n', "--no-derot", action='store_false', help='Do not derotate')  # FIXME it's just isleading when I print the parameters
     parser.add_argument('--on-orbit-plane', action='store_true', help='Put snapshot on orbit plane')
     parser.add_argument("--out-dir", default=None)
     parser.add_argument("--save-single-image", help="Save also single images in dedicated fits files", action='store_true')
@@ -376,6 +379,7 @@ def main(cli=None):
                         )
 
     return im
+
 
 if __name__ == '__main__':
     main()
