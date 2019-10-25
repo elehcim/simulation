@@ -1,9 +1,7 @@
 import os
 import simulation
-import pynbody
 import pandas as pd
 import matplotlib.pylab as plt
-import matplotlib
 import numpy as np
 import tqdm
 from astropy.table import Table
@@ -32,6 +30,7 @@ def get_radial_period(sim_name, data_dir=DATA_DIR):
     rperiod = d[int(peri[1:])]
     return rperiod
 
+
 def compute_t_period(sim_name):
     df = get_tables(sim_name).to_pandas()
     if 'r' not in df.keys():
@@ -49,8 +48,10 @@ def compute_t_period(sim_name):
     df['orbital_phase'] = pd.cut(df['t_period'], [-0.25, 0.25, 0.75, 1.25, 1.75], labels=False)
     return df
 
+
 def get_t_period(sim_name):
     return compute_t_period(sim_name)['t_period']
+
 
 def get_vrot_max(tbl):
     max_vrot = list()
@@ -58,10 +59,12 @@ def get_vrot_max(tbl):
         max_vrot.append(np.nanmax(prof))
     return np.array(max_vrot)
 
+
 def get_center(sim_name, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'center', sim_name + '_cen.fits'))
     cen = np.array([tbl['cx'], tbl['cy'], tbl['cz']]).T
     return cen
+
 
 def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     df = Table.read(os.path.join(data_dir, 'tables/{}.fits'.format(sim_name))).to_pandas()
@@ -188,14 +191,17 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 def get_sf_pos(sim_name):
     return pickle.load(open(os.path.join(DATA_DIR, 'sf', sim_name + "_sf_pos.pkl"), 'rb'))
 
+
 def get_mach(sim_name, data_dir=DATA_DIR):
     name = os.path.join(data_dir, f"mach/{sim_name}_mach.fits")
     print(f"Getting Mach number table: {name}")
     return Table.read(name)
 
+
 def shorten_name(filename):
     name, peri = os.path.basename(filename).split('_')[:2]
     return name[3:5] + peri
+
 
 def get_color_from_name(name):
     prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -208,7 +214,10 @@ def get_color_from_name(name):
         col = mpl_colors[2]
     elif name.startswith('71'):
         col = mpl_colors[3]
+    else:
+        col = None
     return col
+
 
 def get_styles_from_name(name, scatter=False):
     if scatter:
@@ -223,7 +232,10 @@ def get_styles_from_name(name, scatter=False):
         st = styles[2]
     elif name.endswith('300'):
         st = styles[3]
+    else:
+        st = None
     return st
+
 
 def get_color_styles(d, scatter=False):
     col_d = dict()
@@ -240,14 +252,17 @@ import re
 def atoi(text):
     return int(text) if text.isdigit() else text
 
+
 def natural_keys(text):
     return [ atoi(c) for c in re.split('(\d+)',text) ]
+
 
 def is_orbit_sideon(sim_name):
     if "_orbit_sideon" in sim_name:
         return True
     else:
         return False
+
 
 def get_sim_name_list(table_list_dir=TABLE_LIST_DIR):
     tables_list = glob.glob(os.path.join(table_list_dir, '*.fits'))
@@ -257,6 +272,7 @@ def get_sim_name_list(table_list_dir=TABLE_LIST_DIR):
     myorder = list(range(11, len(tables_list))) + list(range(3, 11)) + list(range(3))
     tables_list = [tables_list[i] for i in myorder]
     return tables_list
+
 
 def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
     if os.path.isfile(cache_file) and not force:
@@ -271,6 +287,7 @@ def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
         tables_list = [tables_list[i] for i in myorder]
         d = load_tables(tables_list, orbit_sideon)
     return d
+
 
 def load_tables(file_list, orbit_sideon):
     """Load dataframes in a dictionary"""
@@ -309,4 +326,11 @@ def get_maps_all_band(sim_name, orbit_sideon, data_dir=DATA_DIR):
         tbl = Table.read(os.path.join(data_dir, 'maps_orbit_sideon_sig_los', sim_name+'_orbit_sideon_maps_allbands.fits'))
     else:
         tbl = Table.read(os.path.join(data_dir, 'maps_orbit_faceon_sig_los', sim_name+'_maps_allbands.fits'))
-    return vlos_map
+    return tbl
+
+
+def get_maps_HI(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + '_HI_maps.fits'
+    tbl = Table.read(os.path.join(data_dir, filename))
+    return tbl
