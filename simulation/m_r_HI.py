@@ -2,14 +2,12 @@ import numpy as np
 import tqdm
 import matplotlib.pyplot as plt
 import pynbody
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 from .ellipse_fit import find_contours, get_longest_contour, transform_contour, fit_ellipse_to_contour
 from.simdata import get_maps_HI
 
 
-ell_keys = ('xc', 'yc', 'a', 'b', 'theta')
-EllParams = namedtuple('EllParams', ell_keys)
-HIData = namedtuple('HIData', ['m','r', 'cs', 'longest_cs', 'ell_params'])
+ELL_KEYS = ('xc', 'yc', 'a', 'b', 'theta')
 
 
 def get_radius_mass_hi_ellipse(rho, width, resolution, threshold=pynbody.units.Unit("1 Msol pc**-2")):
@@ -58,14 +56,10 @@ def get_radius_mass_hi_ellipse(rho, width, resolution, threshold=pynbody.units.U
     cs = find_contours(rho, threshold)
     longest_contour = get_longest_contour(cs)
     if not longest_contour.size:
-        # return HIData(m_hi, np.nan, cs, None, None)
         return dict(m_hi=m_hi,
                     r_hi=np.nan,
-                    # cs=cs,
-                    # longest_contour=longest_contour,
-                    ell=dict(zip(ell_keys, [np.nan]*len(ell_keys))),
+                    ell=dict(zip(ELL_KEYS, [np.nan]*len(ELL_KEYS))),
                     )
-        # return m_hi, np.nan
 
     x, y = transform_contour(longest_contour, width, resolution)
     xy = np.vstack([x,y]).T
@@ -81,14 +75,10 @@ def get_radius_mass_hi_ellipse(rho, width, resolution, threshold=pynbody.units.U
         ell_corr[4] = ell.params[4] - np.pi/2
     ell_corr[4] = (ell_corr[4] + np.pi/2) % (np.pi) - np.pi/2
 
-    # return HIData(m_hi, r_hi, cs, longest_contour, EllParams(*ell.params))
     return dict(m_hi=m_hi,
                 r_hi=r_hi,
-                # cs=cs,
-                # longest_contour=longest_contour,
-                ell=dict(zip(ell_keys, ell_corr)),
+                ell=dict(zip(ELL_KEYS, ell_corr)),
                 )
-    # return m_hi, r_hi
 
 
 def get_HI_size_mass(sim, width=20, resolution=1000):
