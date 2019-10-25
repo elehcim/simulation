@@ -5,6 +5,8 @@ from astropy.table import Table
 
 DATA_FOLDER = os.path.join(os.path.dirname(__file__), 'observationalData/')
 
+Y_P = 0.2551  # Primordial helium abundance (Izotov 2014)
+# (M_HI + M_He) / M_HI = 1.342 = 1/(1-Y_P)
 
 def load_papastergis16(data_folder=DATA_FOLDER):
     filepath = os.path.join(data_folder, 'papastergis.txt')
@@ -29,7 +31,7 @@ def load_papastergis16(data_folder=DATA_FOLDER):
     for cn in tbl.colnames:
         tbl[cn].unit = names_units[cn]
 
-    tbl['mHI'] = np.log10((10**tbl['Mbar']-10**tbl['Mstar'])/1.3)
+    tbl['mHI'] = np.log10((10**tbl['Mbar']-10**tbl['Mstar'])/1.342)
     tbl['mHI'].unit = 'log10(Msun)'
 
     return tbl
