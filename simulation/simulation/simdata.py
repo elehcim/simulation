@@ -31,8 +31,11 @@ def get_radial_period(sim_name, data_dir=DATA_DIR):
     return rperiod
 
 
-def compute_t_period(sim_name):
-    df = get_tables(sim_name).to_pandas()
+def compute_t_period(sim_name, df=None):
+    if df is None:
+        df = get_tables(sim_name).to_pandas()
+
+    # Some have it, some not
     if 'r' not in df.keys():
         df['r'] = np.sqrt(df['x']**2 + df['y']**2)
 
@@ -301,8 +304,10 @@ def load_tables(file_list, orbit_sideon):
     return d
 
 
-def get_tables(sim_name, data_dir=DATA_DIR):
-    name = os.path.join(data_dir, "tables/{}.fits".format(sim_name))
+def get_tables(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + '.fits'
+    name = os.path.join(data_dir, "tables", filename)
     print("Getting tables: {}".format(name))
     return Table.read(name)
 

@@ -17,6 +17,7 @@ def lambda_r(flux, v_los, sig_los):
 
 
 def lambda_r_r_lim(flux, v_los, sig_los, width, r_lim):
+    """Compute lambda up to a certain radius `r_lim`"""
     assert flux.ndim == v_los.ndim == sig_los.ndim == 2
     resolution = flux.shape[-1]
     # print(f"flux.shape={flux.shape}")
