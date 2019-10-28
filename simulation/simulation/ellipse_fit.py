@@ -3,13 +3,20 @@ from skimage.measure import find_contours, EllipseModel
 import matplotlib.pyplot as plt
 import pynbody
 import simulation
+from collections import namedtuple
 
+ELL_KEYS = ('xc', 'yc', 'a', 'b', 'theta')
+EllParams = namedtuple('EllParams', ELL_KEYS)
 
 def ellipsemodel2patch(e, edgecolor='red'):
+    return ellipseparams2patche(e.params, edgecolor=edgecolor)
+
+
+def ellipseparams2patch(params, edgecolor='red'):
     import matplotlib.patches as mpatches
-    center = e.params[0:2]
-    a, b = e.params[2:4]
-    theta = e.params[4]
+    center = params[0:2]
+    a, b = params[2:4]
+    theta = params[4]
     return mpatches.Ellipse(center, 2*a, 2*b, theta*180/np.pi, edgecolor=edgecolor, facecolor='none')
 
 
@@ -32,9 +39,9 @@ def plot_contours(cs, width, resolution):
 
 def get_longest_contour(contours):
     longest_contour = np.array([])
-    for seg in contours:
-        if len(seg) > len(longest_contour):
-            longest_contour = seg
+    for segment in contours:
+        if len(segment) > len(longest_contour):
+            longest_contour = segment
     return longest_contour
 
 
@@ -44,6 +51,18 @@ def fit_ellipse_to_contour(contour):
     return ellipse
 
 
+def fit_contour(img, threshold, width, resolution):
+    cs = find_contours(img, threshold)
+    longest_contour = get_longest_contour(cs)
+    if not longest_contour.size:
+        return tuple([np.nan]*len(ELL_KEYS))
+
+    x, y = transform_contour(longest_contour, width, resolution)
+    xy = np.vstack([x,y]).T
+
+    ell = fit_ellipse_to_contour(xy)
+    # print(ell.params)
+    return ell.params
 
 if __name__ == '__main__':
     snap = pynbody.load('/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected/mb.69002_p200_a800_r600_new_adhoc/out/snapshot_0011')
