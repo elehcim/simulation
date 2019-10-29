@@ -32,8 +32,12 @@ def get_radial_period(sim_name, data_dir=DATA_DIR):
 
 
 def compute_t_period(sim_name, df=None):
+    """Basically return `tables` with some additional useful orbit related columns
+    You can specify the version (orbit_sideon or not) of the table through parameter `df`
+    """
+
     if df is None:
-        df = get_tables(sim_name).to_pandas()
+        df = get_tables(sim_name, orbit_sideon=True).to_pandas()
 
     # Some have it, some not
     if 'r' not in df.keys():
@@ -340,10 +344,16 @@ def get_maps_HI(sim_name, orbit_sideon, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'hi_maps', filename))
     return tbl
 
+
 def get_angmom(sim_name, orbit_sideon, data_dir=DATA_DIR):
     appendix = "" if not orbit_sideon else "_orbit_sideon"
     filename = sim_name + appendix + '_derot_angmom.fits'
     # FIXME, maybe folder not necessary
     folder = "angmom_orbit_faceon" if not orbit_sideon else 'angmom_orbit_sideon'
     tbl = Table.read(os.path.join(data_dir, folder, filename))
+    return tbl
+
+
+def get_magnitudes(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'magnitudes', sim_name+'_mag.fits'))
     return tbl
