@@ -102,9 +102,8 @@ def get_HI_size_mass(sim, width=20, resolution=1000):
     return m_arr, r_arr
 
 
-def get_HI_size_mass_from_maps(sim_name, orbit_sideon):
+def get_HI_size_mass_from_maps(maps):
     res = defaultdict(list)
-    maps = get_maps_HI(sim_name, orbit_sideon=orbit_sideon)
     width = maps.meta['WIDTH']
     resolution = maps.meta['RESOL']
     for rho in tqdm.tqdm(maps['sigma_hi']):
