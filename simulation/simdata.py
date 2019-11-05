@@ -6,14 +6,38 @@ import numpy as np
 import tqdm
 import glob
 import pickle
+import warnings
 from astropy.table import Table
-from simulation.util import make_lowess, get_sim_name
+from simulation.util import make_lowess, get_sim_name, setup_logger
 from simulation.derived import feh, mgfe, gas_metals, neutral_fraction
 from simulation.vlos_profiles import get_max_vlos
 
+logger = setup_logger('simdata', logger_level='INFO')
 
 DATA_DIR = '/home/michele/sim/analysis/ng_ana/data'
-TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
+# TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
+
+SIM_NAME_DICT = {
+ '62p50': 'mb.62002_p50_a800_r600',
+ '62p100': 'mb.62002_p100_a800_r600',
+ '62p200': 'mb.62002_p200_a800_r600',
+ '62p300': 'mb.62002_p300_a800_r600',
+ '71p50': 'mb.71002_p50_a800_r600',
+ '71p100': 'mb.71002_p100_a800_r600',
+ '71p200': 'mb.71002_p200_a800_r600',
+ '71p300': 'mb.71002_p300_a800_r600',
+ '68p50': 'mb.68002_p50_a800_r600',
+ '68p100': 'mb.68002_p100_a800_r600',
+ '68p200': 'mb.68002_p200_a800_r600',
+ '68p300': 'mb.68002_p300_a800_r600',
+ '69p50': 'mb.69002_p50_a800_r600_new_adhoc',
+ '69p100': 'mb.69002_p100_a800_r600_new_adhoc',
+ '69p200': 'mb.69002_p200_a800_r600_new_adhoc',
+ '69p300': 'mb.69002_p300_a800_r600_new_adhoc',
+ '41p100': 'mb.41002_p100_a800_r600_t9.56',
+ '41p200': 'mb.41002_p200_a800_r600_t9.56',
+ '41p300': 'mb.41002_p300_a800_r600_t9.56'}
+
 
 def get_name_peri(sim_name):
     mb, peri = sim_name.split('_')[:2]
@@ -75,6 +99,7 @@ def get_center(sim_name, data_dir=DATA_DIR):
 
 
 def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
+    # TODO improve API with explicit `on_orbit_sideon` parameter
     df = Table.read(os.path.join(data_dir, 'tables/{}.fits'.format(sim_name))).to_pandas()
 
     # Remove wrong sigmas
@@ -207,7 +232,7 @@ def get_sf_pos(sim_name):
 
 def get_mach(sim_name, data_dir=DATA_DIR):
     name = os.path.join(data_dir, f"mach/{sim_name}_mach.fits")
-    print(f"Getting Mach number table: {name}")
+    logger.debug(f"Getting Mach number table: {name}")
     return Table.read(name)
 
 
@@ -262,12 +287,15 @@ def get_color_styles(d, scatter=False):
 # From https://www.tutorialspoint.com/How-to-correctly-sort-a-string-with-a-number-inside-in-Python
 import re
 
-def atoi(text):
+def _atoi(text):
     return int(text) if text.isdigit() else text
 
+def natural_keys(_):
+    warnings.warn("This function is deprecaate, use simulation.simdata.SIM_NAME_DICT", DeprecationWarning)
+    return _natural_keys(_)
 
-def natural_keys(text):
-    return [ atoi(c) for c in re.split('(\d+)',text) ]
+def _natural_keys(text):
+    return [ _atoi(c) for c in re.split('(\d+)',text) ]
 
 
 def is_orbit_sideon(sim_name):
@@ -277,14 +305,15 @@ def is_orbit_sideon(sim_name):
         return False
 
 
-def get_sim_name_list(table_list_dir=TABLE_LIST_DIR):
-    tables_list = glob.glob(os.path.join(table_list_dir, '*.fits'))
-    tables_list.sort(key=natural_keys)
+# Legacy function
+# def get_sim_name_list(table_list_dir=TABLE_LIST_DIR):
+#     tables_list = glob.glob(os.path.join(table_list_dir, '*.fits'))
+#     tables_list.sort(key=_natural_keys)
 
-    # Order by mass
-    myorder = list(range(11, len(tables_list))) + list(range(3, 11)) + list(range(3))
-    tables_list = [tables_list[i] for i in myorder]
-    return tables_list
+#     # Order by mass
+#     myorder = list(range(11, len(tables_list))) + list(range(3, 11)) + list(range(3))
+#     tables_list = [tables_list[i] for i in myorder]
+#     return tables_list
 
 
 def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
@@ -292,25 +321,19 @@ def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
         print(f"Loaded cache {cache_file}")
         d = pickle.load(open(cache_file, 'rb'))
     else:
-        tables_list = glob.glob(os.path.join(TABLE_LIST_DIR, '*.fits'))
-        tables_list.sort(key=natural_keys)
-
-        # Order by mass
-        myorder = list(range(11, len(tables_list))) + list(range(3, 11)) + list(range(3))
-        tables_list = [tables_list[i] for i in myorder]
+        tables_list = SIM_NAME_DICT.values()
         d = load_tables(tables_list, orbit_sideon)
     return d
 
 
-def load_tables(file_list, orbit_sideon):
+def load_tables(sim_name_list, orbit_sideon):
     """Load dataframes in a dictionary"""
     d = dict()
-    for f in file_list:
-        sim_name = os.path.splitext(os.path.basename(f))[0]
+    for sim_name in sim_name_list:
         if orbit_sideon:
             sim_name += '_orbit_sideon'
 #         print(sim_name)
-        d[shorten_name(f)] = get_df(sim_name)
+        d[shorten_name(sim_name)] = get_df(sim_name)
     return d
 
 
@@ -318,13 +341,13 @@ def get_tables(sim_name, orbit_sideon, data_dir=DATA_DIR):
     appendix = "" if not orbit_sideon else "_orbit_sideon"
     filename = sim_name + appendix + '.fits'
     name = os.path.join(data_dir, "tables", filename)
-    print("Getting tables: {}".format(name))
+    logger.debug("Getting tables: {}".format(name))
     return Table.read(name)
 
 
 def get_phot(sim_name, data_dir=DATA_DIR):
     name = os.path.join(data_dir, "photometry/{}_photometry.fits".format(sim_name))
-    print("Getting photometry: {}".format(name))
+    logger.debug("Getting photometry: {}".format(name))
     return Table.read(name)
 
 
@@ -351,6 +374,13 @@ def get_maps_HI(sim_name, orbit_sideon, data_dir=DATA_DIR):
     return tbl
 
 
+def get_HI_data(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + '_HI.fits'
+    tbl = Table.read(os.path.join(data_dir, 'hi', filename))
+    return tbl
+
+
 def get_angmom(sim_name, orbit_sideon, data_dir=DATA_DIR):
     appendix = "" if not orbit_sideon else "_orbit_sideon"
     filename = sim_name + appendix + '_derot_angmom.fits'
@@ -370,3 +400,24 @@ def get_lambda_r(sim_name, orbit_sideon, data_dir=DATA_DIR):
     filename = sim_name + appendix + '_lambda_r.fits'
     tbl = Table.read(os.path.join(data_dir, 'lambda_r', filename))
     return tbl
+
+def get_structure(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + '_structure.fits'
+    tbl = Table.read(os.path.join(data_dir, 'structure', filename))
+    return tbl
+
+
+
+
+# def _generate_sim_dict():
+#     sim_d = dict()
+#     for simpath in get_sim_name_list():
+#         print(simpath)
+#         sim_name = get_sim_name(os.path.join(simpath, 'out'))
+#         sim_d[shorten_name(simpath)] = os.path.splitext(sim_name)[0]
+#     return sim_d
+
+
+def short2simname(name, sim_names_dict=SIM_NAME_DICT):
+    return sim_names_dict.get(name)
