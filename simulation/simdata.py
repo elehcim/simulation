@@ -4,11 +4,11 @@ import pandas as pd
 import matplotlib.pylab as plt
 import numpy as np
 import tqdm
+import glob
+import pickle
 from astropy.table import Table
 from simulation.util import make_lowess, get_sim_name
-import glob
 from simulation.derived import feh, mgfe, gas_metals, neutral_fraction
-import pickle
 from simulation.vlos_profiles import get_max_vlos
 
 
@@ -52,7 +52,8 @@ def compute_t_period(sim_name, df=None):
 
     # Put 0 of the scale on first pericenter
     df['t_period'] = (df['t']-first_pericenter_time)/radial_period
-    df['orbital_phase'] = pd.cut(df['t_period'], [-0.25, 0.25, 0.75, 1.25, 1.75], labels=False)
+    df['orbital_phase'] = pd.cut(df['t_period'], [-0.25, 0.25, 0.75, 1.25, 1.75, 2.25], labels=False)
+    df['offset_orbital_phase'] = pd.cut(df['t_period'], np.array([-0.25, 0.25, 0.75, 1.25, 1.75, 2.25])-0.25, labels=False)
     return df
 
 
@@ -92,6 +93,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     sig_tbl = Table.read(os.path.join(data_dir, "sigma/{}_sigma.fits".format(sim_name))).to_pandas()
     cg_tbl = Table.read(os.path.join(data_dir, "../gas/cold_gas_data/{}_cold_gas.fits".format(name_no_orientation))).to_pandas()
     sf_tbl = Table.read(os.path.join(data_dir, "sf/{}_sf.fits".format(name_no_orientation))).to_pandas()
+    lr_tbl = Table.read(os.path.join(data_dir, "lambda_r/{}_lambda_r.fits".format(sim_name)))
 
     # Merge data
     for col in phot_tbl.columns:
@@ -115,7 +117,11 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     for col in ('medians', 'averages', 'length', 'bx', 'by', 'bz'):
         df['sf_' + col] = sf_tbl[col]
 
+    for col in ['lambda_r']:
+        df[col] = lr_tbl[col]
+
     df['r_eff_fit'] = struct_tbl['r_eff']
+    df['lambda_r_struct'] = struct_tbl['lambda_r']
 
     df['name'], df['pericenter'] = get_name_peri(sim_name)
 
@@ -356,4 +362,11 @@ def get_angmom(sim_name, orbit_sideon, data_dir=DATA_DIR):
 
 def get_magnitudes(sim_name, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'magnitudes', sim_name+'_mag.fits'))
+    return tbl
+
+
+def get_lambda_r(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + '_lambda_r.fits'
+    tbl = Table.read(os.path.join(data_dir, 'lambda_r', filename))
     return tbl
