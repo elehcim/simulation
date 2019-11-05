@@ -62,7 +62,7 @@ def fit_contour(img, threshold, width, resolution):
 
     ell = fit_ellipse_to_contour(xy)
     # print(ell.params)
-    return ell.params
+    return EllParams(*ell.params)
 
 if __name__ == '__main__':
     snap = pynbody.load('/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected/mb.69002_p200_a800_r600_new_adhoc/out/snapshot_0011')
