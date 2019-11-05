@@ -15,7 +15,7 @@ from pynbody.filt import Filter
 data_path = '/home/michele/sim/analysis/ng_ana/data/'
 
 class Slit(Filter):
-    """ Emulate a Slit, so taking a slice at z=const of a snap"""
+    """Emulate a Slit, so taking a slice at z=const of a snap"""
     def __init__(self, x1, y1=None, x2=None, y2=None):
         self._descriptor = "slit"
         x1, y1, x2, y2 = [units.Unit(x) if isinstance(x, str) else x for x in (x1, y1, x2, y2)]
@@ -43,8 +43,6 @@ class Slit(Filter):
 
 
 
-# sim_name = simulation.util.get_sim_name(simpath)
-
 
 def get_vlos_map(sim_name, orbit_sideon):
     if orbit_sideon:
@@ -53,6 +51,7 @@ def get_vlos_map(sim_name, orbit_sideon):
         tbl = Table.read(os.path.join(data_path, 'maps_orbit_faceon_sig_los', sim_name+'_maps.fits'))
     vlos_map = tbl['vlos']
     return vlos_map
+
 
 def plot_maps(vlos_map, idx):
     res = vlos_map.shape[1]
@@ -66,6 +65,8 @@ def plot_maps(vlos_map, idx):
 
 
 def compute_profile(vlos_map):
+    """Compute the profile using the horizontal line on the middle of the image"""
+
     #TODO do an average on some pixels around center
     res = vlos_map.shape[1]
     prof = profile_line(vlos_map.transpose(1,2,0), (res//2,0), (res//2,res-1))
@@ -73,9 +74,12 @@ def compute_profile(vlos_map):
 
 
 def plot_profile(prof, ax=None):
+    """Plot the profile"""
     if ax is None:
         ax = plt
-    ax.plot(np.max(np.abs(prof), axis=0))
+    # ax.plot(np.abs(prof, axis=0))
+    ax.plot(prof)
+
 
 # Entry point function
 def get_max_vlos(sim_name, orbit_sideon=True):
