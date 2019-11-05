@@ -31,3 +31,17 @@ def get_sdss_r(V, R):
     # r[VmR <= 0.93] = 0.267 * VmR + 0.088 + R
     # r[VmR > 0.93] = 0.77 * VmR - 0.37 + R
     return r
+
+def color_sdss_r_i(RmI):
+    """
+    Get SDSS (r'-i') color from Johnson filters color (R-I)
+    Jordi2006 eq. 2
+    """
+    return 1.007 * RmI - 0.236
+
+
+def color_sdss_g_i(V, R, I):
+    """
+    Get SDSS (g'-i') color from Johnson filters V, R, I
+    """
+    return color_sdss_g_r(V-R) - color_sdss_r_i(R - I)
