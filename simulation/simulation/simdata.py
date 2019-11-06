@@ -122,6 +122,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     # Merge data
     for col in phot_tbl.columns:
+        if col == 'lambda_r': continue
         df[col] = phot_tbl[col]
 
     for col in dm_tbl.columns:
@@ -146,7 +147,8 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
         df[col] = lr_tbl[col]
 
     df['r_eff_fit'] = struct_tbl['r_eff']
-    df['lambda_r_struct'] = struct_tbl['lambda_r']
+    if 'lambda_r' in struct_tbl:
+        df['lambda_r_struct'] = struct_tbl['lambda_r']
 
     df['name'], df['pericenter'] = get_name_peri(sim_name)
 
@@ -212,7 +214,10 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
         # Put 0 of the scale on first pericenter
         df['t_period'] = (df.t-first_pericenter_time)/radial_period
-        df['orbital_phase'] = pd.cut(df.t_period, [-0.25, 0.25, 0.75, 1.25, 1.75], labels=False)
+        t_period_intervals = np.array([-0.25, 0.25, 0.75, 1.25, 1.75, 2.25])
+
+        df['orbital_phase'] = pd.cut(df.t_period, t_period_intervals, labels=False)
+        df['offset_orbital_phase'] = pd.cut(df.t_period, t_period_intervals - 0.25, labels=False)
             # labels=(1, 2, 3, 4))
             # labels=('peri_1', 'apo_1', 'peri_2', 'apo_2' ))
         # 0 on start of simulation
@@ -407,6 +412,13 @@ def get_structure(sim_name, orbit_sideon, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'structure', filename))
     return tbl
 
+def get_profiles(sim_name, orbit_sideon, ptype, data_dir=DATA_DIR):
+    # TODO
+    raise NotImplementedError
+    # appendix = "" if not orbit_sideon else "_orbit_sideon"
+    # filename = sim_name + appendix + '_structure.fits'
+    # tbl = Table.read(os.path.join(data_dir, 'structure', filename))
+    # return tbl
 
 
 
