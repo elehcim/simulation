@@ -246,18 +246,18 @@ def get_last_d(d):
         last_d[k] = last_row
     return last_d
 
-def get_df_last_rows(df):
-    """From a dataframe get the last or the second to last row if it is available.
-    TODO Use for else idiom
-    """
+def get_df_last_rows(df, n_last=5):
+    """From a dataframe get the last row among the last n_last if they are available."""
     last_row = pd.DataFrame(data=None, columns=df.columns, index=(0,))
     for c in df.columns:
         lvi = df[c].last_valid_index()
-        if lvi == len(df) - 2 or lvi == len(df) - 1: # if it's second to last it's still ok
-            last_row[c] = df[c].iloc[lvi]
+        for i in range(1, n_last + 1):
+            if lvi == len(df) - i: # if it's one of the n_last rows it's still ok
+                last_row[c] = df[c].iloc[lvi]
+                break
         else:
             if not (c.endswith('_mean') or c.endswith('_std') or c.startswith('sf_')):
-                print(f'In {df.name[0]}p{df.pericenter[0]} {c} we have a different number of elements ({lvi}, {df.t.iloc[lvi]:.2f})')
+                print(f'In {df.name[0][:3]}p{df.pericenter[0]}tf{df.t.iloc[-1]:.2f} {c} we have a different number of elements ({lvi}, {df.t.iloc[lvi]:.2f})')
             last_row[c] = np.nan
     return last_row
 
