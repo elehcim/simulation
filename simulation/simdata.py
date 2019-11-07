@@ -11,6 +11,7 @@ from astropy.table import Table
 from simulation.util import make_lowess, get_sim_name, setup_logger
 from simulation.derived import feh, mgfe, gas_metals, neutral_fraction
 from simulation.vlos_profiles import get_max_vlos
+from simulation.magnitude_transformation import get_sdss_r
 
 logger = setup_logger('simdata', logger_level='INFO')
 
@@ -151,6 +152,10 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
         df['lambda_r_struct'] = struct_tbl['lambda_r']
 
     df['name'], df['pericenter'] = get_name_peri(sim_name)
+
+    # Other colors:
+    df['mag_sdss_r'] = get_sdss_r(df['mag_v'].values, df['mag_r'].values)
+
 
     avg_columns = ['lambda_r', 'n', 'sfr', 'r_eff', 'r_eff3d',
                    'r_eff_fit', 'ellipticity', 'mu_e',
