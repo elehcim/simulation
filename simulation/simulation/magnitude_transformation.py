@@ -25,12 +25,28 @@ def rmR(VmR):
 
 def get_sdss_r(V, R):
     VmR = V - R
-    r = np.where(VmR <= 0.93,
-        0.267 * VmR + 0.088,
-        0.77 * VmR - 0.37) + R
-    # r[VmR <= 0.93] = 0.267 * VmR + 0.088 + R
-    # r[VmR > 0.93] = 0.77 * VmR - 0.37 + R
+    r = R + np.where(VmR <= 0.93,
+                     0.267 * VmR + 0.088,
+                     0.77 * VmR - 0.37)
     return r
+
+def get_sdss_g(B, V):
+    BmV = B - V
+    g = 0.630 * BmV - 0.124 + V
+    return g
+
+def get_sdss_u(U, B, V):
+    g = get_sdss_g(B, V)
+    u = g + 0.750 * (U-B) + 0.77*(B-V) + 0.72
+    return u
+
+def get_sdss_i(R, I):
+    i = I + 0.247 * (R-I) + 0.329
+    return i
+
+def get_sdss_z(R, I):
+    z = R - 1.584 * (R-I) + 0.386
+    return z
 
 def color_sdss_r_i(RmI):
     """

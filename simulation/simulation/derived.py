@@ -216,3 +216,64 @@ def vz_disp(self):
 @pynbody.derived_array
 def mach(self):
     return (np.sqrt(self['v2']).in_units('km s**-1')/self['cs'].in_units('km s**-1'))
+
+
+# Magnitude derived array (conversion between Johnson and SDSS filters)
+
+from .magnitude_transformation import get_sdss_u, get_sdss_g, get_sdss_r, get_sdss_i, get_sdss_z
+
+def sdss_band_from_johnson_Jordi2006(s, band):
+    if band == 'sdss_u':
+        return get_sdss_u(s['u_mag'], s['b_mag'], s['v_mag'])
+    if band == 'sdss_g':
+        return get_sdss_g(s['b_mag'], s['v_mag'])
+    if band == 'sdss_r':
+        return get_sdss_r(s['v_mag'], s['r_mag'])
+    if band == 'sdss_i':
+        return get_sdss_i(s['r_mag'], s['i_mag'])
+    if band == 'sdss_z':
+        return get_sdss_z(s['r_mag'], s['i_mag'])
+    else:
+        raise NotImplementedError(f'SDSS band {band} has not been implemented yet')
+
+
+def sdss_band_from_johnson_Jester2005(s, band):
+    # http://www.sdss3.org/dr8/algorithms/sdssUBVRITransform.php
+    if band=='sdss_r':
+        r = s['v_mag'] + np.where(s['u_mag']-s['b_mag'] < 0,
+                                  - 0.46 * (s['b_mag']-s['v_mag']) + 0.11,
+                                  - 0.42 * (s['b_mag']-s['v_mag']) + 0.11)
+        r = np.where(s['r_mag']-s['i_mag'] < 1.15, r, np.nan)
+        return r
+    elif band=='sdss_g':
+        g = s['v_mag'] + np.where(s['u_mag']-s['b_mag'] < 0,
+                                  0.64 * (s['b_mag']-s['v_mag']) - 0.13,
+                                  0.60 * (s['b_mag']-s['v_mag']) - 0.12)
+        g = np.where(s['r_mag']-s['i_mag'] < 1.15, r, np.nan)
+        return g
+    else:
+        raise NotImplementedError(f'SDSS band {band} has not been implemented yet')
+
+_CONVERSION_TABLES = {'Jordi2006'  : sdss_band_from_johnson_Jordi2006,
+                      'Jester2005' : sdss_band_from_johnson_Jester2005}
+
+_MY_TABLE = 'Jordi2006'
+
+from pynbody.derived import lum_den_template
+import functools
+
+sdss_bands = ['sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', 'sdss_z']
+
+for band in sdss_bands:
+    X = lambda s, b=str(band): _CONVERSION_TABLES[_MY_TABLE](s, band=b)
+    X.__name__ = band + "_mag"
+    X.__doc__ = band + " magnitude from analysis.luminosity.calc_mags and converted to SDSS filter using Jester 2005"""
+    pynbody.derived_array(X)
+
+    lum_den = functools.partial(lum_den_template,band)
+
+    lum_den.__name__ = band + "_lum_den"
+    lum_den.__doc__ = "Luminosity density in astronomy-friendly units: 10^(-0.4 %s_mag) per unit volume. " \
+                      "" \
+                      "The magnitude is taken from analysis.luminosity.calc_mags."%band
+    pynbody.derived_array(lum_den)
