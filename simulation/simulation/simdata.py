@@ -239,6 +239,28 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     print('{}: ok, data loaded'.format(sim_name))
     return df
 
+def get_last_d(d):
+    last_d = dict()
+    for k, df in d.items():
+        last_row = get_df_last_rows(df)
+        last_d[k] = last_row
+    return last_d
+
+def get_df_last_rows(df):
+    """From a dataframe get the last or the second to last row if it is available.
+    TODO Use for else idiom
+    """
+    last_row = pd.DataFrame(data=None, columns=df.columns, index=(0,))
+    for c in df.columns:
+        lvi = df[c].last_valid_index()
+        if lvi == len(df) - 2 or lvi == len(df) - 1: # if it's second to last it's still ok
+            last_row[c] = df[c].iloc[lvi]
+        else:
+            if not (c.endswith('_mean') or c.endswith('_std') or c.startswith('sf_')):
+                print(f'In {df.name[0]}p{df.pericenter[0]} {c} we have a different number of elements ({lvi}, {df.t.iloc[lvi]:.2f})')
+            last_row[c] = np.nan
+    return last_row
+
 
 def get_sf_pos(sim_name):
     return pickle.load(open(os.path.join(DATA_DIR, 'sf', sim_name + "_sf_pos.pkl"), 'rb'))
