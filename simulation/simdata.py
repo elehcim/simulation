@@ -117,7 +117,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     dm_tbl = Table.read(os.path.join(data_dir, "dm/{}_dm.fits".format(name_no_orientation))).to_pandas()
     mag_tbl = Table.read(os.path.join(data_dir, "magnitudes/{}_mag.fits".format(name_no_orientation))).to_pandas()
     sig_tbl = Table.read(os.path.join(data_dir, "sigma/{}_sigma.fits".format(sim_name))).to_pandas()
-    cg_tbl = Table.read(os.path.join(data_dir, "../gas/cold_gas_data/{}_cold_gas.fits".format(name_no_orientation))).to_pandas()
+    cg_tbl = Table.read(os.path.join(data_dir, "cold_gas/{}_cold_gas.fits".format(name_no_orientation))).to_pandas()
     sf_tbl = Table.read(os.path.join(data_dir, "sf/{}_sf.fits".format(name_no_orientation))).to_pandas()
     lr_tbl = Table.read(os.path.join(data_dir, "lambda_r/{}_lambda_r.fits".format(sim_name)))
 
