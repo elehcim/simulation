@@ -3,6 +3,7 @@ import simulation
 import numpy as np
 import pandas as pd
 from astropy.table import Table
+import astropy.units as u
 import matplotlib.pyplot as plt
 import pynbody
 import tqdm
