@@ -172,8 +172,8 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
         avg_columns.append('max_v_los')
     # FIXME ok but this is not what I need
     except Exception as e:
-        print(e)
-        print("Not computing Max vlos")
+        logger.error(e)
+        logger.error("Not computing Max vlos")
 
     # Do averages
 
@@ -233,10 +233,10 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
         # df['t_period'] = (df.t-df.t.iloc[0])/radial_period
 
     except Exception as e:
-        print(e)
-        print("Not computing Radial period")
+        logger.error(e)
+        logger.error("Not computing Radial period")
 
-    print('{}: ok, data loaded'.format(sim_name))
+    logger.info('{}: ok, data loaded'.format(sim_name))
     return df
 
 def get_last_d(d):
@@ -257,7 +257,7 @@ def get_df_last_rows(df, n_last=5):
                 break
         else:
             if not (c.endswith('_mean') or c.endswith('_std') or c.startswith('sf_')):
-                print(f'In {df.name[0][:3]}p{df.pericenter[0]}tf{df.t.iloc[-1]:.2f} {c} we have a different number of elements ({lvi}, {df.t.iloc[lvi]:.2f})')
+                logger.debug(f'In {df.name[0][:3]}p{df.pericenter[0]}tf{df.t.iloc[-1]:.2f} {c} we have a different number of elements ({lvi}, {df.t.iloc[lvi]:.2f})')
             last_row[c] = np.nan
     return last_row
 
