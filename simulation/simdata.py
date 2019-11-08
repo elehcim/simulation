@@ -153,13 +153,6 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     df['name'], df['pericenter'] = get_name_peri(sim_name)
 
-    # Other bands:
-    df['mag_sdss_u'] = get_sdss_u(df['mag_u'].values, df['mag_b'].values, df['mag_v'].values)
-    df['mag_sdss_g'] = get_sdss_g(df['mag_b'].values, df['mag_v'].values)
-    df['mag_sdss_r'] = get_sdss_r(df['mag_v'].values, df['mag_r'].values)
-    df['mag_sdss_i'] = get_sdss_i(df['mag_r'].values, df['mag_i'].values)
-    df['mag_sdss_z'] = get_sdss_z(df['mag_r'].values, df['mag_i'].values)
-
 
     avg_columns = ['lambda_r', 'n', 'sfr', 'r_eff', 'r_eff3d',
                    'r_eff_fit', 'ellipticity', 'mu_e',
