@@ -105,6 +105,7 @@ def get_center(sim_name, data_dir=DATA_DIR):
 
 def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     # TODO improve API with explicit `on_orbit_sideon` parameter
+    logger.info("Merging dataframes")
     df = Table.read(os.path.join(data_dir, 'tables/{}.fits'.format(sim_name))).to_pandas()
 
     # Remove wrong sigmas
@@ -142,7 +143,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     for col in mag_tbl.columns:
         df['mag_' + col] = mag_tbl[col]
 
-    for col in ('n', 'mu_e'):
+    for col in ('n', 'mu_e', 'avg_mu_e'):
         df[col] = struct_tbl[col]
 
     for col in ('medians', 'averages', 'length', 'bx', 'by', 'bz'):
@@ -151,15 +152,14 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     for col in ['lambda_r']:
         df[col] = lr_tbl[col]
 
-    df['r_eff_fit'] = struct_tbl['r_eff']
-    if 'lambda_r' in struct_tbl:
-        df['lambda_r_struct'] = struct_tbl['lambda_r']
+    for c in ('rms_err', 'exit_mode', 'numiter', 'r_eff'):
+        df['fit_' + c] = struct_tbl[c]
 
     df['name'], df['pericenter'] = get_name_peri(sim_name)
 
 
     avg_columns = ['lambda_r', 'n', 'sfr', 'r_eff', 'r_eff3d',
-                   'r_eff_fit', 'ellipticity', 'mu_e',
+                   'fit_r_eff', 'ellipticity', 'mu_e', 'avg_mu_e',
                    'sigma_gas', 'sigma_star',
                    'mass_star', 'orientation', 'dm_mass', 'dm_mass_all']
 
@@ -259,6 +259,36 @@ def get_df_last_rows(df, n_last=5):
     return last_row
 
 
+def last_d2df(last_d):
+    last_df = pd.concat(last_d).reset_index(level=1, drop=True)
+    # last_df.columns
+
+    drop_cols = ['bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin', 'area',
+                 'xcentroid', 'xmax','xmin', 'ycentroid', 'ymax','ymin',
+                 'cxx', 'cyy', 'cxy', 'covar_sigx2', 'covar_sigxy', 'covar_sigy2',
+                 'gini', 't', 'perimeter', 'min_value', 'minval_xpos', 'minval_ypos',
+                 'semimajor_axis_sigma', 'semiminor_axis_sigma', 'source_sum',
+                 'max_value', 'maxval_xpos', 'maxval_ypos','id','equivalent_radius',
+                ]
+
+    not_wanted_cols = list()
+    for c in last_df.columns:
+        if c in drop_cols or c.endswith('_mean') or c.endswith('_std') or c.startswith('sf_'):
+            # print(c)
+            not_wanted_cols.append(c)
+    last_df.drop(columns=not_wanted_cols, inplace=True)
+    # last_df.columns
+
+    # last_df['color_sdss_g_r'] = color_sdss_g_r(last_df['mag_v'] - last_df['mag_r'])
+    last_df['color_sdss_g_r'] = last_df['mag_sdss_g'] - last_df['mag_sdss_r']
+
+    # Categorize name column
+    last_df['name'] = pd.Categorical(last_df.name, ['62002', '71002', '69002', '68002', '41002'], ordered=True)
+    # last_df.name
+
+    last_df.sort_values(by=['name', 'pericenter'], inplace=True)
+    return last_df
+
 def get_sf_pos(sim_name):
     return pickle.load(open(os.path.join(DATA_DIR, 'sf', sim_name + "_sf_pos.pkl"), 'rb'))
 
@@ -351,7 +381,7 @@ def is_orbit_sideon(sim_name):
 
 def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
     if os.path.isfile(cache_file) and not force:
-        print(f"Loaded cache {cache_file}")
+        logger.info(f"Loaded cache {cache_file}")
         d = pickle.load(open(cache_file, 'rb'))
     else:
         tables_list = SIM_NAME_DICT.values()
@@ -440,13 +470,14 @@ def get_structure(sim_name, orbit_sideon, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'structure', filename))
     return tbl
 
-def get_profiles(sim_name, orbit_sideon, ptype, data_dir=DATA_DIR):
-    # TODO
-    raise NotImplementedError
-    # appendix = "" if not orbit_sideon else "_orbit_sideon"
-    # filename = sim_name + appendix + '_structure.fits'
-    # tbl = Table.read(os.path.join(data_dir, 'structure', filename))
-    # return tbl
+# PROF_TYPES = {"dens":"dens",
+#               "3d_dens": "dens", "dens"}
+
+def get_profiles(sim_name, orbit_sideon, prof_type, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + f'_{prof_type}.fits'
+    tbl = Table.read(os.path.join(data_dir, 'profiles', filename))
+    return tbl
 
 
 
