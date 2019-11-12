@@ -110,9 +110,12 @@ class MagnitudeSersic1D(Fittable1DModel):
                             ('mu_e', outputs_unit['y'])])
 
 
-def sersic_fit(sb_profile, r_eff, n_0, deviation_relative_r_eff=0.2, deviation_abs_n=0.5, verblevel=0):
+def sersic_fit_sb_profile_(sb_profile, **kwargs):
     r = sb_profile['rbins'].view(np.ndarray)
     sb = sb_profile['sb'].view(np.ndarray)
+    return sersic_fit(r, sb, **kwargs)
+
+def sersic_fit(r, sb, r_eff, n_0, deviation_relative_r_eff=0.2, deviation_abs_n=0.5, verblevel=0):
     idx = np.digitize(r_eff, r) - 1
     mu_e_init = sb[idx]
     sersic_init = MagnitudeSersic1D(mu_e=mu_e_init, r_eff=r_eff, n=n_0,
