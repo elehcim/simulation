@@ -31,6 +31,13 @@ def get_sdss_z(R, I):
     z = R - 1.584 * (R-I) + 0.386
     return z
 
+# Subaru SuprimeCam
+def Aku_conversion_BmV_gmr_sec2_11_3(BmV):
+    return (BmV - (0.2271+0.0038))/(1.3313-0.4216)
+    # return (BmV - (0.2309))/(0.9097)
+
+def Lupton2005_BmV_gmr(BmV):
+    return (BmV - (0.2309))/(0.8914)
 
 
 def color_sdss_r_i(RmI):
