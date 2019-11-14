@@ -319,24 +319,62 @@ def get_color_from_name(name):
         col = None
     return col
 
+LINESTYLES_DICT = dict((('loosely dotted',        (0, (1, 10))),
+     ('dotted',                (0, (1, 1))),
+     ('densely dotted',        (0, (1, 1))),
+
+     ('loosely dashed',        (0, (5, 10))),
+     ('dashed',                (0, (5, 5))),
+     ('densely dashed',        (0, (5, 1))),
+
+     ('loosely dashdotted',    (0, (3, 10, 1, 10))),
+     ('dashdotted',            (0, (3, 5, 1, 5))),
+     ('densely dashdotted',    (0, (3, 1, 1, 1))),
+
+     ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
+     ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
+     ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))))
+
 
 def get_styles_from_name(name, scatter=False):
     if scatter:
-        styles = ['o', '^', "s", 'd']
+        styles = ['o', '^', "s", 'd', '*']
     else:
-        styles = ['-', '--', '-.', ':']
+        styles = ['-', '--', '-.', ':', LINESTYLES_DICT['dashdotdotted']]
     if name.endswith('50'):
         st = styles[0]
     elif name.endswith('100'):
         st = styles[1]
-    elif name.endswith('200'):
+    elif name.endswith('150'):
         st = styles[2]
-    elif name.endswith('300'):
+    elif name.endswith('200'):
         st = styles[3]
+    elif name.endswith('300'):
+        st = styles[4]
     else:
         st = None
     return st
 
+
+
+def get_styles_from_sim(name, scatter=False):
+    if scatter:
+        styles = ['o', '^', "s", 'd', '*']
+    else:
+        styles = ['-', '--', '-.', ':', LINESTYLES_DICT['dashdotdotted']]
+    if name.startswith('41'):
+        st = styles[0]
+    elif name.startswith('69'):
+        st = styles[1]
+    elif name.startswith('68'):
+        st = styles[2]
+    elif name.startswith('71'):
+        st = styles[3]
+    elif name.startswith('62'):
+        st = styles[4]
+    else:
+        st = None
+    return st
 
 def get_color_styles(d, scatter=False):
     col_d = dict()
