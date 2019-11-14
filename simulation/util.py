@@ -342,6 +342,21 @@ def parse_simname(name):
     return p, a, r
 
 
+def get_aspect(extent, shape):
+    """When importing an image with imread, this function computes the aspect parameter.
+
+    Example:
+    --------
+    img = plt.imread("Mr_gr_-19_-8_0.0_1.0.png")
+    extent = (-19, -8, 0, 1)
+    ax.imshow(img, extent=extent, aspect=get_aspect(extent, img.shape)
+
+    """
+    W = np.abs(extent[1]-extent[0])
+    H = np.abs(extent[3]-extent[2])
+    h = shape[0]
+    w = shape[1]
+    return (h/H) / (w/W)
 
 if __name__ == '__main__':
     # mega for-loop
