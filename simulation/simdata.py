@@ -315,6 +315,8 @@ def get_color_from_name(name):
         col = mpl_colors[2]
     elif name.startswith('71'):
         col = mpl_colors[3]
+    elif name.startswith('62'):
+        col = mpl_colors[4]
     else:
         col = None
     return col
