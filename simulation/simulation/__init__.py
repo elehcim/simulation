@@ -19,7 +19,7 @@ from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 
@@ -100,7 +100,7 @@ def get_param_used(path):
         return None
     try:
         with open(path) as csvfile:
-            logger.info("Found parameter file")
+            logger.debug("Found parameter file")
             spamreader = csv.reader(csvfile, delimiter=' ', skipinitialspace=True)
             for line in spamreader:
                 try:
