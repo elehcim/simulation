@@ -136,8 +136,13 @@ def main(cli=None):
     parser.add_argument(help='Path of the snapshots', dest='path')
     parser.add_argument(default=0, type=int, nargs='?', help='First file (ordinal, default=0)', dest='first')
     parser.add_argument(default=-1, type=int, nargs='?', help='Last file (ordinal, default=-1)', dest='last')
+    parser.add_argument('--eta', action='store_true', help='Print only ETA')
     args = parser.parse_args(cli)
-    print(SimDuration(args.path, args.first, args.last))
+    sd = SimDuration(args.path, args.first, args.last)
+    if args.eta:
+        print(f'ETA: {sd.eta()}')
+    else:
+        print(sd)
 
 
 if __name__ == '__main__':
