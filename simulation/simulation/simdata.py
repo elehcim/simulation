@@ -510,6 +510,17 @@ def get_structure(sim_name, orbit_sideon, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'structure', filename))
     return tbl
 
+def get_sigma(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + '_sigma.fits'
+    tbl = Table.read(os.path.join(data_dir, 'sigma', filename))
+    return tbl
+
+def get_cold_gas(sim_name, data_dir=DATA_DIR):
+    filename = sim_name + '_cold_gas.fits'
+    tbl = Table.read(os.path.join(data_dir, 'cold_gas', filename))
+    return tbl
+
 # PROF_TYPES = {"dens":"dens",
 #               "3d_dens": "dens", "dens"}
 
