@@ -338,11 +338,15 @@ LINESTYLES_DICT = dict((('loosely dotted',        (0, (1, 10))),
      ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))))
 
 
-def get_styles_from_name(name, scatter=False):
+def get_styles_from_name(**kwargs):
+    warnings.warn("This function is deprecaate, use simulation.simdata.get_styles_from_peri", DeprecationWarning)
+    return get_styles_from_peri(**kwargs)
+
+def get_styles_from_peri(name, scatter=False):
     if scatter:
         styles = ['o', '^', "s", 'd', '*']
     else:
-        styles = ['-', '--', '-.', ':', LINESTYLES_DICT['dashdotdotted']]
+        styles = ['-', '--', '-.', ':', LINESTYLES_DICT['densely dashdotdotted']]
     if name.endswith('50'):
         st = styles[0]
     elif name.endswith('100'):
@@ -363,7 +367,7 @@ def get_styles_from_sim(name, scatter=False):
     if scatter:
         styles = ['o', '^', "s", 'd', '*']
     else:
-        styles = ['-', '--', '-.', ':', LINESTYLES_DICT['dashdotdotted']]
+        styles = ['-', '--', '-.', ':', LINESTYLES_DICT['densely dashdotdotted']]
     if name.startswith('41'):
         st = styles[0]
     elif name.startswith('69'):
@@ -384,7 +388,7 @@ def get_color_styles(d, scatter=False):
         col_d[k] = get_color_from_name(k)
     st_d = dict()
     for k in d.keys():
-        st_d[k] = get_styles_from_name(k, scatter=scatter)
+        st_d[k] = get_styles_from_peri(k, scatter=scatter)
     return col_d, st_d
 
 # From https://www.tutorialspoint.com/How-to-correctly-sort-a-string-with-a-number-inside-in-Python
