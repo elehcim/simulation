@@ -547,3 +547,14 @@ def get_profiles(sim_name, orbit_sideon, prof_type, data_dir=DATA_DIR):
 
 def short2simname(name, sim_names_dict=SIM_NAME_DICT):
     return sim_names_dict.get(name)
+
+
+if __name__ == '__main__':
+    import pprint
+    NO_GAS_DICT = dict()
+    no_gas_list = glob.glob('/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected/*no_gas')
+    for simpath in no_gas_list:
+        print(simpath)
+        sim_name = get_sim_name(os.path.join(simpath, 'out'))
+        NO_GAS_DICT[shorten_name(simpath)] = sim_name
+    pprint.pprint(NO_GAS_DICT)
