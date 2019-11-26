@@ -180,7 +180,7 @@ def compute_angmom(sim, derotator=None, on_orbit_plane=True, radius=10, initial_
             angmom['Lb' + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(baryon_snap_sphere))
             angmom['jb' + '_c'].append(specific_angmom(baryon_snap_sphere))
 
-        except ValueError as e:
+        except (KeyError, ValueError) as e:
             # Usually is 'Insufficient particles around center to get velocity'
             logger.warning(f"{i} {e}")
             # Get at least the time
