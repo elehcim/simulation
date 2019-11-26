@@ -134,7 +134,11 @@ class Derotator:
 def specific_angmom(snap):
     return pynbody.array.SimArray(pynbody.analysis.angmom.ang_mom_vec(snap), units=gadget_angmom_units)/snap['mass'].sum()
 
-
+# import line_profiler
+# import atexit
+# profile = line_profiler.LineProfiler()
+# atexit.register(profile.print_stats)
+# @profile
 def compute_angmom(sim, derotator=None, on_orbit_plane=True, radius=10, initial_rotation_simname=""):
     """
     Returns the angular momentum of stars and gas inside a sphere of `radius` center in the center of the stars.
@@ -156,22 +160,23 @@ def compute_angmom(sim, derotator=None, on_orbit_plane=True, radius=10, initial_
     # From this: https://stackoverflow.com/a/42731787
     # sl = sim._snap_indexes
     # snap_indexes = list(range(sl.start or 0, sl.stop or len(sim), sl.step or 1))
-    for i, snap in enumerate(tqdm.tqdm(sim)):
+    for i, snap in enumerate(tqdm.tqdm(sim[:5])):
         try:
             if derotator is not None:
                 snap['pos'], snap['vel'] = derotator.derotate_snap(snap, i)
 
             # Here I need to center on velocity
             pynbody.analysis.halo.center(snap.s)
-
-            angmom['Ltot' + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(snap[sphere]))
-            angmom['j' + '_c'].append(specific_angmom(snap[sphere]))
+            _sph = snap[sphere]
+            angmom['Ltot' + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(_sph))
+            angmom['j' + '_c'].append(specific_angmom(_sph))
             angmom['j'].append(specific_angmom(snap))
 
             for f in families:
                 fam = pynbody.family.get_family(f)
-                angmom['L'+ f + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(snap[fam][sphere]))
-                angmom['j'+ f + '_c'].append(specific_angmom(snap[fam][sphere]))
+                _fam_sph = snap[fam][sphere]
+                angmom['L'+ f + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(_fam_sph))
+                angmom['j'+ f + '_c'].append(specific_angmom(_fam_sph))
                 angmom['j'+ f].append(specific_angmom(snap[fam]))
 
             baryon_snap = snap.g.union(snap.s)
@@ -180,7 +185,7 @@ def compute_angmom(sim, derotator=None, on_orbit_plane=True, radius=10, initial_
             angmom['Lb' + '_c'].append(pynbody.analysis.angmom.ang_mom_vec(baryon_snap_sphere))
             angmom['jb' + '_c'].append(specific_angmom(baryon_snap_sphere))
 
-        except ValueError as e:
+        except (KeyError, ValueError) as e:
             # Usually is 'Insufficient particles around center to get velocity'
             logger.warning(f"{i} {e}")
             # Get at least the time
