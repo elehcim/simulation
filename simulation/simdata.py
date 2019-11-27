@@ -72,7 +72,7 @@ def get_radial_period(sim_name, which='measured', data_dir=DATA_DIR):
 
     name = os.path.join(data_dir, f"radial_period/{sim_name}_radial_period.fits")
     logger.debug(f"Getting T_r table: {name}")
-    return Table.read(name)[which]
+    return float(Table.read(name)[which])
 
 
 def compute_t_period(sim_name, df=None):
@@ -227,7 +227,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     # t_period
     try:
-        radial_period = get_radial_period(sim_name, data_dir)
+        radial_period = get_radial_period(name_no_orientation, data_dir)
         zero_crossings = np.where(np.diff(np.signbit(df['r'].diff())))[0]
         idx_peri = zero_crossings[1]  # first element is always 0, so the second is the actual pericenter
         first_pericenter_time = df.t[idx_peri]
@@ -418,7 +418,7 @@ def natural_keys(_):
     return _natural_keys(_)
 
 def _natural_keys(text):
-    return [ _atoi(c) for c in re.split('(\d+)',text) ]
+    return [ _atoi(c) for c in re.split(r'(\d+)',text) ]
 
 
 def is_orbit_sideon(sim_name):

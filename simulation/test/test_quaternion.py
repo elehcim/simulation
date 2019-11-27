@@ -20,7 +20,7 @@ new_vec = quat * vq * quat.conj()
 rot3 = np.squeeze(quaternion.as_float_array(new_vec)[:, 1:])
 
 # Using directly the function
-from derotate_simulation import rotate_vec
+from simulation.derotate_simulation import rotate_vec
 rot4 = np.squeeze(rotate_vec(vec[np.newaxis], quat))
 
 # Testing if I'm doing the same with the function by hand or calling the function
