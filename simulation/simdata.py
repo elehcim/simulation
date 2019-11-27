@@ -227,7 +227,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     # t_period
     try:
-        radial_period = get_radial_period(name_no_orientation, data_dir)
+        radial_period = get_radial_period(name_no_orientation, data_dir=data_dir)
         zero_crossings = np.where(np.diff(np.signbit(df['r'].diff())))[0]
         idx_peri = zero_crossings[1]  # first element is always 0, so the second is the actual pericenter
         first_pericenter_time = df.t[idx_peri]
@@ -246,7 +246,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
         # df['t_period'] = (df.t-df.t.iloc[0])/radial_period
 
     except Exception as e:
-        logger.error(e)
+        logger.error(repr(e), exc_info=True)
         logger.error("Not computing Radial period")
 
     logger.info('{}: ok, data loaded'.format(sim_name))
