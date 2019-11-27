@@ -1,4 +1,3 @@
-# DEPRECATED use simulation.read_header and the entry point
 #!/usr/bin/env python
 
 # Script and functions to easily read a format 2 Gadget2 file. Adapted from pynbody source code.
@@ -190,6 +189,11 @@ def _construct_gadget_header(data, endian='='):
 
     return header
 
+def get_header(filename):
+    fd = open(filename, "rb")
+    (name, length) = read_block_head(fd)
+    header_block = fd.read(256)
+    return _construct_gadget_header(header_block)
 
 def main(filename=None):
     if filename is None:

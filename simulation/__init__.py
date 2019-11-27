@@ -181,6 +181,11 @@ def get_compiler_options(path):
         return None
     return ll
 
+def get_times_header(sim_dir):
+    """Faster way to get times in the header"""
+    snap_name_list = snapshot_file_list(os.path.expanduser(sim_dir), include_dir=True)
+    return np.array([pynbody.load(snap).header.time for snap in snap_name_list])
+
 
 class Simulation:
     """An object to work with Gadget2 simulations.
