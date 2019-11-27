@@ -229,7 +229,10 @@ def plot_integrand(rp, ra, E, V0, J):
 
 
 def measure_radial_period(sim):
-    """Measure the orbital period taking the interval between apsis"""
+    """
+    Measure the orbital period taking the interval between apsis.
+    Return radial period in Gyr
+    """
     dr = np.diff(sim.r)
     zero_crossings = np.where(np.diff(np.signbit(dr)))[0]
     times_of_apsis = sim.times_header[zero_crossings]

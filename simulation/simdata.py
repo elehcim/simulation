@@ -49,8 +49,8 @@ def get_name_peri(sim_name):
     return mb[3:], int(peri[1:])
 
 
-def get_radial_period(sim_name, data_dir=DATA_DIR):
-    """Return radial period in internal code units"""
+def get_radial_period_pickle(sim_name, data_dir=DATA_DIR):
+    """Return radial period in Gyr"""
     mb, peri = sim_name.split('_')[:2]
     filename = os.path.join(data_dir, "radial_period", "radial_period_{}.pickle".format(mb))
     # print(filename)
@@ -59,10 +59,26 @@ def get_radial_period(sim_name, data_dir=DATA_DIR):
     rperiod = d[int(peri[1:])]
     return rperiod
 
+def get_radial_period(sim_name, which='measured', data_dir=DATA_DIR):
+    """Return radial period in Gyr
+
+    Parameters
+    ----------
+    which : str
+        one of ['measured', 'computed'] the difference being that the latter has
+        been computing using a potential for the cluster and the information of
+        the orbit pericenter and apocenter.
+    """
+
+    name = os.path.join(data_dir, f"radial_period/{sim_name}_radial_period.fits")
+    logger.debug(f"Getting T_r table: {name}")
+    return Table.read(name)[which]
+
 
 def compute_t_period(sim_name, df=None):
-    """Basically return `tables` with some additional useful orbit related columns
-    You can specify the version (orbit_sideon or not) of the table through parameter `df`
+    """Basically return `tables` with some additional useful orbit related columns.
+    You can specify the version (orbit_sideon or not) of the table through parameter `df`.
+    But this does not change the result of the added columns because they are independent from the point of view.
     """
 
     if df is None:
