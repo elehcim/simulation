@@ -354,9 +354,9 @@ LINESTYLES_DICT = dict((('loosely dotted',        (0, (1, 10))),
      ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))))
 
 
-def get_styles_from_name(**kwargs):
+def get_styles_from_name(*args, **kwargs):
     warnings.warn("This function is deprecaate, use simulation.simdata.get_styles_from_peri", DeprecationWarning)
-    return get_styles_from_peri(**kwargs)
+    return get_styles_from_peri(*args, **kwargs)
 
 def get_styles_from_peri(name, scatter=False):
     if scatter:
@@ -449,6 +449,15 @@ def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
     return d
 
 
+def _get_data_dir():
+    return os.path.join(os.path.dirname(__file__), 'data')
+
+def get_pickle_data(cache_file):
+    fullpath = os.path.join(_get_data_dir(), cache_file)
+    logger.info(f"Loading cache {fullpath}")
+    d = pickle.load(open(fullpath, 'rb'))
+    return d
+
 def load_tables(sim_name_list, orbit_sideon):
     """Load dataframes in a dictionary"""
     d = dict()
@@ -458,6 +467,25 @@ def load_tables(sim_name_list, orbit_sideon):
 #         print(sim_name)
         d[shorten_name(sim_name)] = get_df(sim_name)
     return d
+
+def save_tables(sim_name_list, orbit_sideon, no_gas=False, cache_file=None):
+    """Save dictionary of dataframes in a pickle file"""
+    if cache_file is None:
+        import datetime
+        today = datetime.date.today().strftime("%Y%m%d")
+        stem = 'data'
+        if no_gas:
+            stem += '_dng'
+        else:
+            stem += '_d'
+        if orbit_sideon:
+            stem += '_orbit_sideon'
+        cache_file = f'{stem}_{today}.pkl'
+
+    fullpath = os.path.join(_get_data_dir(), cache_file)
+    d = load_tables(sim_name_list=sim_name_list, orbit_sideon=orbit_sideon)
+    logger.info(f'Saving data to {fullpath}')
+    pickle.dump(d, open(fullpath, 'wb'))
 
 
 def get_tables(sim_name, orbit_sideon, data_dir=DATA_DIR):
