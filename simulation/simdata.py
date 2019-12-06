@@ -120,7 +120,7 @@ def get_center(sim_name, data_dir=DATA_DIR):
 
 
 def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
-    # TODO improve API with explicit `on_orbit_sideon` parameter
+    # TODO improve API with explicit `orbit_sideon` parameter
     logger.info("Merging dataframes")
     df = Table.read(os.path.join(data_dir, 'tables/{}.fits'.format(sim_name))).to_pandas()
 
@@ -132,7 +132,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     is_sideon = is_orbit_sideon(sim_name)
     name_no_orientation = sim_name.split('_orbit_sideon')[0]
 
-    phot_tbl = Table.read(os.path.join(data_dir, 'photometry/{}_photometry.fits'.format(sim_name))).to_pandas()
+    phot_tbl = get_phot(name_no_orientation, orbit_sideon=is_sideon, data_dir=data_dir).to_pandas()
 
     struct_tbl = Table.read(os.path.join(data_dir, "structure/{}_structure.fits".format(sim_name))).to_pandas()
     dm_tbl = Table.read(os.path.join(data_dir, "dm/{}_dm.fits".format(name_no_orientation))).to_pandas()
@@ -496,10 +496,12 @@ def get_tables(sim_name, orbit_sideon, data_dir=DATA_DIR):
     return Table.read(name)
 
 
-def get_phot(sim_name, data_dir=DATA_DIR):
-    name = os.path.join(data_dir, "photometry/{}_photometry.fits".format(sim_name))
-    logger.debug("Getting photometry: {}".format(name))
-    return Table.read(name)
+def get_phot(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    appendix = "" if not orbit_sideon else "_orbit_sideon"
+    filename = sim_name + appendix + '_photometry.fits'
+    logger.debug("Getting photometry: {}".format(filename))
+    tbl = Table.read(os.path.join(data_dir, 'photometry', filename))
+    return tbl
 
 
 def get_maps(sim_name, orbit_sideon, data_dir=DATA_DIR):
