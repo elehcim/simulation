@@ -32,16 +32,22 @@ def lambda_r_r_lim(flux, v_los, sig_los, width, r_lim, center=None):
     r[r>r_max] = 0
     return np.sum(flux * r * np.abs(v_los)) / np.sum(flux * r * np.sqrt(v_los**2 + sig_los**2))
 
-def lambda_r_sim(flux, v_los, sig_los):
+def lambda_r_sim(flux, v_los, sig_los, center=None):
+    "Compute lambda_R for the whole simulation in one go."
     assert flux.ndim == v_los.ndim == sig_los.ndim == 3
     resolution = flux.shape[-1]
-    # print(f"flux.shape={flux.shape}")
+    if center is None:
+        center = (resolution/2, resolution/2)
+    else:
+        assert len(center) == 2
     x = y = np.arange(-resolution/2, resolution/2)
     xx, yy = np.meshgrid(x, y)
-    z = np.sqrt(xx**2 + yy**2)
-    r = z[np.newaxis]
-    # print(f"r.shape={r.shape}")
+    # Add new axis at the end and then transpose later
+    new_xx = xx[:,:,np.newaxis] + (resolution/2 - center[0])
+    new_yy = yy[:,:,np.newaxis] + (resolution/2 - center[1])
+    r = np.sqrt(new_xx**2 + new_yy**2).transpose(2,0,1)
     return np.sum(flux * r * np.abs(v_los), axis=(1,2)) / np.sum(flux * r * np.sqrt(v_los**2 + sig_los**2), axis=(1,2))
+
 
 def lambda_r_profile(flux, v_los, sig_los, width, r_lim, bins=50, center=None):
     resolution = flux.shape[-1]

@@ -75,6 +75,13 @@ def test_lambda_r_sim(maps):
     return lambda_r_sim(flux, v_los, sig_los)
 
 @pytest.mark.array_compare
+def test_lambda_r_sim_center(maps, sim_name, orbit_sideon):
+    phot = get_phot(sim_name, orbit_sideon=orbit_sideon).to_pandas()
+    center = (phot.xcentroid.values, phot.ycentroid.values)
+    flux, v_los, sig_los = maps['lum'], maps['vlos'], maps['sig_los']
+    return lambda_r_sim(flux, v_los, sig_los, center=center)
+
+@pytest.mark.array_compare
 def test_lambda_r_profiles_center(one_map, r_lim, bins, center):
     flux, v_los, sig_los = one_map['lum'], one_map['vlos'], one_map['sig_los']
     width = one_map.meta['WIDTH']
