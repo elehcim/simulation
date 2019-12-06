@@ -25,6 +25,7 @@ setup(name='simulation',
                               'save_quat=simulation.save_quat:main',
                               'save_center=simulation.save_center:main',
                               'derotate_simulation=simulation.derotate_simulation:main',
+                              'save_data=simulation.save_data:main',
                               ]
                    }
       )
