@@ -9,7 +9,7 @@ setup(name='simulation',
       install_requires=['pynbody', 'astropy', 'pandas', 'matplotlib', 'scipy', 'numpy',
                         'scikit-image', 'numpy-quaternion', 'numba', 'tqdm', 'photutils'],
       packages=['simulation', 'simulation.plot', 'simulation.parsers', 'simulation.interp'],
-      package_data={'simulation': ['interp/tables/HI_data_all.npz', 'observationalData/*']},
+      package_data={'simulation': ['interp/tables/HI_data_all.npz', 'observationalData/*', 'data/*.pkl']},
       scripts=['simulation/scripts/get_maxid', 'simulation/scripts/read_header'],
       entry_points={
           'console_scripts': ['sim_duration=simulation.sim_duration:main',
