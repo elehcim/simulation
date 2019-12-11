@@ -1,5 +1,7 @@
 import os
 import glob
+from typing import Tuple
+
 from simulation.util import get_aspect
 import matplotlib.pyplot as plt
 # from collection import namedtuple
@@ -34,7 +36,10 @@ class CMname:
     def __repr__(self):
         return str(self.elements)
 
+
 class AkuCM:
+    extent: Tuple[float, ...]
+
     def __init__(self, y):
         filename = get_filename_from_y(y)
         self.cmname = CMname(filename)

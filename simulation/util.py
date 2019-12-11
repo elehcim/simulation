@@ -10,6 +10,7 @@ from astropy.table import Table
 
 loggers = {}
 
+
 def setup_logger(logger_name=None, logger_level='DEBUG'):
     if loggers.get(logger_name):
         logger = loggers.get(logger_name)

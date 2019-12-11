@@ -9,7 +9,7 @@ ELL_KEYS = ('xc', 'yc', 'a', 'b', 'theta')
 EllParams = namedtuple('EllParams', ELL_KEYS)
 
 def ellipsemodel2patch(e, edgecolor='red'):
-    return ellipseparams2patche(e.params, edgecolor=edgecolor)
+    return ellipseparams2patch(e.params, edgecolor=edgecolor)
 
 
 def ellipseparams2patch(params, edgecolor='red'):

@@ -5,7 +5,6 @@ import simulation
 import matplotlib.pyplot as plt
 import pynbody
 import numpy as np
-import pandas
 
 from astropy.table import Table
 from skimage.measure import profile_line
@@ -14,9 +13,11 @@ from pynbody.filt import Filter
 
 data_path = '/home/michele/sim/analysis/ng_ana/data/'
 
+
 class Slit(Filter):
     """Emulate a Slit, so taking a slice at z=const of a snap"""
     def __init__(self, x1, y1=None, x2=None, y2=None):
+        super().__init__()
         self._descriptor = "slit"
         x1, y1, x2, y2 = [units.Unit(x) if isinstance(x, str) else x for x in (x1, y1, x2, y2)]
         if y1 is None:
@@ -33,15 +34,13 @@ class Slit(Filter):
                                   if units.is_unit_like(x) else x
                                   for x in (self.x1, self.y1, self.x2, self.y2)]
 
-        return ((sim["x"] > x1) * (sim["x"] < x2) * (sim["y"] > y1) * (sim["y"] < y2))
+        return (sim["x"] > x1) * (sim["x"] < x2) * (sim["y"] > y1) * (sim["y"] < y2)
 
     def __repr__(self):
         x1, y1, x2, y2 = ["'%s'" % str(x)
                                   if units.is_unit_like(x) else x
                                   for x in (self.x1, self.y1, self.x2, self.y2)]
         return "Slit(%s, %s, %s, %s)" % (x1, y1, x2, y2)
-
-
 
 
 def get_vlos_map(sim_name, orbit_sideon):

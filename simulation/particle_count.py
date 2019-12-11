@@ -5,7 +5,6 @@ import argparse
 import os
 import numpy as np
 import simulation
-import asciiplotlib as apl
 
 # # FIXME: decide whether to use header or snapshots
 # def main(filename=None):
@@ -41,6 +40,8 @@ class SimParticle(object):
 
 
 def plot_graph(times, dm , gas, stars, width=50, height=15):
+    import asciiplotlib as apl
+
     fig = apl.figure()
     fig.plot(times, dm, label="dm", width=width, height=height)
     fig.plot(times, gas, label="g", width=width, height=height)
@@ -49,6 +50,8 @@ def plot_graph(times, dm , gas, stars, width=50, height=15):
 
 
 def plot_multigraph(times, dm , gas, stars, width=50, height=15):
+    import asciiplotlib as apl
+
     fig = apl.SubplotGrid((1,3), padding=(0, 0))
 
     fig[0,0].plot(times, dm, label="dm", width=width, height=height) # , symbol='points pt "o"'

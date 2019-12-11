@@ -13,8 +13,8 @@ from simulation.util import get_sim_name
 from simulation.derived import feh, mgfe
 
 
-def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
-    '''
+def sfh_snap(snap, massform=True, trange=None, bins=100, **kwargs):
+    """
     star formation history from pynbody.plot.stars
 
     By default, sfh will use the formation mass of the star.  In tipsy, this will be
@@ -36,7 +36,7 @@ def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
         The SFR in each time bin
     thebins : pynbody.array.SimArray (Gyr)
         The bins edges
-    '''
+    """
     if 'nbins' in kwargs:
         bins = kwargs['nbins']
 
@@ -45,7 +45,7 @@ def sfh_snap(snap, massform=True, trange=False, bins=100, **kwargs):
     else:
         simstars = snap
 
-    if trange:
+    if trange is not None:
         assert len(trange) == 2
     else:
         trange = [simstars['tform'].in_units("Gyr").min(), simstars['tform'].in_units("Gyr").max()]

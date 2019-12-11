@@ -11,7 +11,11 @@ import numpy as np
 from astropy.table import Table, vstack, Column
 from photutils import EllipticalAperture, data_properties
 
+from simulation.lambda_r_photometric import print_fit_results, fit_sersic_2D, create_apertures
+from simulation.util import setup_logger
+
 logger = setup_logger('__name__', logger_level='INFO')
+
 
 class Photometry:
     sersic1D = None

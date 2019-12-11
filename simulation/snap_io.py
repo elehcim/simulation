@@ -1,6 +1,7 @@
 import os
 import glob
 import pynbody
+import numpy as np
 from .util import setup_logger
 
 MORIA_PATH = '/home/michele/sim/MoRIA/'
