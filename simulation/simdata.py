@@ -144,9 +144,11 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     cg_tbl = Table.read(os.path.join(data_dir, "cold_gas/{}_cold_gas.fits".format(name_no_orientation))).to_pandas()
     sf_tbl = Table.read(os.path.join(data_dir, "sf/{}_sf.fits".format(name_no_orientation))).to_pandas()
     lr_tbl = Table.read(os.path.join(data_dir, "lambda_r/{}_lambda_r.fits".format(sim_name)))
+    am_tbl = get_angmom(name_no_orientation, orbit_sideon=is_sideon)
 
     # Merge data
     for col in phot_tbl.columns:
+        # skip this:
         if col == 'lambda_r': continue
         df[col] = phot_tbl[col]
 
@@ -170,6 +172,12 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     for col in ['lambda_r']:
         df[col] = lr_tbl[col]
+
+    for col in am_tbl.columns:
+        # I already have those:
+        if col in ('r', 't', 't_period', 'orbital_phase', 'mass_star'):
+            continue
+        df[col] = am_tbl[col]
 
     for c in ('rms_err', 'exit_mode', 'numiter', 'r_eff'):
         df['fit_' + c] = struct_tbl[c]
@@ -471,20 +479,25 @@ def load_tables(sim_name_list, orbit_sideon):
         d[shorten_name(sim_name)] = get_df(sim_name)
     return d
 
+
+def _pickle_filename(orbit_sideon, no_gas):
+    import datetime
+    today = datetime.date.today().strftime("%Y%m%d")
+    stem = 'data'
+    if no_gas:
+        stem += '_dng'
+    else:
+        stem += '_d'
+    if orbit_sideon:
+        stem += '_orbit_sideon'
+    cache_file = f'{stem}_{today}.pkl'
+    return cache_file
+
+
 def save_tables(sim_name_list, orbit_sideon, no_gas=False, cache_file=None):
     """Save dictionary of dataframes in a pickle file"""
     if cache_file is None:
-        import datetime
-        today = datetime.date.today().strftime("%Y%m%d")
-        stem = 'data'
-        if no_gas:
-            stem += '_dng'
-        else:
-            stem += '_d'
-        if orbit_sideon:
-            stem += '_orbit_sideon'
-        cache_file = f'{stem}_{today}.pkl'
-
+        cache_file = _pickle_filename(orbit_sideon, no_gas)
     fullpath = os.path.join(_get_data_dir(), cache_file)
     d = load_tables(sim_name_list=sim_name_list, orbit_sideon=orbit_sideon)
     logger.info(f'Saving data to {fullpath}')
