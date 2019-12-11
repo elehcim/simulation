@@ -37,6 +37,7 @@ SIM_NAME_DICT = {
  '68p300': 'mb.68002_p300_a800_r600',
  '69p50': 'mb.69002_p50_a800_r600_new_adhoc',
  '69p100': 'mb.69002_p100_a800_r600_new_adhoc',
+ '69p150': 'mb.69002_p150_a800_r600_new_adhoc',
  '69p200': 'mb.69002_p200_a800_r600_new_adhoc',
  '69p200i': 'mb.69002_p200_a800_r600_inertial',
  '69p300': 'mb.69002_p300_a800_r600_new_adhoc',

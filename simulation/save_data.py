@@ -6,7 +6,7 @@ from simulation.simdata import SIM_NAME_DICT, save_tables, _get_data_dir, _pickl
 def parse_args(cli=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-on-orbit-plane', action='store_false', help='Put snapshot on orbit plane')
-    parser.add_argument('--no_gas', action='store_true', help='Get the no gas (only tides) version')
+    parser.add_argument('--no-gas', action='store_true', help='Get the no gas (only tides) version')
     args = parser.parse_args(cli)
     return args
 
