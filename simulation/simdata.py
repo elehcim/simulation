@@ -31,7 +31,6 @@ SIM_NAME_DICT = {
  '71p300': 'mb.71002_p300_a800_r600',
  '68p50': 'mb.68002_p50_a800_r600',
  '68p100': 'mb.68002_p100_a800_r600',
- '68p100r': 'mb.68002_p100_a800_r600_retrograde',
  '68p150': 'mb.68002_p150_a800_r600',
  '68p200': 'mb.68002_p200_a800_r600',
  '68p300': 'mb.68002_p300_a800_r600',
@@ -39,13 +38,37 @@ SIM_NAME_DICT = {
  '69p100': 'mb.69002_p100_a800_r600_new_adhoc',
  '69p150': 'mb.69002_p150_a800_r600_new_adhoc',
  '69p200': 'mb.69002_p200_a800_r600_new_adhoc',
- '69p200i': 'mb.69002_p200_a800_r600_inertial',
  '69p300': 'mb.69002_p300_a800_r600_new_adhoc',
  '41p50': 'mb.41002_p50_a800_r600_t9.56',
  '41p100': 'mb.41002_p100_a800_r600_t9.56',
  '41p150': 'mb.41002_p150_a800_r600_t9.56',
  '41p200': 'mb.41002_p200_a800_r600_t9.56',
- '41p300': 'mb.41002_p300_a800_r600_t9.56'}
+ '41p300': 'mb.41002_p300_a800_r600_t9.56',
+}
+
+NO_GAS_DICT = {
+ '62p50': 'mb.62002_p50_a800_r600_no_gas',
+ '62p100': 'mb.62002_p100_a800_r600_no_gas',
+ '62p150': 'mb.62002_p150_a800_r600_no_gas',
+ '62p200': 'mb.62002_p200_a800_r600_no_gas',
+ '62p300': 'mb.62002_p300_a800_r600_no_gas',
+ '69p50': 'mb.69002_p50_a800_r600_no_gas',
+ '69p100': 'mb.69002_p100_a800_r600_no_gas',
+ '69p150': 'mb.69002_p150_a800_r600_no_gas',
+ '69p200': 'mb.69002_p200_a800_r600_no_gas',
+ '69p300': 'mb.69002_p300_a800_r600_no_gas',
+ '41p50': 'mb.41002_p50_a800_r600_t9.56_no_gas',
+ '41p100': 'mb.41002_p100_a800_r600_t9.56_no_gas',
+ '41p150': 'mb.41002_p150_a800_r600_t9.56_no_gas',
+ '41p200': 'mb.41002_p200_a800_r600_t9.56_no_gas',
+ '41p300': 'mb.41002_p300_a800_r600_t9.56_no_gas',
+}
+
+SPECIAL_DICT = {
+ '68p100r': 'mb.68002_p100_a800_r600_retrograde',
+ '69p200i': 'mb.69002_p200_a800_r600_inertial',
+
+}
 
 
 def get_name_peri(sim_name):
@@ -62,6 +85,7 @@ def get_radial_period_pickle(sim_name, data_dir=DATA_DIR):
     # print(d)
     rperiod = d[int(peri[1:])]
     return rperiod
+
 
 def get_radial_period(sim_name, which='measured', data_dir=DATA_DIR):
     """Return radial period in Gyr
@@ -139,10 +163,11 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     phot_tbl = get_phot(name_no_orientation, orbit_sideon=is_sideon, data_dir=data_dir).to_pandas()
 
     struct_tbl = Table.read(os.path.join(data_dir, "structure/{}_structure.fits".format(sim_name))).to_pandas()
-    dm_tbl = Table.read(os.path.join(data_dir, "dm/{}_dm.fits".format(name_no_orientation))).to_pandas()
-    mag_tbl = Table.read(os.path.join(data_dir, "magnitudes/{}_mag.fits".format(name_no_orientation))).to_pandas()
+    dm_tbl = get_dm(name_no_orientation).to_pandas()
+    rt_tbl = get_tidal_radius(name_no_orientation).to_pandas()
+    mag_tbl = get_magnitudes(name_no_orientation).to_pandas()
     sig_tbl = Table.read(os.path.join(data_dir, "sigma/{}_sigma.fits".format(sim_name))).to_pandas()
-    cg_tbl = Table.read(os.path.join(data_dir, "cold_gas/{}_cold_gas.fits".format(name_no_orientation))).to_pandas()
+    cg_tbl = get_cold_gas(name_no_orientation).to_pandas()
     sf_tbl = Table.read(os.path.join(data_dir, "sf/{}_sf.fits".format(name_no_orientation))).to_pandas()
     lr_tbl = Table.read(os.path.join(data_dir, "lambda_r/{}_lambda_r.fits".format(sim_name)))
     am_tbl = get_angmom(name_no_orientation, orbit_sideon=is_sideon)
@@ -155,6 +180,9 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     for col in dm_tbl.columns:
         df[col] = dm_tbl[col]
+
+    for col in rt_tbl.columns:
+        df[col] = rt_tbl[col]
 
     for col in sig_tbl.columns:
         df[col] = sig_tbl[col]
@@ -375,7 +403,7 @@ def get_styles_from_peri(name, scatter=False):
         styles = ['o', '^', "s", 'd', '*']
     else:
         styles = ['-', '--', '-.', ':', LINESTYLES_DICT['densely dashdotdotted']]
-    if name.endswith('50'):
+    if name.endswith('p50'):
         st = styles[0]
     elif name.endswith('100'):
         st = styles[1]
@@ -461,14 +489,20 @@ def load_cached_tables(orbit_sideon, cache_file='data_d.pkl', force=False):
     return d
 
 
-def _get_data_dir():
-    return os.path.join(os.path.dirname(__file__), 'data')
+def _get_data_dir(subdir='data'):
+    return os.path.join(os.path.dirname(__file__), subdir)
+
 
 def get_pickle_data(cache_file):
     fullpath = os.path.join(_get_data_dir(), cache_file)
     logger.info(f"Loading cache {fullpath}")
     d = pickle.load(open(fullpath, 'rb'))
     return d
+
+
+def get_big_df(cache_file):
+    return pd.concat([v for v in get_pickle_data(cache_file).values()], axis=0)
+
 
 def load_tables(sim_name_list, orbit_sideon):
     """Load dataframes in a dictionary"""
@@ -479,30 +513,6 @@ def load_tables(sim_name_list, orbit_sideon):
 #         print(sim_name)
         d[shorten_name(sim_name)] = get_df(sim_name)
     return d
-
-
-def _pickle_filename(orbit_sideon, no_gas):
-    import datetime
-    today = datetime.date.today().strftime("%Y%m%d")
-    stem = 'data'
-    if no_gas:
-        stem += '_dng'
-    else:
-        stem += '_d'
-    if orbit_sideon:
-        stem += '_orbit_sideon'
-    cache_file = f'{stem}_{today}.pkl'
-    return cache_file
-
-
-def save_tables(sim_name_list, orbit_sideon, no_gas=False, cache_file=None):
-    """Save dictionary of dataframes in a pickle file"""
-    if cache_file is None:
-        cache_file = _pickle_filename(orbit_sideon, no_gas)
-    fullpath = os.path.join(_get_data_dir(), cache_file)
-    d = load_tables(sim_name_list=sim_name_list, orbit_sideon=orbit_sideon)
-    logger.info(f'Saving data to {fullpath}')
-    pickle.dump(d, open(fullpath, 'wb'))
 
 
 def get_tables(sim_name, orbit_sideon, data_dir=DATA_DIR):
@@ -565,11 +575,22 @@ def get_magnitudes(sim_name, data_dir=DATA_DIR):
     return tbl
 
 
+def get_dm(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'dm', sim_name+'_dm.fits'))
+    return tbl
+
+
+def get_tidal_radius(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'tidal_radius', sim_name+'_rt.fits'))
+    return tbl
+
+
 def get_lambda_r(sim_name, orbit_sideon, data_dir=DATA_DIR):
     appendix = "" if not orbit_sideon else "_orbit_sideon"
     filename = sim_name + appendix + '_lambda_r.fits'
     tbl = Table.read(os.path.join(data_dir, 'lambda_r', filename))
     return tbl
+
 
 def get_structure(sim_name, orbit_sideon, data_dir=DATA_DIR):
     appendix = "" if not orbit_sideon else "_orbit_sideon"
@@ -577,11 +598,13 @@ def get_structure(sim_name, orbit_sideon, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'structure', filename))
     return tbl
 
+
 def get_sigma(sim_name, orbit_sideon, data_dir=DATA_DIR):
     appendix = "" if not orbit_sideon else "_orbit_sideon"
     filename = sim_name + appendix + '_sigma.fits'
     tbl = Table.read(os.path.join(data_dir, 'sigma', filename))
     return tbl
+
 
 def get_cold_gas(sim_name, data_dir=DATA_DIR):
     filename = sim_name + '_cold_gas.fits'
