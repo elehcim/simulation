@@ -28,3 +28,13 @@ def halo_scaled_density(c, rho_c=RHO_C, overdensity_factor=200.0):
 def halo_scaled_radius(M, c, rho_c=RHO_C, overdensity_factor=200.0):
     R_s = ((M / (4.0/3.0 * np.pi * overdensity_factor * rho_c)) ** (1.0 / 3.0)) / c
     return R_s
+
+@u.quantity_input
+def compute_nfw_c(M: u.solMass):
+    if M < 1e8 * u.solMass:
+        print("Initializing NFW using Strigari2007 formula")
+        c = halo_Strigari2007(M)
+    else:
+        print("Initializing NFW using Wechsler2002 formula")
+        c = halo_Wechsler2002(M)
+    return c
