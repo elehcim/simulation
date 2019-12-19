@@ -163,14 +163,15 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     phot_tbl = get_phot(name_no_orientation, orbit_sideon=is_sideon, data_dir=data_dir).to_pandas()
 
-    struct_tbl = Table.read(os.path.join(data_dir, "structure/{}_structure.fits".format(sim_name))).to_pandas()
+    struct_tbl = get_structure(name_no_orientation, orbit_sideon=is_sideon).to_pandas()
     dm_tbl = get_dm(name_no_orientation).to_pandas()
     rt_tbl = get_tidal_radius(name_no_orientation).to_pandas()
+    vr_tbl = get_virial(name_no_orientation).to_pandas()
     mag_tbl = get_magnitudes(name_no_orientation).to_pandas()
-    sig_tbl = Table.read(os.path.join(data_dir, "sigma/{}_sigma.fits".format(sim_name))).to_pandas()
     cg_tbl = get_cold_gas(name_no_orientation).to_pandas()
-    sf_tbl = Table.read(os.path.join(data_dir, "sf/{}_sf.fits".format(name_no_orientation))).to_pandas()
-    lr_tbl = Table.read(os.path.join(data_dir, "lambda_r/{}_lambda_r.fits".format(sim_name)))
+    sf_tbl = get_sf(name_no_orientation).to_pandas()
+    sig_tbl = get_sigma(name_no_orientation, orbit_sideon=is_sideon).to_pandas()
+    lr_tbl = get_lambda_r(name_no_orientation, orbit_sideon=is_sideon)
     am_tbl = get_angmom(name_no_orientation, orbit_sideon=is_sideon)
 
     # Merge data
@@ -184,6 +185,9 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     for col in rt_tbl.columns:
         df[col] = rt_tbl[col]
+
+    for col in vr_tbl.columns:
+        df[col] = vr_tbl[col]
 
     for col in sig_tbl.columns:
         df[col] = sig_tbl[col]
@@ -349,6 +353,10 @@ def last_d2df(last_d):
 def get_sf_pos(sim_name):
     return pickle.load(open(os.path.join(DATA_DIR, 'sf', sim_name + "_sf_pos.pkl"), 'rb'))
 
+def get_sf(sim_name, data_dir=DATA_DIR):
+    name = os.path.join(data_dir, f"sf/{sim_name}_sf.fits")
+    logger.debug(f"Getting Star Formation table: {name}")
+    return Table.read(name)
 
 def get_mach(sim_name, data_dir=DATA_DIR):
     name = os.path.join(data_dir, f"mach/{sim_name}_mach.fits")
