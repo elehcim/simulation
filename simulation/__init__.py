@@ -17,6 +17,7 @@ from .util import np_printoptions, make_df_monotonic_again_using_reference_df, g
 from .plot.plot_trace import plot_trace, plot_trace_df
 from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
+from .simdata import SIM_NAME_DICT, SIMS_DIR
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -228,6 +229,14 @@ class Simulation:
             It can be useful if the snapshots contain an incorrect value of OmegaM0 for example.
         """
         # TODO join this __init__ with the Moria or Kicked class
+
+        # Shortcut
+        if sim_dir in SIM_NAME_DICT:
+            short_name = sim_dir
+            sim_dir = os.path.join(SIMS_DIR, SIM_NAME_DICT[sim_dir], 'out')
+        else:
+            short_name = None
+
         if sim_id is None:
             sim_id = sim_dir
         self.sim_id = sim_id

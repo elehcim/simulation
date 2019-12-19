@@ -16,6 +16,7 @@ from simulation.magnitude_transformation import get_sdss_u, get_sdss_g, get_sdss
 logger = setup_logger('simdata', logger_level='INFO')
 
 DATA_DIR = '/home/michele/sim/analysis/ng_ana/data'
+SIMS_DIR = '/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected'
 # TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
 
 SIM_NAME_DICT = {
@@ -582,6 +583,11 @@ def get_dm(sim_name, data_dir=DATA_DIR):
 
 def get_tidal_radius(sim_name, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'tidal_radius', sim_name+'_rt.fits'))
+    return tbl
+
+
+def get_virial(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'virial', sim_name+'_vr.fits'))
     return tbl
 
 
