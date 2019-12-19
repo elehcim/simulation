@@ -77,5 +77,5 @@ def tidal_radius(r, galaxy_mass, cluster_model, peri, apo=800):
     """
     ecc = (apo - peri) / (apo + peri)
     mass_cl = cluster_model.mass_enclosed_fast(r)
-    rt = peri * (galaxy_mass / (mass_cl*(3 + ecc)))**(1.0/3.0)
+    rt = r * (galaxy_mass / (mass_cl*(3 + ecc)))**(1.0/3.0)
     return rt
