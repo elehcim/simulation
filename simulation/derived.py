@@ -31,8 +31,33 @@ logger = logging.getLogger('simulation.derived')
 #   else
 #     return -98.;
 # }
-
-
+# //______________________________________________________________________________
+# /*!
+#  * log10(M_mgsol/M_fesol) = -0.261299, source: Grevesse et al. 2007 en 2010
+#  * formula: [Mg/Fe] = log10(M_Mg/M_Fe)-log10(M_Mg_sol/M_Fe_sol)
+#  *
+#  * \return [Mg/Fe] for this particle
+#  */
+# double
+# CStarParticle::mgfe() const
+# {
+#   return log10(mg() / fe()) + 0.261299;
+# }
+# //______________________________________________________________________________
+# /*!
+#  * [Fe/H] = log10(Fe_mass / particleMass) + 2.756433 (see Valcke masters thesis).
+#  * formula: [A/B] = log10(A/B)-log10(A_sol/B_sol)
+#  *
+#  * \return [Fe/H] for this particle. If Fe (or particle mass) is 0: -98.
+#  */
+# double
+# CStarParticle::feh() const
+# {
+#   if (fe() != 0. && mass() != 0.)
+#     return log10(fe() / mass()) + 2.756433;
+#   else
+#     return -98.;
+# }
 
 
 
@@ -45,7 +70,7 @@ logger = logging.getLogger('simulation.derived')
 
 # popIII_filt = filt.BandPass('feh', -5, 100)
 
-MgFe_corr = -0.261299
+MgFe_corr = -0.261299  # from Hyplot: log10(M_mgsol/M_fesol) = -0.261299, source: Grevesse et al. 2007 en 2010
 FeH_corr = -2.756433
 
 def _get_ftype(snap):
