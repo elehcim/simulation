@@ -83,24 +83,24 @@ def _get_ftype(snap):
 
 
 @pynbody.derived_array
-def feh(snap):
+def feh(snap, na_value=np.nan):
     ftype = _get_ftype(snap)
     if not ftype:
         raise RuntimeError("Derived array 'feh' is available only for family gas or star")
     name = 'fe' + ftype
     arr = np.log10(snap[name]/snap['mass']) - FeH_corr
-    arr[np.logical_or(snap[name] == 0.0, snap['mass'] == 0.0)] = -98.0
+    arr[np.logical_or(snap[name] == 0.0, snap['mass'] == 0.0)] = na_value  # -98.0
     return arr
 
 
 @pynbody.derived_array
-def mgfe(snap):
+def mgfe(snap, na_value=np.nan):
     ftype = _get_ftype(snap)
     if not ftype:
         raise RuntimeError("Derived array 'mgfe' is available only for family gas or star")
     name = 'mg' + ftype
     arr = np.log10(snap[name]/snap['fe' + ftype]) - MgFe_corr
-    arr[np.logical_or(snap[name] == 0.0, snap['fe' + ftype] == 0.0)] = 0.471782
+    arr[np.logical_or(snap[name] == 0.0, snap['fe' + ftype] == 0.0)] = na_value # 0.471782
     return arr
 
 
