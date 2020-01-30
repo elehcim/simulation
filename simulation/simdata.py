@@ -319,6 +319,11 @@ def get_df_last_rows(df, n_last=5):
             last_row[c] = np.nan
     return last_row
 
+def get_first_d(d):
+    first_d = dict()
+    for k, df in d.items():
+        first_d[k] = df.iloc[[0]]  # double brackets return Dataframe, not Series
+    return first_d
 
 def last_d2df(last_d):
     last_df = pd.concat(last_d).reset_index(level=1, drop=True)
