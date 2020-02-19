@@ -70,6 +70,10 @@ logger = logging.getLogger('simulation.derived')
 
 # popIII_filt = filt.BandPass('feh', -5, 100)
 
+# To avoid log(0). np.nan are possible too, but checks when interpolating have to be changed too.
+NA_VALUE_FEH = -98.0
+NA_VALUE_MGFE = 0.471782
+
 MgFe_corr = -0.261299  # from Hyplot: log10(M_mgsol/M_fesol) = -0.261299, source: Grevesse et al. 2007 en 2010
 FeH_corr = -2.756433
 
@@ -83,7 +87,7 @@ def _get_ftype(snap):
 
 
 @pynbody.derived_array
-def feh(snap, na_value=np.nan):
+def feh(snap, na_value=NA_VALUE_FEH):
     ftype = _get_ftype(snap)
     if not ftype:
         raise RuntimeError("Derived array 'feh' is available only for family gas or star")
@@ -94,7 +98,7 @@ def feh(snap, na_value=np.nan):
 
 
 @pynbody.derived_array
-def mgfe(snap, na_value=np.nan):
+def mgfe(snap, na_value=NA_VALUE_MGFE):
     ftype = _get_ftype(snap)
     if not ftype:
         raise RuntimeError("Derived array 'mgfe' is available only for family gas or star")
@@ -163,6 +167,10 @@ def acce_norm(self):
 @pynbody.derived_array
 def dt_acc(self, errtol=0.05, softening=0.03):
     return np.sqrt(2 * errtol * softening / self['acce_norm'])
+
+@pynbody.derived_array
+def v_norm(self):
+    return np.sqrt((self['vel'] ** 2).sum(axis=1))
 
 
 #2 * All.CourantFac * SphP[p].Hsml / SphP[p].MaxSignalVel;
