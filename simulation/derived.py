@@ -94,8 +94,9 @@ def feh(snap, na_value=NA_VALUE_FEH):
     name = 'fe' + ftype
     # arr = np.log10(snap[name]/snap['mass']) - FeH_corr
     out = np.ones_like(snap[name].view(np.ndarray))  # ones_like so that log10 does not complain
-    arr = np.log10(np.divide(snap[name], snap['mass'], out=out, where=np.logical_and(snap[name] != 0.0, snap['mass'] != 0.0))) - FeH_corr
-    arr[np.logical_or(snap[name] == 0.0, snap['mass'] == 0.0)] = na_value  # -98.0
+    na_value_condition = np.logical_or(snap[name] == 0.0, snap['mass'] == 0.0)
+    arr = np.log10(np.divide(snap[name], snap['mass'], out=out, where=np.logical_not(na_value_condition))) - FeH_corr
+    arr[na_value_condition] = na_value  # -98.0
     return arr
 
 
@@ -107,8 +108,9 @@ def mgfe(snap, na_value=NA_VALUE_MGFE):
     name = 'mg' + ftype
     # arr = np.log10(snap[name]/snap['fe' + ftype]) - MgFe_corr
     out = np.ones_like(snap[name].view(np.ndarray))  # ones_like so that log10 does not complain
-    arr = np.log10(np.divide(snap[name], snap['fe' + ftype], out=out, where=np.logical_and(snap[name] != 0.0, snap['fe' + ftype] != 0.0))) - MgFe_corr
-    arr[np.logical_or(snap[name] == 0.0, snap['fe' + ftype] == 0.0)] = na_value # 0.471782
+    na_value_condition = np.logical_or(snap[name] == 0.0, snap['fe' + ftype] == 0.0)
+    arr = np.log10(np.divide(snap[name], snap['fe' + ftype], out=out, where=np.logical_not(na_value_condition))) - MgFe_corr
+    arr[na_value_condition] = na_value # 0.471782
     return arr
 
 
