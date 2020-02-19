@@ -8,23 +8,33 @@ def snap():
 
 @pytest.mark.array_compare
 def test_feh(snap):
-    return snap.g['feh']
+    arr = snap.g['feh']
+    assert arr.units == pynbody.units.NoUnit()
+    return arr
 
 @pytest.mark.array_compare
 def test_feh_stars(snap):
-    return snap.s['feh']
+    arr = snap.s['feh']
+    assert arr.units == pynbody.units.NoUnit()
+    return arr
 
 @pytest.mark.array_compare
 def test_mgfe(snap):
-    return snap.g['mgfe']
+    arr = snap.g['mgfe']
+    assert arr.units == pynbody.units.NoUnit()
+    return arr
 
 @pytest.mark.array_compare
 def test_mgfe_stars(snap):
-    return snap.s['mgfe']
+    arr = snap.s['mgfe']
+    assert arr.units == pynbody.units.NoUnit()
+    return arr
 
 @pytest.mark.array_compare
 def test_neutral_fraction(snap):
-    return snap.g['neutral_fraction']
+    arr = snap.g['neutral_fraction']
+    assert pynbody.units.Unit("1.00e+00")
+    return arr
 
 
 ## TODO Don't forget stars
