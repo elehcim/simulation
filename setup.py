@@ -26,6 +26,7 @@ setup(name='simulation',
                               'save_center=simulation.save_center:main',
                               'derotate_simulation=simulation.derotate_simulation:main',
                               'save_data=simulation.save_data:main',
+                              'snap2mat=simulation.convert_snapshot_to_mat:main',
                               ]
                    }
       )
