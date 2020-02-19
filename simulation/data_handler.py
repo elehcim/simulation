@@ -74,4 +74,4 @@ class DataHandler:
 
 
     def data_big(self):
-        return pd.concat([v for v in self.data().values()], axis=0)
+        return pd.concat([v for v in self.data().values()], axis=0, sort=True)
