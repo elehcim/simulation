@@ -6,7 +6,6 @@ from scipy.interpolate import interpn
 
 
 def load_data(filename):
-    # with np.load('Halpha_data_all.npz') as data:
     with np.load(filename) as data:
         table_data  = data['table_data']
         dens_conv   = data['dens_conv']
@@ -86,6 +85,6 @@ if __name__ == '__main__':
     # print("Asked for:")
     # print('temp={}, feh={}, mgfe={}, z={}, rho={}'.format(*query))
 
-    result = get_HI(*query)
+    result = get_HI_vec(*query)
     # print("HI: {}".format(result[0]))
     print(result[0])
