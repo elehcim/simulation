@@ -50,7 +50,7 @@ def get_HI_vec(temp, feh, mgfe, z, rho):
     # (specific value does not matter, since in FeH=-99 case the MgFe
     # value does not matter, table values are the same)
     mymgfe = mgfe.copy()
-    mymgfe[np.where(feh == -98)] = _mgfe[0]
+    mymgfe[np.where(feh == -98.0)] = _mgfe[0]
 
     query = np.array([temp.in_units('K').view(np.ndarray),
             feh.view(np.ndarray),
