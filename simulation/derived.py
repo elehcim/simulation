@@ -194,9 +194,9 @@ def dt_courant(self, courant=0.1):
 # def dt_acc(self, errtol=0.05, softening=0.03):
 #     return (np.sqrt(2 * errtol * softening / self['acce_norm'] * pynbody.units.kpc)).in_units('kpc km**-1 s')
 
-from .interp.neutral_fraction import get_HI_vec
 @pynbody.derived_array
 def neutral_fraction(snap):
+    from .interp.neutral_fraction import get_HI_vec
     if snap._unifamily is not pynbody.family.gas:
         raise RuntimeError("Derived array 'neutral_fraction' is available only for family gas")
 
@@ -207,6 +207,18 @@ def neutral_fraction(snap):
             snap['rho'])
     return pynbody.array.SimArray(hi, units=pynbody.units.Unit("1"))
 
+@pynbody.derived_array
+def cii(snap):
+    from .interp.gas_emission import _table_interpolator_CII
+    if snap._unifamily is not pynbody.family.gas:
+        raise RuntimeError("Derived array 'cii' is available only for family gas")
+
+    _cii = _table_interpolator_CII.interpolate_vec(snap['temp'].in_units('K').view(np.ndarray),
+            snap['feh'].view(np.ndarray),
+            snap['mgfe'].view(np.ndarray),
+            np.ones_like(snap['feh']) * snap.ancestor.header.redshift,
+            snap['rho'].in_units('g cm**-3').view(np.ndarray))
+    return pynbody.array.SimArray(_cii, units=pynbody.units.Unit('erg s**-1 cm**-3'))
 
 @pynbody.derived_array
 def mass_HI(self):
