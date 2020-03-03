@@ -15,7 +15,6 @@ from .parsers.parse_info import parse_info
 from .snap_io import load_moria, load_kicked, load_sim, make_snaps_path, snapshot_file_list
 from .util import np_printoptions, make_df_monotonic_again_using_reference_df, get_sim_name
 from .plot.plot_trace import plot_trace, plot_trace_df
-from .sfh_in_box import plot_binned_sfh
 from .units import gadget_time_units, gadget_dens_units, gadget_vel_units
 from .simdata import SIM_NAME_DICT, SIMS_DIR
 
@@ -605,6 +604,7 @@ class Simulation:
     """
 
     def plot_gas_and_stars(self, i, velocity_proj=False, sfh=False, cog=False, starsize=None, **kwargs):
+        from .sfh_in_box import plot_binned_sfh
         """Create figure with gas and star rendering from pynbody"""
         snap = self.snap_list[i]
         snap.g['smooth'] /= 2
