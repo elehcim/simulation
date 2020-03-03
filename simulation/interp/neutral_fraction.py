@@ -63,9 +63,10 @@ def get_HI_vec(temp, feh, mgfe, z, rho):
     # print('Density conversion factor: {}'.format(conversion_factor))
     # print('Density conversion factor shape: {}'.format(conversion_factor.shape))
     # print(query[-1])
+    # Convert from g/cm3 to amu/cm3 (effectively n_H, hydrogen number density)
     query[-1] *= conversion_factor[0]
     # Adjust the density
-    query[-1][np.where(query[-1] > _dens.max())] = _dens.max()
+    # query[-1][np.where(query[-1] > _dens.max())] = _dens.max()
 
     # if query[-1] > _dens.max():
     #     query[-1] = _dens.max()
@@ -78,7 +79,7 @@ def get_HI_vec(temp, feh, mgfe, z, rho):
 if __name__ == '__main__':
     print_limits()
     parser = argparse.ArgumentParser("Get HI emission from gas particles")
-    parser.add_argument('values', type=float, nargs=5, help='Five floats: Temp, FeH, MgFe, Z, density (in g/cm**3 ??)')
+    parser.add_argument('values', type=float, nargs=5, help='Five floats: Temp, FeH, MgFe, Z, density (in g/cm**3)')
     args = parser.parse_args() #"10.0 0 0 0 0.01".split())
 
     query = args.values

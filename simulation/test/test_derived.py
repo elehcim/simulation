@@ -33,8 +33,6 @@ def test_mgfe_stars(snap):
 @pytest.mark.array_compare
 def test_neutral_fraction(snap):
     arr = snap.g['neutral_fraction']
+    # print(snap.g['rho'].in_units('g cm**-3'))
     assert pynbody.units.Unit("1.00e+00")
     return arr
-
-
-## TODO Don't forget stars
