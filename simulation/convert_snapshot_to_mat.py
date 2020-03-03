@@ -25,7 +25,7 @@ QUANTITIES = ('temp', 'u',
               'rho', 'mass', 'p',
               'feh', 'mgfe', 'zsph',
               'mass_HI', 'neutral_fraction',
-              'vx', 'vy', 'vz', 'v_norm', 'mach',
+              'vx', 'vy', 'vz', 'v_norm', 'mach', 'cii',
               )
 
 DENSITY_THRESHOLD = 6e-6
@@ -34,13 +34,6 @@ def convert_to_mat_all_info(snap_name, density_threshold, outfile_name, quantiti
     snap = pynbody.load(snap_name)
     gas = snap.gas
     filt = pynbody.filt.HighPass('rho', density_threshold)
-
-
-
-    # pos = gas[filt]['pos'].view(np.ndarray)
-    # ids = gas[filt]['iord'].view(np.ndarray)
-    # rho = gas[filt]['rho'].view(np.ndarray)
-
     data = dict()
     for qty in list(quantities) + ['iord', 'x', 'y', 'z']:
 
