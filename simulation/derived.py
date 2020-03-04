@@ -300,7 +300,7 @@ def sdss_band_from_johnson_Jester2005(s, band):
         g = s['v_mag'] + np.where(s['u_mag']-s['b_mag'] < 0,
                                   0.64 * (s['b_mag']-s['v_mag']) - 0.13,
                                   0.60 * (s['b_mag']-s['v_mag']) - 0.12)
-        g = np.where(s['r_mag']-s['i_mag'] < 1.15, r, np.nan)
+        g = np.where(s['r_mag']-s['i_mag'] < 1.15, g, np.nan)
         return g
     else:
         raise NotImplementedError(f'SDSS band {band} has not been implemented yet')
