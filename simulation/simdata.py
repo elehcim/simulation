@@ -593,6 +593,13 @@ def get_dm(sim_name, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'dm', sim_name+'_dm.fits'))
     return tbl
 
+def get_sf(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'sf', sim_name+'_sf.fits'))
+    return tbl
+
+def get_cii(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'cii', sim_name+'_cii.fits'))
+    return tbl
 
 def get_tidal_radius(sim_name, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'tidal_radius', sim_name+'_rt.fits'))
