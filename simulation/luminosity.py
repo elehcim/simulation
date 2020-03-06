@@ -3,9 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
 
-# from an old version of this table. The value in the table have been updated recently, this values are consistent with pynbody
-# http://mips.as.arizona.edu/~cnaw/sun.html
-sun_abs_magnitudes = {'u':5.56, 'b':5.45, 'v':4.8, 'r':4.46, 'i':4.1, 'j':3.66, 'h':3.32, 'k':3.28}
+# Values of pynbody (pynbody.luminosity.halo_lum) from http://www.ucolick.org/~cnaw/sun.html which does not exist anymore.
+# SUN_ABS_MAGNITUDES = {'u':5.56, 'b':5.45, 'v':4.8, 'r':4.46, 'i':4.1, 'j':3.66, 'h':3.32, 'k':3.28}
+
+# The following values from here: http://mips.as.arizona.edu/~cnaw/sun.html
+SUN_ABS_MAGNITUDES = {'u':5.61, 'b':5.44, 'v':4.81,
+                      'r':4.43, 'i':4.10,
+                      'j':3.67, 'h':3.32, 'k':3.27,
+                      'sdss_u':5.49, 'sdss_g':5.23, 'sdss_r':4.53, 'sdss_i':4.19, 'sdss_z':4.01}
 
 
 def kpc2pix(qty_kpc, width, resolution):
@@ -29,7 +34,7 @@ def convert_to_mag_arcsec2(image, band):
     1 square arcsecond is thus 2.35e-9 pc^2
     """
     pc2_to_sqarcsec = 2.3504430539466191e-09
-    img_mag_arcsec2 = sun_abs_magnitudes[band] - 2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
+    img_mag_arcsec2 = SUN_ABS_MAGNITUDES[band] - 2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
     return img_mag_arcsec2
 
@@ -75,7 +80,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
         pynbody.analysis.halo.center(snap.s, vel=False)
 
     lum_density_name = band + '_lum_density'
-    sun_abs_mag = sun_abs_magnitudes[band]
+    sun_abs_mag = SUN_ABS_MAGNITUDES[band]
     snap.s[lum_density_name] = (10 ** (-0.4 * (snap.s[band + "_mag"] - sun_abs_mag))) * snap.s['rho'] / snap.s['mass']
 
     snap.s[lum_density_name].units = snap.s['rho'].units/snap.s['mass'].units
@@ -126,7 +131,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
         if lum_pc2:
             cbar_label = '${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper())
         else:
-            cbar_label = '$\mu_{}$ [mag/arcsec$^2$]'.format(band.upper())
+            cbar_label = '$\mu_{{{}}}$ [mag/arcsec$^2$]'.format(band.upper())
 
         from mpl_toolkits.axes_grid1.axes_grid import CbarAxes
 
