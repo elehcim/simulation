@@ -87,6 +87,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
 
     try:
         # snap.s['smooth'] /= 2
+        # Projection, units imply projection
         pc2 = pynbody.plot.sph.image(snap.s, qty=lum_density_name, units='pc^-2',
                                  noplot=True, width=width, resolution=resolution)
     finally:
