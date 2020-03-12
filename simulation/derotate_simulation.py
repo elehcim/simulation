@@ -83,7 +83,7 @@ def get_all_keys(snap):
     ak.sort()
     return ak
 
-def rotate_snap(input_snap, quat, omega_mb, pivot, offset=None, on_orbit_plane=False):
+def rotate_snap(input_snap, quat, omega_mb, pivot, on_orbit_plane=False):
     f = input_snap
     s = pynbody.snapshot.new(dm=len(f.dm), gas=len(f.gas), star=len(f.star), order='gas,dm,star')
     # print(get_all_keys(f))
@@ -118,7 +118,8 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, offset=None, on_orbit_plane=F
 
     s.properties = f.properties.copy()
     s.properties['z'] = f.properties['z']
-    s.properties['boxsize'] = 60 * pynbody.units.kpc  ## FIXME why not copying boxsize of f
+    s.properties['boxsize'] = 10000 * pynbody.units.kpc  ## FIXME why not copying boxsize of f
+    s.header = f.header
     # print(s.properties)
     return s
 
