@@ -15,7 +15,6 @@ from simulation.luminosity import surface_brightness, convert_to_mag_arcsec2
 from simulation.util import setup_logger, get_sim_name, get_pivot, get_quat, get_omega_mb
 from simulation.angmom import faceon, sideon
 from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane, rotate_vec
-from simulation.derived import vz_disp
 
 R_EFF_BORDER = 10
 
