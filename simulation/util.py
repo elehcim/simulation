@@ -226,7 +226,7 @@ def make_df_monotonic_again_using_reference_df(df, ref):
 
 def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
     """Return a numpy array reading the omega_mb table in `quat_dir`"""
-    logger = setup_logger('get_omega_mb', logger_level='INFO')
+    logger = setup_logger('get_omega_mb', logger_level='DEBUG')
     if os.path.isdir(os.path.expanduser(omega_dir)):
         omega_dir = os.path.expanduser(omega_dir)
         omega_file = os.path.join(omega_dir, sim_name+'_quat.fits')
@@ -244,7 +244,7 @@ def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
 
 
 def get_quat_file(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
-    logger = setup_logger('get_quat_file', logger_level='INFO')
+    logger = setup_logger('get_quat_file', logger_level='DEBUG')
     if os.path.isdir(os.path.expanduser(quat_dir)):
         quat_dir = os.path.expanduser(quat_dir)
         quat_file = os.path.join(quat_dir, sim_name+'_quat.fits')
@@ -255,7 +255,7 @@ def get_quat_file(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
 
 def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
     """Return a numpy array reading the table in `quat_dir`"""
-    logger = setup_logger('get_quat', logger_level='INFO')
+    logger = setup_logger('get_quat', logger_level='DEBUG')
     quat_file = get_quat_file(sim_name, quat_dir)
     if os.path.isfile(quat_file):
         logger.info('Reading quaternion table: {}'.format(quat_file))
