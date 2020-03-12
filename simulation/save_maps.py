@@ -27,20 +27,21 @@ class Imaging:
         self.resolution = resolution
         self._snap = snap
 
-    # @functools.lru_cache(1)
+    @functools.lru_cache(1)
     def v_los_map(self):
-        # noplot is useless because with noplot==True it has no effects
+        # log is useless because with noplot==True it has no effects
         return pynbody.plot.sph.image(self._snap.s, qty='vz', av_z=True, width=self.width,
                                       resolution=self.resolution, noplot=True)
 
+
     # @functools.lru_cache(1)
-    def v_disp_norm_map(self):
-        return pynbody.plot.sph.image(self._snap.s, qty='v_disp', av_z=True, width=self.width,
-                                      resolution=self.resolution, noplot=True)
-    # @functools.lru_cache(1)
-    def v_disp_los_map(self):
-        return pynbody.plot.sph.image(self._snap.s, qty='vz_disp', av_z=True, width=self.width,
-                                      resolution=self.resolution, noplot=True)
+    def v_disp_los_map(self, av_z=True):
+        # Default to Volume average
+        self._snap.s['vz2'] = self._snap.s['vz']**2
+        avg_vz2 = pynbody.plot.sph.image(self._snap.s, qty='vz2', av_z=av_z, width=self.width,
+                                         resolution=self.resolution, noplot=True)
+        sigma = np.sqrt(avg_vz2 - self.v_los_map()**2)
+        return sigma
 
     @functools.lru_cache(1)
     def sb_lum(self, band='v'):
@@ -214,7 +215,7 @@ def single_snap_maps(snap_name,
     return im
 
 
-COLUMNS_UNITS = dict(vlos=u.km/u.s, sig_norm=u.km/u.s, sig_los=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
+COLUMNS_UNITS = dict(vlos=u.km/u.s, sig_los=u.km/u.s, mag=u.mag * u.arcsec**-2, lum=u.solLum * u.pc**-2)
 
 
 def get_derotation_parameters(sim_name, quat_dir, pivot, snap_list=None):
@@ -266,7 +267,7 @@ def simulation_maps(sim_path, width, resolution,
     nan_arr = np.empty((resolution, resolution), dtype=np.float32)
     nan_arr[:] = np.nan
     # TODO Use list of dicts. Use a separate function to write the table given that it requires a dict of list.
-    maps_dict = dict(vlos=list(), sig_norm=list(), sig_los=list(), mag=list(), lum=list())
+    maps_dict = dict(vlos=list(), sig_los=list(), mag=list(), lum=list())
 
     data_out_name = get_outname('data', out_dir=sim_name, band=band, width=width, resolution=resolution)
 
@@ -297,20 +298,18 @@ def simulation_maps(sim_path, width, resolution,
                                   )
             # TODO factor out this part of the code.
             vlos = im.v_los_map()
-            sig_norm = im.v_disp_norm_map()
             sig_los = im.v_disp_los_map()
             # lum = im.sb_lum(band)
             # mag = im.sb_mag(band)
             lum, mag = im.sb(band)
             # Map saving
             maps_dict['vlos'].append(vlos)
-            maps_dict['sig_norm'].append(sig_norm)
             maps_dict['sig_los'].append(sig_los)
             maps_dict['mag'].append(mag)
             maps_dict['lum'].append(lum)
 
             if save_single_image:
-                mtbl_loc = Table([vlos, sig_norm, sig_los, mag, lum], names=['vlos','sig_norm','sig_los','mag', 'lum'], meta={'time':time, 'time_u': str(u.kpc*u.s*u.km**-1), 'band':band})
+                mtbl_loc = Table([vlos, sig_los, mag, lum], names=['vlos','sig_los','mag', 'lum'], meta={'time':time, 'time_u': str(u.kpc*u.s*u.km**-1), 'band':band})
                 for col_name, col in mtbl_loc.columns.items():
                     col.unit = COLUMNS_UNITS[col_name]
 
