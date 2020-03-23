@@ -33,6 +33,8 @@ def setup_logger(logger_name=None, logger_level='DEBUG'):
 
     return logger
 
+logger = setup_logger('derotation_info', logger_level='INFO')
+
 
 @contextlib.contextmanager
 def np_printoptions(*args, **kwargs):
@@ -226,7 +228,6 @@ def make_df_monotonic_again_using_reference_df(df, ref):
 
 def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
     """Return a numpy array reading the omega_mb table in `quat_dir`"""
-    logger = setup_logger('get_omega_mb', logger_level='DEBUG')
     if os.path.isdir(os.path.expanduser(omega_dir)):
         omega_dir = os.path.expanduser(omega_dir)
         omega_file = os.path.join(omega_dir, sim_name+'_quat.fits')
@@ -234,7 +235,7 @@ def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
         omega_file = None
 
     if os.path.isfile(omega_file):
-        logger.info('Reading omega_mb table: {}'.format(omega_file))
+        logger.debug('Reading omega_mb table: {}'.format(omega_file))
         tbl = Table.read(omega_file)
         omega_mb_arr = np.array([tbl["omega_mb_x"], tbl["omega_mb_y"], tbl["omega_mb_z"]]).T
     else:
@@ -244,7 +245,6 @@ def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
 
 
 def get_quat_file(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
-    logger = setup_logger('get_quat_file', logger_level='DEBUG')
     if os.path.isdir(os.path.expanduser(quat_dir)):
         quat_dir = os.path.expanduser(quat_dir)
         quat_file = os.path.join(quat_dir, sim_name+'_quat.fits')
@@ -255,10 +255,9 @@ def get_quat_file(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
 
 def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
     """Return a numpy array reading the table in `quat_dir`"""
-    logger = setup_logger('get_quat', logger_level='DEBUG')
     quat_file = get_quat_file(sim_name, quat_dir)
     if os.path.isfile(quat_file):
-        logger.info('Reading quaternion table: {}'.format(quat_file))
+        logger.debug('Reading quaternion table: {}'.format(quat_file))
         tbl = Table.read(quat_file)
         quat_arr = np.array([tbl["q_w"], tbl["q_x"], tbl["q_y"], tbl["q_z"]]).T
     else:
@@ -278,7 +277,6 @@ def get_initial_rotation(sim_name):
 def get_pivot(sim_name,
               pivot_file='~/sim/MySimulations/ng/pivot.json',
               raise_if_cannot_derotate=True):
-    logger = setup_logger('get_pivot', logger_level='INFO')
     try:
         with open(os.path.expanduser(pivot_file), 'r') as f:
             d = json.load(f)['pivot']
