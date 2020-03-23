@@ -41,7 +41,7 @@ def convert_to_mag_arcsec2(image, band):
 
 def surface_brightness(snap, band='v', width=10, resolution=500, center=False, lum_pc2=False, noplot=False,
                        mag_filter=None, gaussian_sigma=None, subplot=None, show_cbar=True, cax=None,
-                       cmap_name='viridis', title=None, isophotes=0, label_contour=True, **kwargs):
+                       cmap_name='viridis', title=None, isophotes=0, label_contour=True, bad_pixels='black', **kwargs):
     """
     Plot and returns the surface brightness in mag/arcsec^2 as defined by `band`.
 
@@ -122,7 +122,7 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
         fig, ax = plt.gcf(), plt.gca()
 
     cmap = plt.get_cmap(cmap_name)
-    cmap.set_bad('black')
+    cmap.set_bad(bad_pixels)
 
     extent = (-width/2, width/2, -width/2, width/2)
     img = ax.imshow(sb, cmap=cmap, extent=extent, origin='lower', **kwargs)
