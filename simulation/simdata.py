@@ -15,8 +15,8 @@ from simulation.magnitude_transformation import get_sdss_u, get_sdss_g, get_sdss
 
 logger = setup_logger('simdata', logger_level='INFO')
 
-DATA_DIR = '/home/michele/sim/analysis/ng_ana/data'
-SIMS_DIR = '/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected'
+DATA_DIR = os.getenv('SIM_DATA_DIR', default='/home/michele/sim/analysis/ng_ana/data')
+SIMS_DIR = os.getenv('SIM_SIM_DIR', default='/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected')
 # TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
 
 SIM_NAME_DICT = {
