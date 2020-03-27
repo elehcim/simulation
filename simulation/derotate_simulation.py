@@ -79,7 +79,7 @@ def get_all_keys(snap):
     for fam in snap.families():
         ak = ak.union(snap[fam].loadable_keys()).union(snap[fam].keys()).union(snap[fam].family_keys())
     # These are the common keys for all the families.
-    ak = [k for k in ak if not k in ['pos', 'vel', 'acce', "x", "y", "z", "vx", "vy", "vz", 'acce_x', 'acce_y', 'acce_z']]
+    ak = [k for k in ak if not k in ['mass', 'pos', 'vel', 'acce', "x", "y", "z", "vx", "vy", "vz", 'acce_x', 'acce_y', 'acce_z']]
     ak.sort()
     return ak
 
@@ -106,11 +106,10 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, on_orbit_plane=False):
         print("Rotating on the plane of the orbit...")
         new_pos, new_vel = rotate_on_orbit_plane(new_pos, new_vel)
 
-    del s['pos']
-    s['pos'] = new_pos.astype(f['pos'].dtype)
-
-    del s['vel']
-    s['vel'] = new_vel.astype(f['vel'].dtype)
+    # fix dtypes. The problem seems that in pynbody.new, dtype is assigned to be np.float64 and can't be changed without casting
+    for k in 'mass', 'pos', 'vel':
+        del s[k]
+        s[k] = new_pos.astype(f[k].dtype)
 
     # print(f['pos'])
     # print(s['pos'])
