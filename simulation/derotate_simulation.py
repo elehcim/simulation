@@ -107,9 +107,14 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, on_orbit_plane=False):
         new_pos, new_vel = rotate_on_orbit_plane(new_pos, new_vel)
 
     # fix dtypes. The problem seems that in pynbody.new, dtype is assigned to be np.float64 and can't be changed without casting
-    for k in 'mass', 'pos', 'vel':
-        del s[k]
-        s[k] = new_pos.astype(f[k].dtype)
+    del s['pos']
+    s['pos'] = new_pos.astype(f['pos'].dtype)
+
+    del s['vel']
+    s['vel'] = new_vel.astype(f['vel'].dtype)
+
+    del s['mass']
+    s['mass'] = f['mass']
 
     # print(f['pos'])
     # print(s['pos'])
