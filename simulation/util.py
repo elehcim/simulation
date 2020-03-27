@@ -8,6 +8,12 @@ import json
 import astropy.units as u
 from astropy.table import Table
 
+DATA_DIR = os.getenv('SIM_DATA_DIR', default='/home/michele/sim/analysis/ng_ana/data')
+SIMS_DIR = os.getenv('SIM_SIM_DIR', default='/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected')
+
+PIVOT_FILE = os.path.join(os.path.dirname(__file__), 'pivot.json')
+DEROTATION_DIR = os.path.join(DATA_DIR, 'quat')
+
 loggers = {}
 
 
@@ -226,7 +232,7 @@ def make_df_monotonic_again_using_reference_df(df, ref):
     return new_df
 
 
-def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
+def get_omega_mb(sim_name, omega_dir=DEROTATION_DIR):
     """Return a numpy array reading the omega_mb table in `quat_dir`"""
     if os.path.isdir(os.path.expanduser(omega_dir)):
         omega_dir = os.path.expanduser(omega_dir)
@@ -244,7 +250,7 @@ def get_omega_mb(sim_name, omega_dir='~/sim/analysis/ng_ana/data/quat'):
     return omega_mb_arr
 
 
-def get_quat_file(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
+def get_quat_file(sim_name, quat_dir=DEROTATION_DIR):
     if os.path.isdir(os.path.expanduser(quat_dir)):
         quat_dir = os.path.expanduser(quat_dir)
         quat_file = os.path.join(quat_dir, sim_name+'_quat.fits')
@@ -253,7 +259,7 @@ def get_quat_file(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
     return quat_file
 
 
-def get_quat(sim_name, quat_dir='~/sim/analysis/ng_ana/data/quat'):
+def get_quat(sim_name, quat_dir=DEROTATION_DIR):
     """Return a numpy array reading the table in `quat_dir`"""
     quat_file = get_quat_file(sim_name, quat_dir)
     if os.path.isfile(quat_file):
@@ -275,7 +281,7 @@ def get_initial_rotation(sim_name):
 
 
 def get_pivot(sim_name,
-              pivot_file='~/sim/MySimulations/ng/pivot.json',
+              pivot_file=PIVOT_FILE,
               raise_if_cannot_derotate=True):
     try:
         with open(os.path.expanduser(pivot_file), 'r') as f:
@@ -292,8 +298,8 @@ def get_pivot(sim_name,
 
 
 def get_quat_pivot(sim_name,
-                   quat_dir='~/sim/analysis/ng_ana/data/quat',
-                   pivot_file='~/sim/MySimulations/ng/pivot.json',
+                   quat_dir=DEROTATION_DIR,
+                   pivot_file=PIVOT_FILE,
                    raise_if_cannot_derotate=True):
 
     quat_arr = get_quat(sim_name, quat_dir)
@@ -302,8 +308,8 @@ def get_quat_pivot(sim_name,
 
 
 def get_quat_omega_pivot(sim_name,
-                   quat_dir='~/sim/analysis/ng_ana/data/quat',
-                   pivot_file='~/sim/MySimulations/ng/pivot.json',
+                   quat_dir=DEROTATION_DIR,
+                   pivot_file=PIVOT_FILE,
                    raise_if_cannot_derotate=True):
 
     quat_arr = get_quat(sim_name, quat_dir)

@@ -8,15 +8,12 @@ import glob
 import pickle
 import warnings
 from astropy.table import Table
-from simulation.util import make_lowess, get_sim_name, setup_logger
+from simulation.util import make_lowess, get_sim_name, setup_logger, DATA_DIR, SIMS_DIR
 from simulation.derived import feh, mgfe, gas_metals, neutral_fraction
 from simulation.vlos_profiles import get_max_vlos
 from simulation.magnitude_transformation import get_sdss_u, get_sdss_g, get_sdss_r, get_sdss_i, get_sdss_z
 
 logger = setup_logger('simdata', logger_level='INFO')
-
-DATA_DIR = os.getenv('SIM_DATA_DIR', default='/home/michele/sim/analysis/ng_ana/data')
-SIMS_DIR = os.getenv('SIM_SIM_DIR', default='/home/michele/sim/MySimulations/ok_new_adhoc_or_not_affected')
 # TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
 
 SIM_NAME_DICT = {
