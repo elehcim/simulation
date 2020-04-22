@@ -580,6 +580,9 @@ def get_angmom(sim_name, orbit_sideon, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, folder, filename))
     return tbl
 
+def get_traj(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'traj', sim_name+'_traj.fits'))
+    return tbl
 
 def get_magnitudes(sim_name, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'magnitudes', sim_name+'_mag.fits'))

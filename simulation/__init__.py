@@ -323,8 +323,8 @@ class Simulation:
         locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
         x = self.trace.x[locations]
         y = self.trace.y[locations]
-        # z = self.trace.z[locations]
-        return pynbody.array.SimArray(np.vstack([x, y]), 'kpc').T
+        z = self.trace.z[locations]
+        return pynbody.array.SimArray(np.vstack([x, y, z]), 'kpc').T
 
     def get_rv_host(self):
         if self.dens_trace is not None:
