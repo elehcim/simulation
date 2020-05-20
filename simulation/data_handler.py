@@ -1,5 +1,5 @@
 import pandas as pd
-from simulation.simdata import get_pickle_data, get_last_d, get_first_d, last_d2df, _get_data_dir
+from simulation.simdata import get_pickle_data, get_last_d, get_first_d, last_d2df
 from functools import lru_cache
 
 def rtre_apo_idx_2(df_all):
