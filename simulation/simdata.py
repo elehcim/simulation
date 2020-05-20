@@ -7,7 +7,6 @@ import pickle
 import warnings
 from astropy.table import Table
 from simulation.util import make_lowess, get_sim_name, setup_logger, DATA_DIR, SIMS_DIR
-from simulation.vlos_profiles import get_max_vlos
 
 logger = setup_logger('simdata', logger_level='INFO')
 # TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
@@ -219,6 +218,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     # Max v_los
     try:
+        from simulation.vlos_profiles import get_max_vlos
         df['max_v_los'] = get_max_vlos(sim_name, is_sideon)
         avg_columns.append('max_v_los')
     # FIXME ok but this is not what I need
