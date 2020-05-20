@@ -1,17 +1,13 @@
 import os
-import simulation
 import pandas as pd
 import matplotlib.pylab as plt
 import numpy as np
-import tqdm
 import glob
 import pickle
 import warnings
 from astropy.table import Table
 from simulation.util import make_lowess, get_sim_name, setup_logger, DATA_DIR, SIMS_DIR
-from simulation.derived import feh, mgfe, gas_metals, neutral_fraction
 from simulation.vlos_profiles import get_max_vlos
-from simulation.magnitude_transformation import get_sdss_u, get_sdss_g, get_sdss_r, get_sdss_i, get_sdss_z
 
 logger = setup_logger('simdata', logger_level='INFO')
 # TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
@@ -636,6 +632,15 @@ def get_cold_gas(sim_name, data_dir=DATA_DIR):
     filename = sim_name + '_cold_gas.fits'
     tbl = Table.read(os.path.join(data_dir, 'cold_gas', filename))
     return tbl
+
+
+def get_vlos_map(sim_name, orbit_sideon, data_dir=DATA_DIR):
+    if orbit_sideon:
+        tbl = Table.read(os.path.join(data_dir, 'maps_orbit_sideon_sig_los', sim_name+'_maps.fits'))
+    else:
+        tbl = Table.read(os.path.join(data_dir, 'maps_orbit_faceon_sig_los', sim_name+'_maps.fits'))
+    vlos_map = tbl['vlos']
+    return vlos_map
 
 # PROF_TYPES = {"dens":"dens",
 #               "3d_dens": "dens", "dens"}
