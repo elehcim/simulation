@@ -9,7 +9,6 @@ import pprint
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data', 'AkuFigs')
 
-
 def get_filename_from_y(y, data_dir=DATA_DIR):
     files = glob.glob(os.path.join(data_dir, '*.png'))
     # print(files)
@@ -26,12 +25,11 @@ def get_filename_from_y(y, data_dir=DATA_DIR):
 class CMname:
     def __init__(self, filename):
         self.filename = filename
-        el = os.path.splitext(filename)[0].split('_')
+        el = os.path.splitext(os.path.basename(filename))[0].split('_')
+        self.elements = el
         self.x = el[0]
         self.y = el[1]
         self.extent = tuple(map(float, el[2:]))
-
-        self.elements = el
 
     def __repr__(self):
         return str(self.elements)
