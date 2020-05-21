@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # from collection import namedtuple
 import pprint
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), 'data', 'AkuFigs')
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'AkuFigs')
 
 def get_filename_from_y(y, data_dir=DATA_DIR):
     files = glob.glob(os.path.join(data_dir, '*.png'))
