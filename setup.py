@@ -10,7 +10,7 @@ setup(name='simulation',
                         # 'pynbody', 'numpy-quaternion',
                         'scikit-image', 'numba', 'tqdm', 'photutils'],
       packages=['simulation', 'simulation.plot', 'simulation.parsers', 'simulation.interp'],
-      package_data={'simulation': ['interp/tables/HI_data_all.npz', 'observationalData/*', 'data/*', 'AkuFigs/*', 'pivot.json']},
+      package_data={'simulation': ['interp/tables/HI_data_all.npz', 'observationalData/*', 'data/*', 'data/AkuFigs/*', 'pivot.json']},
       scripts=['simulation/scripts/get_maxid', 'simulation/scripts/read_header'],
       entry_points={
           'console_scripts': ['sim_duration=simulation.sim_duration:main',
