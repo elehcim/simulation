@@ -1,4 +1,4 @@
-import simulation
+import simulation.derived
 import pynbody
 import pytest
 
