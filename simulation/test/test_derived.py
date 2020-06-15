@@ -1,10 +1,11 @@
+import os
 import simulation.derived
 import pynbody
 import pytest
 
 @pytest.fixture
 def snap():
-    return pynbody.load('snapshot_0563_69p1')
+    return pynbody.load(os.path.join(os.path.dirname(__file__), 'snapshot_0563_69p1'))
 
 @pytest.mark.array_compare
 def test_feh(snap):

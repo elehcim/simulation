@@ -1,4 +1,5 @@
-import simulation
+import os
+import simulation.derived
 import pynbody
 import pytest
 import numpy as np
@@ -7,11 +8,11 @@ import numpy as np
 
 @pytest.fixture
 def snap():
-    return pynbody.load('snapshot_0563_69p1')
+    return pynbody.load(os.path.join(os.path.dirname(__file__), 'snapshot_0563_69p1'))
 
 @pytest.fixture
 def snap1():
-    return pynbody.load('snapshot_0001_69p1')
+    return pynbody.load(os.path.join(os.path.dirname(__file__), 'snapshot_0001_69p1'))
 
 # I'm testing with data from hyplot
 @pytest.mark.array_compare(atol=1e-57, rtol=1e-1)

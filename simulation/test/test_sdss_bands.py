@@ -1,10 +1,11 @@
+import os
 import simulation.derived
 import pynbody
 import pytest
 
 @pytest.fixture
 def snap():
-    return pynbody.load('snapshot_0563_69p1')
+    return pynbody.load(os.path.join(os.path.dirname(__file__), 'snapshot_0563_69p1'))
 
 def test_sdss_r(snap):
     # Jordi2006

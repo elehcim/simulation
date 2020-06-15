@@ -1,3 +1,4 @@
+import os
 import pytest
 import numpy as np
 
@@ -48,24 +49,24 @@ def test_lambda_profile(one_map, r_lim, bins):
 
 def test_lambda_r(one_map):
     flux, v_los, sig_los = one_map['lum'], one_map['vlos'], one_map['sig_los']
-    assert lambda_r(flux, v_los, sig_los) == 0.18987114457712997
+    assert lambda_r(flux, v_los, sig_los) == 0.15854747610882525
 
 def test_lambda_r_center(one_map, center):
     flux, v_los, sig_los = one_map['lum'], one_map['vlos'], one_map['sig_los']
-    assert lambda_r(flux, v_los, sig_los, center=center) == 0.19390877198811343
+    assert lambda_r(flux, v_los, sig_los, center=center) == 0.1616258631390128
 
 def test_lambda_r_r_lim(one_map, r_lim):
     flux, v_los, sig_los = one_map['lum'], one_map['vlos'], one_map['sig_los']
     width = one_map.meta['WIDTH']
-    assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=r_lim) == 0.18440312231219064
+    assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=r_lim) == 0.1541484147312302
     # Test what happens if I include the whole image as with simple lambda_r()
     assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=width*2) == lambda_r(flux, v_los, sig_los)
 
 def test_lambda_r_r_lim_center(one_map, r_lim, center):
     flux, v_los, sig_los = one_map['lum'], one_map['vlos'], one_map['sig_los']
     width = one_map.meta['WIDTH']
-    assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=r_lim, center=center) == 0.1891922557707294
-    assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=r_lim, center=None) == 0.18440312231219064
+    assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=r_lim, center=center) == 0.1578646884417137
+    assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=r_lim, center=None) == 0.1541484147312302
     assert lambda_r_r_lim(flux, v_los, sig_los, width=width, r_lim=width*2, center=center) == lambda_r(flux, v_los, sig_los, center=center)
 
 
