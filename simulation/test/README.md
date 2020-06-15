@@ -13,5 +13,7 @@ py.test --arraydiff-generate-path=reference
 From the `test/` directory run:
 
 ```bash
-py.test --cov=..
+py.test --cov=simulation --cov-report html --cov-report term
 ```
+
+the html report is in `htmlcov/index.html`
