@@ -273,7 +273,8 @@ def get_quat(sim_name, quat_dir=DEROTATION_DIR):
 
 
 def get_initial_rotation(sim_name):
-    """Get initial rotation due to the choice of the axis in the moving box technique"""
+    """Get initial rotation due to the choice of the axis in the moving box technique,
+    Depends on the pericenter distance only"""
     quat_file = get_quat_file(sim_name)
     tbl = Table.read(quat_file)
     quat_vp0 = np.quaternion(tbl.meta['QUAT_P0W'], tbl.meta["QUAT_P0X"], tbl.meta["QUAT_P0Y"], tbl.meta["QUAT_P0Z"])
