@@ -84,6 +84,7 @@ class Derotator:
         slicer = sim._snap_indexes
         quat_arr, omega_mb_arr, pivot = get_quat_omega_pivot(my_sim_name)
 
+        self.my_sim_name = my_sim_name
         self.quat_arr = quat_arr[slicer]
         self.omega_mb_arr = omega_mb_arr[slicer]
         self.omega_mb_0 = self.omega_mb_arr[0]
@@ -113,7 +114,7 @@ class Derotator:
 
         return derotate_pos_and_vel(snap['pos'], snap['vel'], quat, omega_mb, self.pivot)
 
-    def derotate_sim(self, sim, on_orbit_plane):
+    def derotate_sim(self, sim, on_orbit_plane, _initial_rotation=False):
         assert len(self.quat_arr) == len(sim)
         assert len(self.omega_mb_arr) == len(sim)
         for i, snap in enumerate(tqdm.tqdm(sim)):
@@ -124,6 +125,17 @@ class Derotator:
             logger.debug("omega_mb: {}".format(omega_mb))
             logger.debug("pivot:    {}".format(self.pivot))
             snap['pos'], snap['vel'] = derotate_pos_and_vel(snap['pos'], snap['vel'], quat, omega_mb, self.pivot)
+
+
+        # This is important in order to compare angular momentum from Moria to MovingBox
+        # It is important to do this before the on_orbit_plane rotation
+        if _initial_rotation:
+            logger.info('Apply initial rotation...')
+            quat_vp0 = get_initial_rotation(self.my_sim_name)
+            print(quat_vp0)
+            snap['pos'] = rotate_vec(snap['pos'], quat_vp0)
+            snap['vel'] = rotate_vec(snap['vel'], quat_vp0)
+
 
         if on_orbit_plane:
             logger.debug("Rotating on the plane of the orbit...")
