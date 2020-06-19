@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from simulation.parsers.parse_trace import parse_trace
 from simulation.units import gadget_time_units
-from simulation.util import get_sim_name, get_pivot, get_quat, get_omega_mb
+from simulation.util import get_sim_name, get_pivot, get_quat, get_omega_mb, get_quat_omega_pivot, get_initial_rotation
 import pynbody
 from astropy.table import Table
 import matplotlib.pyplot as plt
@@ -14,6 +14,69 @@ import argparse
 import gc
 
 ORBIT_PLANE_QUAT = 1/np.sqrt(2) * np.quaternion(1, -1, 0, 0)
+
+
+class Derotator:
+    def __init__(self, sim, sim_name=None):
+        """Create sliced tables of quaternions, omega. Get pivot too
+        They are sliced so that they can be indexed with an enumerate list on `sim`"""
+        my_sim_name = sim_name or get_sim_name(sim.sim_id)
+        # logger.info(f"Initialize derotator from {my_sim_name}...")
+
+        slicer = sim._snap_indexes
+        quat_arr, omega_mb_arr, pivot = get_quat_omega_pivot(my_sim_name)
+
+        self.my_sim_name = my_sim_name
+        self.quat_arr = quat_arr[slicer]
+        self.omega_mb_arr = omega_mb_arr[slicer]
+        self.omega_mb_0 = self.omega_mb_arr[0]
+        self.pivot = pivot
+        # print(self.quat_arr, self.omega_mb_arr, self.pivot)
+
+        # try:
+        #     quat_vp0 = get_initial_rotation(initial_rotation_simname)
+        #     logger.info('Apply initial rotation...')
+
+        #     print(quat_vp0)
+        # except Exception:
+        #     logger.warning('Cannot get initial rotation.')
+
+    def derotate_snap(self, snap, idx_snap, _initial_rotation=False):
+        """I dont like it, maybe a dict like structure would be better, but for now I leave it like that.
+        The assumpion here is to have the index synchronized with the slicer (snap_indexes) of the sim
+        """
+        quat = np.quaternion(*self.quat_arr[idx_snap])
+        omega_mb = self.omega_mb_arr[idx_snap]# - self.omega_mb_0
+
+        return derotate_pos_and_vel(snap['pos'], snap['vel'], quat, omega_mb, self.pivot)
+
+    def derotate_sim(self, sim, on_orbit_plane, _initial_rotation=False):
+        assert len(self.quat_arr) == len(sim)
+        assert len(self.omega_mb_arr) == len(sim)
+        for i, snap in enumerate(tqdm.tqdm(sim)):
+            quat = np.quaternion(*self.quat_arr[i, :])
+            omega_mb = self.omega_mb_arr[i, :]
+            # logger.info("Derotating...")
+            # logger.debug("quat:     {}".format(quat))
+            # logger.debug("omega_mb: {}".format(omega_mb))
+            # logger.debug("pivot:    {}".format(self.pivot))
+            snap['pos'], snap['vel'] = derotate_pos_and_vel(snap['pos'], snap['vel'], quat, omega_mb, self.pivot)
+
+
+        # This is important in order to compare angular momentum from Moria to MovingBox
+        # It is important to do this before the on_orbit_plane rotation
+        if _initial_rotation:
+            # logger.info('Apply initial rotation...')
+            quat_vp0 = get_initial_rotation(self.my_sim_name)
+            print(quat_vp0)
+            snap['pos'] = rotate_vec(snap['pos'], quat_vp0)
+            snap['vel'] = rotate_vec(snap['vel'], quat_vp0)
+
+
+        if on_orbit_plane:
+            # logger.debug("Rotating on the plane of the orbit...")
+            snap['pos'], snap['vel'] = rotate_on_orbit_plane(snap['pos'], snap['vel'])
+
 
 
 def rotate_vec(vec, quat):
