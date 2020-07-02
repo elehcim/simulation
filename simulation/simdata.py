@@ -59,6 +59,7 @@ NO_GAS_DICT = {
 
 SPECIAL_DICT = {
  '68p100r': 'mb.68002_p100_a800_r600_retrograde',
+ '69p100r': 'mb.69002_p100_a800_r600_retrograde',
  '69p200i': 'mb.69002_p200_a800_r600_inertial',
 
 }
