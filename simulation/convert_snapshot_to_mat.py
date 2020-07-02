@@ -2,7 +2,7 @@ import pynbody
 import numpy as np
 import os
 from scipy.io import savemat
-import simulation
+from simulation import derived
 import argparse
 
 def convert_snapshot_to_mat(snap_name, density_threshold, outfile_name):
@@ -25,7 +25,7 @@ QUANTITIES = ('temp', 'u',
               'rho', 'mass', 'p',
               'feh', 'mgfe', 'zsph',
               'mass_HI', 'neutral_fraction',
-              'vx', 'vy', 'vz', 'v_norm', 'mach', 'cii',
+              'vx', 'vy', 'vz', 'v_norm', 'mach', 'cii', 'smooth',
               )
 
 DENSITY_THRESHOLD = 6e-6
