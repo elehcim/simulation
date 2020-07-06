@@ -2,7 +2,7 @@ import numpy as np
 from skimage.measure import find_contours, EllipseModel
 import matplotlib.pyplot as plt
 import pynbody
-import simulation
+from simulation import derived
 from collections import namedtuple
 
 ELL_KEYS = ('xc', 'yc', 'a', 'b', 'theta')
@@ -93,3 +93,4 @@ if __name__ == '__main__':
     plt.plot(xy[:,0], xy[:,1])
     # plot_contours(cs, width, resolution)
     plt.gca().add_patch(ep)
+    plt.show()
