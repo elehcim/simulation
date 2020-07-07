@@ -8,16 +8,21 @@ from collections import namedtuple
 ELL_KEYS = ('xc', 'yc', 'a', 'b', 'theta')
 EllParams = namedtuple('EllParams', ELL_KEYS)
 
-def ellipsemodel2patch(e, edgecolor='red'):
+def ellipsemodel2patch(e, edgecolor='red', **kwargs):
+    if edgecolor in kwargs:
+        del kwargs['edgecolor']
     return ellipseparams2patch(e.params, edgecolor=edgecolor)
 
 
-def ellipseparams2patch(params, edgecolor='red'):
+def ellipseparams2patch(params, edgecolor='red', **kwargs):
+    if edgecolor in kwargs:
+        del kwargs['edgecolor']
+
     import matplotlib.patches as mpatches
     center = params[0:2]
     a, b = params[2:4]
     theta = params[4]
-    return mpatches.Ellipse(center, 2*a, 2*b, theta*180/np.pi, edgecolor=edgecolor, facecolor='none')
+    return mpatches.Ellipse(center, 2*a, 2*b, theta*180/np.pi, edgecolor=edgecolor, facecolor='none', **kwargs)
 
 
 def transform_contour(contour, width, resolution):
