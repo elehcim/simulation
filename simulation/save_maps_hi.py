@@ -14,6 +14,7 @@ from astropy import units as u
 from simulation.util import setup_logger, get_sim_name
 from simulation.save_maps import single_snap_maps, parse_args, get_derotation_parameters, write_out_table
 from simulation.simdata import get_center
+from simulation import derived
 
 logger = setup_logger('save_maps_hi', logger_level='INFO')
 
