@@ -118,8 +118,11 @@ def compute_t_period(sim_name, df=None):
     # print(first_pericenter_time)
 
     # Put 0 of the scale on first pericenter
+    # t_period: 0=first pericenter, 0.5=apocenter, 1=second pericenter
     df['t_period'] = (df['t']-first_pericenter_time)/radial_period
+    # orbital_phase: 0=around pericenter, 1=around apocenter, 2=around pericenter
     df['orbital_phase'] = pd.cut(df['t_period'], [-0.25, 0.25, 0.75, 1.25, 1.75, 2.25], labels=False)
+    # offset_orbital_phase: 0=first infall, 1=after peir towards apo, 2=second infall (before peri)
     df['offset_orbital_phase'] = pd.cut(df['t_period'], np.array([-0.25, 0.25, 0.75, 1.25, 1.75, 2.25])-0.25, labels=False)
     return df
 
