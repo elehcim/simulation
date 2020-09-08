@@ -55,6 +55,8 @@ def fit_ellipse_to_contour(contour):
     ellipse.estimate(contour)
     return ellipse
 
+class NoIsophoteFitError(Exception):
+    pass
 
 def fit_contour(img, threshold, width, resolution):
     cs = find_contours(img, threshold)
@@ -67,6 +69,8 @@ def fit_contour(img, threshold, width, resolution):
 
     ell = fit_ellipse_to_contour(xy)
     # print(ell.params)
+    if ell.params is None:
+        raise NoIsophoteFitError(f"Can't fit isophote {threshold}")
     return EllParams(*ell.params)
 
 if __name__ == '__main__':
