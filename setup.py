@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='simulation',
-      version='0.4',
+      version='0.4.1',
       description='A package to analyze Gadget2 simulations',
       license="MIT",
       author='Michele Mastropietro',
