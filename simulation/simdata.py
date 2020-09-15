@@ -101,6 +101,8 @@ def compute_t_period(sim_name, df=None):
     """Basically return `tables` with some additional useful orbit related columns.
     You can specify the version (orbit_sideon or not) of the table through parameter `df`.
     But this does not change the result of the added columns because they are independent from the point of view.
+
+    Note: Trajectory is computed using only x, y coordinates
     """
 
     if df is None:

@@ -1,5 +1,6 @@
 import pynbody
 import numpy as np
+import copy
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
 
@@ -121,7 +122,8 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
     else:
         fig, ax = plt.gcf(), plt.gca()
 
-    cmap = plt.get_cmap(cmap_name)
+    # Copy to remove deprecation warning
+    cmap = copy.copy(plt.get_cmap(cmap_name))
     cmap.set_bad(bad_pixels)
 
     extent = (-width/2, width/2, -width/2, width/2)
