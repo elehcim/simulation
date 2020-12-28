@@ -37,6 +37,9 @@ def convert_to_mag_arcsec2(image, band):
     pc2_to_sqarcsec = 2.3504430539466191e-09
     img_mag_arcsec2 = SUN_ABS_MAGNITUDES[band] - 2.5 * np.log10(image.in_units("pc^-2") * pc2_to_sqarcsec)
     img_mag_arcsec2.units = pynbody.units.arcsec**-2
+    # equivalently: -2.5*log10(2.3504430539466191e-09) = 21.572
+    # so: img_mag_arcsec2 = SUN_ABS_MAGNITUDES[band] + 21.572 - 2.5 * np.log10(image.in_units("pc^-2"))
+    # as in wikipedia: https://en.wikipedia.org/wiki/Surface_brightness#Relationship_to_physical_units
     return img_mag_arcsec2
 
 
