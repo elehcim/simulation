@@ -135,9 +135,9 @@ def surface_brightness(snap, band='v', width=10, resolution=500, center=False, l
 
     if show_cbar:
         if lum_pc2:
-            cbar_label = '${0}I_{1}$ [L$_{{\odot,{1}}}$/pc$^2$]'.format("Log" if log else "", band.upper())
+            cbar_label = '${0}I_{1}$ (L$_{{\odot,{1}}}$/pc$^2$)'.format("Log" if log else "", band.upper())
         else:
-            cbar_label = '$\mu_{{{}}}$ [mag/arcsec$^2$]'.format(band.upper())
+            cbar_label = '$\mu_{{{}}}$ (mag/arcsec$^2$)'.format(band.upper())
 
         from mpl_toolkits.axes_grid1.axes_grid import CbarAxes
 
@@ -241,7 +241,7 @@ def color_plot(snap, bands=('b','i'), width=10, resolution=500, mag_filter=29, g
     ax.set_xlabel('x/kpc')
     ax.set_ylabel('y/kpc')
     color_name = '{}-{}'.format(*bands)
-    cbar.set_label('{} [mag/arcsec$^2$]'.format(color_name.upper()))
+    cbar.set_label('{} (mag/arcsec$^2$)'.format(color_name.upper()))
     # cont = ax.contour(img, cmap='flag', extent=(-width/2, width/2, -width/2, width/2))
     if title is not None:
         ax.set_title(title)
