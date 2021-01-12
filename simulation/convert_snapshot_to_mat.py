@@ -7,8 +7,7 @@ import argparse
 
 def convert_snapshot_to_mat(snap_name, density_threshold, outfile_name):
     """Take a snapshot, cut on the density and provide a mat file with particle positions (x,y,z) and IDs"""
-
-    snap = pynbody.load(snap_name)
+    snap = pynbody.load(snap_name, ignore_cosmo=True)
     gas = snap.gas
     filt = pynbody.filt.HighPass('rho', density_threshold)
 
@@ -31,7 +30,7 @@ QUANTITIES = ('temp', 'u',
 DENSITY_THRESHOLD = 6e-6
 
 def convert_to_mat_all_info(snap_name, density_threshold, outfile_name, quantities=QUANTITIES):
-    snap = pynbody.load(snap_name)
+    snap = pynbody.load(snap_name, ignore_cosmo=True)
     gas = snap.gas
     filt = pynbody.filt.HighPass('rho', density_threshold)
     data = dict()

@@ -1,13 +1,13 @@
 from setuptools import setup
 
 setup(name='simulation',
-      version='0.4.2',
+      version='0.4.3',
       description='A package to analyze Gadget2 simulations',
       license="MIT",
       author='Michele Mastropietro',
       author_email='michele.mastropietro@ugent.be',
       install_requires=['astropy', 'pandas', 'matplotlib', 'scipy', 'numpy',
-                        # 'pynbody', 'numpy-quaternion',
+                        'pynbody', 'numpy-quaternion',
                         'scikit-image', 'numba', 'tqdm', 'photutils'],
       packages=['simulation', 'simulation.plot', 'simulation.parsers', 'simulation.interp'],
       package_data={'simulation': ['interp/tables/*', 'observationalData/*', 'data/*', 'data/AkuFigs/*', 'pivot.json']},
