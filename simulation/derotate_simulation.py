@@ -146,7 +146,7 @@ def get_all_keys(snap):
     ak.sort()
     return ak
 
-def rotate_snap(input_snap, quat, omega_mb, pivot, on_orbit_plane=False):
+def rotate_snap(input_snap, quat, omega_mb, pivot, on_orbit_plane=False, offset=None):
     f = input_snap
     s = pynbody.snapshot.new(dm=len(f.dm), gas=len(f.gas), star=len(f.star), order='gas,dm,star')
     # print(get_all_keys(f))
@@ -163,7 +163,7 @@ def rotate_snap(input_snap, quat, omega_mb, pivot, on_orbit_plane=False):
     for k in get_all_keys(f.s):
         s.s[k] = f.s[k]
 
-    new_pos, new_vel = derotate_pos_and_vel(f['pos'], f['vel'], quat, omega_mb, pivot)
+    new_pos, new_vel = derotate_pos_and_vel(f['pos'], f['vel'], quat, omega_mb, pivot, offset)
 
     if on_orbit_plane:
         print("Rotating on the plane of the orbit...")
@@ -205,8 +205,12 @@ def derotate_pos_and_vel(pos, vel, quat, omega_mb, pivot, offset=None):
     return new_pos, new_vel
 
 
-def write_rotated_snap(s, filename):
-    s.write(fmt=pynbody.snapshot.gadget.GadgetSnap, filename=filename, use_time=True)
+def write_rotated_snap(s, filename, out_mat=False):
+    if out_mat:
+        from simulation.convert_snapshot_to_mat import convert_to_mat_all_info
+        convert_to_mat_all_info(s, density_threshold=0.0, outfile_name=filename+".mat")
+    else:
+        s.write(fmt=pynbody.snapshot.gadget.GadgetSnap, filename=filename, use_time=True)
 
 
 def get_quaternions(trace):
@@ -214,7 +218,7 @@ def get_quaternions(trace):
     return quaternion.as_quat_array(quat)
 
 
-def derotate_simulation(sim_path, new_path, snap_indexes=slice(None), on_orbit_plane=False):
+def derotate_simulation(sim_path, new_path, snap_indexes=slice(None), on_orbit_plane=False, out_mat=False):
     sim = simulation.Simulation(sim_path, snap_indexes=snap_indexes)
 
     sim_name = get_sim_name(sim_path)
@@ -243,14 +247,15 @@ def derotate_simulation(sim_path, new_path, snap_indexes=slice(None), on_orbit_p
         # print(snap)
         # print(q)
         # print(pivot)
-        s_rot = rotate_snap(snap, q, om_mb, pivot, offset[i], on_orbit_plane)
+        s_rot = rotate_snap(snap, q, om_mb, pivot, on_orbit_plane, offset[i])
         # This requires a change in source code of pynbody since it seems not possible
         # to set the dtype of the initial arrays as created by new()
         assert s_rot['mass'].dtype == np.float32
         assert s_rot['pos'].dtype == np.float32
         assert s_rot['vel'].dtype == np.float32
 
-        write_rotated_snap(s_rot, os.path.join(new_path, os.path.basename(snap._filename)))
+        out_name = os.path.join(new_path, os.path.basename(snap._filename))
+        write_rotated_snap(s_rot, out_name, out_mat)
         del snap
         sim.snap_list[i] = None  # destroying references to the snap and the list
         if i % 10 == 0:
@@ -261,6 +266,7 @@ def parse_args(cli=None):
     parser.add_argument(dest='sim_path', help="Path to the simulation snapshots")
     parser.add_argument("-o", '--outpath', help="Folder of the derotated snapshots", default=None)
     parser.add_argument('--on-orbit-plane', help='Rotate snaps to be viewed from the orbit plane', action='store_true')
+    parser.add_argument('--out-mat', help='Output matfile', action='store_true')
     parser.add_argument('--start', help="First snap index", default=None, type=int)
     parser.add_argument('--stop', help="Last snap index", default=None, type=int)
     parser.add_argument('-n', help="Take one every n snapshots", default=None, type=int)
@@ -278,9 +284,11 @@ def main(cli=None):
         new_path = args.outpath
     if args.snap_idxs is not None:
         print("Getting snapshots: ", args.snap_idxs)
-        derotate_simulation(args.sim_path, new_path, args.snap_idxs, on_orbit_plane=args.on_orbit_plane)
+        derotate_simulation(args.sim_path, new_path, args.snap_idxs,
+                            on_orbit_plane=args.on_orbit_plane, out_mat=args.out_mat)
     else:
-        derotate_simulation(args.sim_path, new_path, slice(args.start, args.stop, args.n), on_orbit_plane=args.on_orbit_plane)
+        derotate_simulation(args.sim_path, new_path, slice(args.start, args.stop, args.n),
+                            on_orbit_plane=args.on_orbit_plane, out_mat=args.out_mat)
 
 
 if __name__ == '__main__':
