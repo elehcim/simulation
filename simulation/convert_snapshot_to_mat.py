@@ -29,8 +29,11 @@ QUANTITIES = ('temp', 'u',
 
 DENSITY_THRESHOLD = 6e-6
 
-def convert_to_mat_all_info(snap_name, density_threshold, outfile_name, quantities=QUANTITIES):
+def convert_to_mat_all_info_snap_name(snap_name, density_threshold, outfile_name, quantities=QUANTITIES):
     snap = pynbody.load(snap_name, ignore_cosmo=True)
+    convert_to_mat_all_info(snap, density_threshold, outfile_name, quantities)
+
+def convert_to_mat_all_info(snap, density_threshold, outfile_name, quantities=QUANTITIES):
     gas = snap.gas
     filt = pynbody.filt.HighPass('rho', density_threshold)
     data = dict()
@@ -57,7 +60,7 @@ def main(cli=None):
         outfile = os.path.basename(args.snap_name) + '.mat'
     else:
         outfile = args.outfile_name
-    convert_to_mat_all_info(args.snap_name, args.density_threshold, outfile)
+    convert_to_mat_all_info_snap_name(args.snap_name, args.density_threshold, outfile)
 
 if __name__ == '__main__':
     main()
