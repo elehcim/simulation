@@ -281,7 +281,7 @@ class Simulation:
                 snap_name_list = snap_name_list[snap_indexes]
             logger.info("Taking {} snapshots ({})".format(len(snap_name_list), snap_indexes))
 
-        snap_list = list(pynbody.load(snap) for snap in snap_name_list)
+        snap_list = list(pynbody.load(snap, ignore_cosmo=True) for snap in snap_name_list)
 
         logger.info('Loading cosmological parameters')
         for i, snap in enumerate(snap_list):
