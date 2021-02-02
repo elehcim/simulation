@@ -104,6 +104,8 @@ class Derotator:
     #     L = rotate_vec(L, quat_vp0)
     #     Lg = rotate_vec(Lg, quat_vp0)
 
+    def __repr__(self):
+        return f"<Derotator> {self.my_sim_name}\n pivot: {self.pivot}\n quat_arr: {self.quat_arr}"
 
     def derotate_snap(self, snap, idx_snap, _initial_rotation=False):
         """I dont like it, maybe a dict like structure would be better, but for now I leave it like that.
