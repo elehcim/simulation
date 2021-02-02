@@ -74,4 +74,15 @@ class DataHandler:
 
 
     def data_big(self):
-        return pd.concat([v for v in self.data().values()], axis=0, sort=True)
+        db = pd.concat([v for v in self.data().values()], axis=0, sort=True)
+        # Uniques are returned in order of appearance.
+        # Even if pd.unique does NOT sort for us, they appear in sorted order, so it's ok.
+        # concat inspired from here:https://stackoverflow.com/a/35850749
+        sim_label = db['name'].str.slice(stop=2).str.cat(db['pericenter'].astype(str), sep='p')
+        # from here: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.astype.html
+        sim_label_dtype = pd.api.types.CategoricalDtype(sim_label.unique(), ordered=True)
+        db['sim_label'] = sim_label.astype(sim_label_dtype)
+        name_dtype = pd.api.types.CategoricalDtype(db['name'].unique(), ordered=True)
+        db['name'] = db['name'].astype(name_dtype)
+
+        return db
