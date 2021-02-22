@@ -7,6 +7,8 @@ import pickle
 import warnings
 from astropy.table import Table
 from simulation.util import make_lowess, get_sim_name, setup_logger, DATA_DIR, SIMS_DIR
+from simulation.units import gadget_dens_units
+from pynbody.units import Unit
 
 logger = setup_logger('simdata', logger_level='INFO')
 # TABLE_LIST_DIR = '/home/michele/sim/analysis/ng_ana/data/tables/general/'
@@ -173,6 +175,8 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     am_tbl = get_angmom(name_no_orientation, orbit_sideon=is_sideon)
     hi_tbl = get_HI_data(name_no_orientation, orbit_sideon=is_sideon)
     cii_tbl = get_cii(name_no_orientation)
+    traj_tbl = get_traj(name_no_orientation)
+
     # Merge data
     for col in phot_tbl.columns:
         # skip this:
@@ -220,6 +224,18 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     for c in ('a', 'b', 'xc', 'yc'):
         df[c + '_hi'] = hi_tbl[c]
+
+    for c in 'x,y,z,vx,vy,vz,temp_host,rho_host,v_host'.split(','):
+        df[c] = traj_tbl[c]
+
+    df['rho_host'] = df.rho_host * gadget_dens_units.in_units('amu cm**-3')
+    k_B = 1.380649e-23 # J/K
+    ## mean constituent mass, FIXME teke into account ionization given temperature.
+    MU_C = 0.58 # amu   ## fully ionized
+    # (Unit('amu cm**-3 J K**-1 K amu**-1').in_units('Pa')) == 1e6
+
+    df['p_host'] = df.rho_host * k_B * df.temp_host / MU_C * (Unit('amu cm**-3 J K**-1 K amu**-1').in_units('Pa'))
+    df['RPS'] = df.v_host**2 * df.rho_host * (Unit('km**2 s**-2 amu cm**-3').in_units('Pa'))
 
     df['cii'] = cii_tbl['cii']
 
