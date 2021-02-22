@@ -171,7 +171,8 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     sig_tbl = get_sigma(name_no_orientation, orbit_sideon=is_sideon).to_pandas()
     lr_tbl = get_lambda_r(name_no_orientation, orbit_sideon=is_sideon)
     am_tbl = get_angmom(name_no_orientation, orbit_sideon=is_sideon)
-
+    hi_tbl = get_HI_data(name_no_orientation, orbit_sideon=is_sideon)
+    cii_tbl = get_cii(name_no_orientation)
     # Merge data
     for col in phot_tbl.columns:
         # skip this:
@@ -213,6 +214,14 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     for c in ('rms_err', 'exit_mode', 'numiter', 'r_eff'):
         df['fit_' + c] = struct_tbl[c]
+
+    for c in ('m_hi', 'r_hi'):
+        df[c] = hi_tbl[c]
+
+    for c in ('a', 'b', 'xc', 'yc'):
+        df[c + '_hi'] = hi_tbl[c]
+
+    df['cii'] = cii_tbl['cii']
 
     df['name'], df['pericenter'] = get_name_peri(sim_name)
 
