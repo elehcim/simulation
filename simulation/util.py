@@ -182,7 +182,7 @@ def get_no_gti_intervals(info):
     Example:
     -------
     >>> test_info = pd.DataFrame({'step': [0, 1, 2, 1, 2, 3, 4, 5, 3, 4, 5, 6, 7]})
-    >>> idx_restart, restart_point = sget_no_gti_intervals(test_info)
+    >>> idx_restart, restart_point = get_no_gti_intervals(test_info)
     >>> idx_restart
         [1, 5]
     >>> restart_point.index
@@ -210,7 +210,7 @@ def prune_no_gti(df, idx_restart, restart_points):
     na = df.copy()
     for a, b in zip(idx_restart, restart_points.index):
         na = na.drop(df.index[slice(a,b)])
-    return na
+    return na.reset_index(drop=True)
 
 
 def make_info_monotonic_again(info):
