@@ -1,6 +1,9 @@
 import pandas as pd
 from simulation.simdata import get_pickle_data, get_last_d, get_first_d, last_d2df
 from functools import lru_cache
+from simulation.util import setup_logger
+
+logger = setup_logger('data_handler', logger_level='INFO')
 
 def rtre_apo_idx_2(df_all):
     """Pick the first occurence of the tidal radius over effective radius criterion"""
@@ -30,12 +33,15 @@ def cut_out_rt_criterion(df_big):
 class DataHandler:
     @classmethod
     def show_data_files(cls):
+        """Show data files sorted by date"""
         import os
         import glob
         from simulation.simdata import _get_data_dir
-        return tuple(sorted(map(os.path.basename, glob.glob(os.path.join(_get_data_dir(), '*.pkl')))))
+        pkl_files = list(map(os.path.basename, glob.glob(os.path.join(_get_data_dir(), '*.pkl'))))
+        pkl_files.sort(key=lambda x: x.split('_')[-1])
+        return tuple(pkl_files)
 
-    def __init__(self, cache_file):
+    def __init__(self, cache_file=None):
         """
         Quickly get data from various sources, using simulation.simdata
 
@@ -43,6 +49,9 @@ class DataHandler:
         ----------
         cache_file : str
         """
+        if cache_file is None:
+            logger.info(f"Getting most recent cache file")
+            cache_file = self.show_data_files()[-1]
         self.cache_file = cache_file
 
     @lru_cache(1)
