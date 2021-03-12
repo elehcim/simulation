@@ -148,6 +148,27 @@ def get_center(sim_name, data_dir=DATA_DIR):
     return cen
 
 
+def get_peri_idx(traj):
+    r = np.linalg.norm(np.vstack([traj['x'],traj['y']]).T, axis=1)
+    # print(r)
+    # peri = r.argmin()
+    zero_crossings = np.where(np.diff(np.signbit(np.diff(r))))[0]
+    try:
+        # idx_peri = zero_crossings[0]  # in pandas first element is always 0,here we use np and the first zero_crossing is actually the pericenter
+        idx_peri1 = zero_crossings[0]  # pericenter
+        idx_peri2 = zero_crossings[2]
+
+    except IndexError as e:
+        st.warning('There seems no pericenter yet: (' + str(e) +')')
+        idx_peri1 = idx_peri2 = 0
+
+    # idx_peri1 = zero_crossings[0]  # pericenter
+    # idx_peri2 = zero_crossings[2]
+    # idx_peri3 = zero_crossings[3]  # first element is always 0, so the second is the actual pericenter
+    return idx_peri1, idx_peri2
+
+
+
 def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     # TODO improve API with explicit `orbit_sideon` parameter
     logger.info("Merging dataframes")
@@ -225,8 +246,12 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
     for c in ('a', 'b', 'xc', 'yc'):
         df[c + '_hi'] = hi_tbl[c]
 
-    for c in 'x,y,z,vx,vy,vz,temp_host,rho_host,v_host'.split(','):
+    for c in 'x,y,z,vx,vy,vz,temp_host,rho_host,v_host,redshift'.split(','):
         df[c] = traj_tbl[c]
+
+    peri_idx1, peri_idx2 = get_peri_idx(traj_tbl)
+    df['tp1'] = traj_tbl['t']-traj_tbl['t'][peri_idx1]
+    df['tp2'] = traj_tbl['t']-traj_tbl['t'][peri_idx2]
 
     df['rho_host'] = df.rho_host * gadget_dens_units.in_units('amu cm**-3')
     k_B = 1.380649e-23 # J/K
@@ -309,6 +334,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
         df['orbital_phase'] = pd.cut(df.t_period, t_period_intervals, labels=False)
         df['offset_orbital_phase'] = pd.cut(df.t_period, t_period_intervals - 0.25, labels=False)
+
             # labels=(1, 2, 3, 4))
             # labels=('peri_1', 'apo_1', 'peri_2', 'apo_2' ))
         # 0 on start of simulation
@@ -626,6 +652,10 @@ def get_sf(sim_name, data_dir=DATA_DIR):
 
 def get_cii(sim_name, data_dir=DATA_DIR):
     tbl = Table.read(os.path.join(data_dir, 'cii', sim_name+'_cii.fits'))
+    return tbl
+
+def get_pca(sim_name, data_dir=DATA_DIR):
+    tbl = Table.read(os.path.join(data_dir, 'pc', sim_name+'_pca.fits'))
     return tbl
 
 def get_tidal_radius(sim_name, data_dir=DATA_DIR):
