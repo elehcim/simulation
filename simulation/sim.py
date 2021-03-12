@@ -259,6 +259,7 @@ class Simulation:
                 df_mono = make_df_monotonic_again_using_reference_df(self.dens_trace, self.dens_trace)
                 self._dens_trace_orig = self.dens_trace.copy()
                 self.dens_trace = df_mono
+            assert self.dens_trace.t.is_monotonic_increasing, "dens_trace is still non monotonically increasing"
 
         self.trace = get_trace(sim_dir)
         if self.trace is not None:
@@ -322,7 +323,9 @@ class Simulation:
             logger.error("trace.txt file is non-monotonic. Cannot get trajectory")
             raise RuntimeError("trace.txt file is non-monotonic. Cannot get trajectory")
         # self.trace should be monotonic here
-        locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
+        # locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
+        locations = np.digitize(self.times_header, self.trace.t, right=True)
+        print(locations)
         x = self.trace.x[locations]
         y = self.trace.y[locations]
         z = self.trace.z[locations]
@@ -330,7 +333,8 @@ class Simulation:
 
     def get_rv_host(self):
         if self.dens_trace is not None:
-            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+            # locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+            locations = np.digitize(self.times_header, self.dens_trace.t, right=True)
             rho_host  = pynbody.array.SimArray(self.dens_trace.rho[locations], gadget_dens_units)
             v_host = pynbody.array.SimArray(self.dens_trace.vel[locations],  gadget_vel_units)
         else:
@@ -339,7 +343,7 @@ class Simulation:
 
     def get_temp_host(self):
         if self.dens_trace is not None:
-            locations = np.digitize(self.times.in_units(gadget_time_units), self.dens_trace.t, right=True)
+            locations = np.digitize(self.times_header, self.dens_trace.t, right=True)
             temp = pynbody.array.SimArray(self.dens_trace.temp[locations], 'K')
         else:
             temp = None
@@ -433,7 +437,7 @@ class Simulation:
     @property
     def r(self):
         if self.is_moving_box:
-            locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
+            locations = np.digitize(self.times_header, self.trace.t, right=True)
             # self.r = pynbody.array.SimArray(self.trace.r[locations], 'kpc')
             return self.trace.r[locations]
         elif self.cog is not None:
