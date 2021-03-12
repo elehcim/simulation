@@ -325,7 +325,7 @@ class Simulation:
         # self.trace should be monotonic here
         # locations = np.digitize(self.times.in_units(gadget_time_units), self.trace.t, right=True)
         locations = np.digitize(self.times_header, self.trace.t, right=True)
-        print(locations)
+        # print(locations)
         x = self.trace.x[locations]
         y = self.trace.y[locations]
         z = self.trace.z[locations]
