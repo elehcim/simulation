@@ -422,6 +422,11 @@ class Simulation:
 
     @property
     @lru_cache(1)
+    def redshift(self):
+        return np.array([snap.header.redshift for snap in self.snap_list])
+
+    @property
+    @lru_cache(1)
     def ram_pressure(self):
         return self.dens_trace.vel**2 * self.dens_trace.rho
 
