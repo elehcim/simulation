@@ -364,6 +364,20 @@ def get_aspect(extent, shape):
     w = shape[1]
     return (h/H) / (w/W)
 
+def savefig(fig, file_stem, ext, dpi=300, tight=True, **kwargs):
+    file_name = file_stem + ext
+    print(f'Saving {file_name}...')
+    if tight:
+        kwargs.update(bbox_inches='tight')
+    print(kwargs)
+    if ext == '.png':
+        fig.savefig(file_name, dpi=dpi, **kwargs)
+        out = f"{file_stem}-crop.png"
+        os.system(f'convert -trim {file_name} {out}')
+    elif ext == '.pdf':
+        fig.savefig(file_name, dpi=dpi, **kwargs)
+        os.system(f'pdfcrop {file_name}')
+
 if __name__ == '__main__':
     # mega for-loop
     print(good_sims)
