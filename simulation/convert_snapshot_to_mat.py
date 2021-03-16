@@ -1,6 +1,7 @@
 import pynbody
 import numpy as np
 import os
+import sys
 from scipy.io import savemat
 from simulation import derived
 import argparse
@@ -25,6 +26,7 @@ QUANTITIES = ('temp', 'u',
               'feh', 'mgfe', 'zsph',
               'mass_HI', 'neutral_fraction',
               'vx', 'vy', 'vz', 'v_norm', 'mach', 'cii', 'smooth',
+              'vorticity', 'v_div',
               )
 
 DENSITY_THRESHOLD = 6e-6
@@ -37,10 +39,21 @@ def convert_to_mat_all_info(snap, density_threshold, outfile_name, quantities=QU
     gas = snap.gas
     filt = pynbody.filt.HighPass('rho', density_threshold)
     data = dict()
+    if 'vorticity' in quantities:
+        try:
+            quantities = list(quantities)
+            gas['omega_x'] = gas['vorticity'][:,0]
+            gas['omega_y'] = gas['vorticity'][:,1]
+            gas['omega_z'] = gas['vorticity'][:,2]
+            quantities.remove('vorticity')
+            quantities = list(quantities) + ['omega_x','omega_y','omega_z']
+        except KeyError as e:
+            print(f"Can't derive: {e}", file=sys.stderr)
+            quantities.remove('vorticity')
     for qty in list(quantities) + ['iord', 'x', 'y', 'z']:
+        data[qty] = gas[filt][qty].view(np.ndarray)
 
-       data[qty] = gas[filt][qty].view(np.ndarray)
-       # dict(x=pos[:,0], y=pos[:,1], z=pos[:,2], id=ids, rho=rho)
+        # dict(x=pos[:,0], y=pos[:,1], z=pos[:,2], id=ids, rho=rho)
     print('output file', outfile_name)
     # print(data)
     savemat(outfile_name, data)
