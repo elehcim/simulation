@@ -1,6 +1,8 @@
 Simulation
 ==========
 
+[![DOI](https://zenodo.org/badge/265493012.svg)](https://zenodo.org/badge/latestdoi/265493012)
+
 Package to analyze simulations made with Gadget2 code of the UGent dwarf galaxies research group.
 
 ### Functions of possible general interest
