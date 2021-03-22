@@ -295,7 +295,9 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
         # df[col+'_mean'] = df[col].rolling(window_size, center=True).mean()
         df[col+'_std'] = df[col].rolling(window_size).std()
         if col.startswith('sigma'):
-            df[col+'_mean'][df[col+'_mean'] <= 0.0] = np.nan
+            # This advice on the idiomatic way of doing this substitution is useful:
+            # https://stackoverflow.com/a/34697070
+            df[col+'_mean'] = df[col+'_mean'].where(df[col+'_mean'] <= 0.0, np.nan)
         # Can use bfill()) or min_periods
         # df[col+'_mean'] = df[col].rolling(window=window_size, win_type='gaussian', center=True, min_periods=1).mean(std=std)
         # print(col)
