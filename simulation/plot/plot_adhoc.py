@@ -6,9 +6,9 @@ import argparse
 from simulation.parsers.parse_trace import parse_trace
 
 def plot_adhoc(trace):
-    plt.plot(trace.t, trace.ax_adhoc, '--',)
-    plt.plot(trace.t, trace.ay_adhoc)
-    plt.plot(trace.t, trace.az_adhoc, ':')
+    plt.plot(trace.t, trace.ax_adhoc, '--', label='$a_x$')
+    plt.plot(trace.t, trace.ay_adhoc, label='$a_y$')
+    plt.plot(trace.t, trace.az_adhoc, ':', label='$a_z$')
     # plt.plot(trace.t, trace.a, 'r', linewidth=1)
     plt.grid()
     plt.legend();
