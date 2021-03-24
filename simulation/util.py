@@ -376,7 +376,7 @@ def savefig(fig, file_stem, ext, dpi=300, tight=True, **kwargs):
         os.system(f'convert -trim {file_name} {out}')
     elif ext == '.pdf':
         fig.savefig(file_name, dpi=dpi, **kwargs)
-        os.system(f'pdfcrop {file_name}')
+        os.system(f'pdfcrop {file_name} {file_name}')
 
 if __name__ == '__main__':
     # mega for-loop
