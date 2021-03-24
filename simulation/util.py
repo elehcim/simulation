@@ -369,7 +369,7 @@ def savefig(fig, file_stem, ext, dpi=300, tight=True, **kwargs):
     print(f'Saving {file_name}...')
     if tight:
         kwargs.update(bbox_inches='tight')
-    print(kwargs)
+    # print(kwargs)
     if ext == '.png':
         fig.savefig(file_name, dpi=dpi, **kwargs)
         out = f"{file_stem}-crop.png"
