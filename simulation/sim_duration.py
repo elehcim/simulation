@@ -1,8 +1,7 @@
 import os
 from .sim import get_param_used
-from .snap_io import load_first_last_snap, snapshot_file_list
+from .snap_io import load_first_last_snap, snapshot_file_list, load
 from datetime import datetime
-import pynbody
 import argparse
 import numpy as np
 
@@ -63,8 +62,8 @@ class SimDuration(object):
         """
         self.path = path
         snaplist = snapshot_file_list(os.path.expanduser(self.path), include_dir=True)
-        self.first_snap = pynbody.load(snaplist[first])
-        self.last_snap = pynbody.load(snaplist[last])
+        self.first_snap = load(snaplist[first])
+        self.last_snap = load(snaplist[last])
         self.f = SnapTime(self.first_snap)
         self.l = SnapTime(self.last_snap)
         self.params = get_param_used(path)

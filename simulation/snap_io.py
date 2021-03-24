@@ -10,6 +10,11 @@ KICKED_PATH = '/home/michele/sim/MySimulations/Moria8Gyr_tidal'
 logger = setup_logger('snap_io', logger_level='INFO')
 
 
+def load(file_name, **kwargs):
+    """Wrapper around pynbody.load for UGent Dwarf Galaxies simulations"""
+    return pynbody.load(file_name, ignore_cosmo=True, **kwargs)
+
+
 def make_snaps_path(sim_number, kicked):
     if kicked:
         return os.path.join(KICKED_PATH, 'sim{}'.format(sim_number), 'out')
@@ -39,22 +44,22 @@ def load_sim(snap_dir, snap_indexes=None):
         else:
             snap_name_list = snap_name_list[snap_indexes]
         logger.info("Taking {} snapshots ({})".format(len(snap_name_list), snap_indexes))
-    snap_list = list(pynbody.load(snap) for snap in snap_name_list)
+    snap_list = list(load(snap) for snap in snap_name_list)
     return snap_list
 
 
-def load_snap(snap_dir, snap_number):
+def load_number(snap_dir, snap_number):
     """Return pynbody.SimSnap
     if `snap_number is negative use it as a list index"""
     snaplist = snapshot_file_list(os.path.expanduser(snap_dir), include_dir=True)
     if snap_number < 0:
-        return pynbody.load(snaplist[snap_number])
+        return load(snaplist[snap_number])
     for snap in snaplist:
         if "{:04d}".format(snap_number) in os.path.basename(snap):
             break
     else:
         raise RuntimeError("No snap {} in simulation folder {}".format(snap_number, snap_dir))
-    return pynbody.load(snap)
+    return load(snap)
 
 
 def load_moria(sim_number, snap_number=None, path=None, snap_indexes=None):
@@ -66,7 +71,7 @@ def load_moria(sim_number, snap_number=None, path=None, snap_indexes=None):
     if snap_number is None:
         return load_sim(sim_dir, snap_indexes=snap_indexes)
     else:
-        return load_snap(sim_dir, snap_number)
+        return load_number(sim_dir, snap_number)
 
 
 def load_kicked(sim_number, snap_number=None, path=None, snap_indexes=None):
@@ -78,7 +83,7 @@ def load_kicked(sim_number, snap_number=None, path=None, snap_indexes=None):
     if snap_number is None:
         return load_sim(sim_dir, snap_indexes=snap_indexes)
     else:
-        return load_snap(sim_dir, snap_number)
+        return load_number(sim_dir, snap_number)
 
 
 def load_moria_sim_and_kicked(sim_number, moria_path=MORIA_PATH, kicked_path=KICKED_PATH):
@@ -87,4 +92,4 @@ def load_moria_sim_and_kicked(sim_number, moria_path=MORIA_PATH, kicked_path=KIC
 
 def load_first_last_snap(snap_dir):
     snaplist = snapshot_file_list(os.path.expanduser(snap_dir), include_dir=True)
-    return pynbody.load(snaplist[0]), pynbody.load(snaplist[-1])
+    return load(snaplist[0]), load(snaplist[-1])
