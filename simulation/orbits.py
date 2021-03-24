@@ -209,7 +209,7 @@ def radial_period_integrand(r, E, V0, J):
     E : float
         Orbital energy in km**2/s**2.
     V0 : function
-        Spherially symmetric potential. Phi(r) = -V0(r). Output units are in km^2/s^2
+        Spherically symmetric potential. Phi(r) = -V0(r). Output units are in km^2/s^2
     J : float
         Angular momentum in km**2/s.
     """
