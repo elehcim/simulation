@@ -63,6 +63,7 @@ def compute_quaternion(trace, dt):
 
 def compute_and_write_quaternion(sim_path, full_sim=False, force_recovery=False):
     sim = simulation.Simulation(sim_path)
+    # sim._save_trace_cache()
     # print(sim.trace.head())
     trace_version = get_trace_version(os.path.join(sim_path, 'trace.txt'))
     if trace_version == 3:  # 'quat_w' in sim.trace:

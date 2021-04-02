@@ -13,6 +13,7 @@ from astropy import units as u
 
 from simulation.luminosity import surface_brightness, convert_to_mag_arcsec2
 from simulation.util import setup_logger, get_sim_name, get_pivot, get_quat, get_omega_mb
+from simulation.snap_io import load
 from simulation.angmom import faceon, sideon
 from simulation.derotate_simulation import derotate_pos_and_vel, rotate_on_orbit_plane, rotate_vec
 
@@ -85,7 +86,7 @@ class Snap:
                  center_velocity=True,
                  center_pos=None):
         logger.info("Opening file {}".format(snap_name))
-        s = pynbody.load(snap_name)
+        s = load(snap_name)
         # max_boxsize = 4000
         # s.properties['boxsize'] = pynbody.units.Unit("{} kpc".format(max_boxsize))
         # s.physical_units()
