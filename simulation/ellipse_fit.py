@@ -62,7 +62,7 @@ def fit_contour(img, threshold, width, resolution):
     cs = find_contours(img, threshold)
     longest_contour = get_longest_contour(cs)
     if not longest_contour.size:
-        return tuple([np.nan]*len(ELL_KEYS))
+        return EllParams(*([np.nan]*len(ELL_KEYS)))
 
     x, y = transform_contour(longest_contour, width, resolution)
     xy = np.vstack([x,y]).T
