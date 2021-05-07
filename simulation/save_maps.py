@@ -28,9 +28,9 @@ class Imaging:
         self._snap = snap
 
     @functools.lru_cache(1)
-    def v_los_map(self):
+    def v_los_map(self, av_z=True):
         # log is useless because with noplot==True it has no effects
-        return pynbody.plot.sph.image(self._snap.s, qty='vz', av_z=True, width=self.width,
+        return pynbody.plot.sph.image(self._snap.s, qty='vz', av_z=av_z, width=self.width,
                                       resolution=self.resolution, noplot=True)
 
 
@@ -40,7 +40,7 @@ class Imaging:
         self._snap.s['vz2'] = self._snap.s['vz']**2
         avg_vz2 = pynbody.plot.sph.image(self._snap.s, qty='vz2', av_z=av_z, width=self.width,
                                          resolution=self.resolution, noplot=True)
-        sigma = np.sqrt(avg_vz2 - self.v_los_map()**2)
+        sigma = np.sqrt(avg_vz2 - self.v_los_map(av_z=av_z)**2)
         return sigma
 
     @functools.lru_cache(1)
