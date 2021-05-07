@@ -146,7 +146,7 @@ class Derotator:
 
 
 def specific_angmom(snap):
-    return pynbody.array.SimArray(pynbody.analysis.angmom.ang_mom_vec(snap), units=gadget_angmom_units)/snap['mass'].sum()
+    return pynbody.array.SimArray(pynbody.analysis.angmom.ang_mom_vec_units(snap))/snap['mass'].sum()
 
 
 def compute_angmom(sim, derotator=None, on_orbit_plane=True, radius=10, initial_rotation_simname=""):
