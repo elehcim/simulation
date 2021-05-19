@@ -2,6 +2,7 @@
 verbose: False
 tracktime: True
 force_no_cosmological: True
+# number_of_threads=8
 
 [gadgethdf-name-mapping]
 FormationTime: tform
@@ -15,6 +16,9 @@ inma: massform
 # 1e10 Msol km^4 kpc^-5 s^-2
 pres: p
 pot: phi
+#hsml:smooth
+hsml: smooth_gadget
+rho: rho_gadget
 
 [gadget-units]
 # Cosmological dependencies (a and h) will be stripped out for non-
@@ -42,4 +46,5 @@ field-ordering = pos, vel, iord, mass, u, rho, smooth, pot, acc, zsph, metals, f
 
 [sph]
 smooth-particles: 50
+tree-leafsize:4
 ; approximate-fast-images: False
