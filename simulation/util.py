@@ -378,6 +378,12 @@ def savefig(fig, file_stem, ext, dpi=300, tight=True, **kwargs):
         fig.savefig(file_name, dpi=dpi, **kwargs)
         os.system(f'pdfcrop {file_name} {file_name}')
 
+
+def smooth(arr, window_size=30):
+    return pd.Series(arr).rolling(window_size,
+                 min_periods=1,
+                 center=True).mean().to_numpy()
+
 if __name__ == '__main__':
     # mega for-loop
     print(good_sims)
