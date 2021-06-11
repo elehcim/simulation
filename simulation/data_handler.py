@@ -50,8 +50,8 @@ class DataHandler:
         cache_file : str
         """
         if cache_file is None:
-            logger.info(f"Getting most recent cache file")
             cache_file = self.show_data_files()[-1]
+            logger.info(f"Getting most recent cache file: {cache_file}")
         self.cache_file = cache_file
 
     @lru_cache(1)
