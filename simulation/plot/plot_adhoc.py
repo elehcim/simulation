@@ -22,8 +22,8 @@ def plot_adhoc(trace, norm=False, units='gadget'):
     # plt.plot(trace.t, trace.a, 'r', linewidth=1)
     plt.ylabel(r'$a_{\mathrm{adhoc}}/a_{tot}$')
     plt.xlabel(xlabel)
-    plt.grid()
-    plt.legend();
+    plt.grid(ls=':')
+    # plt.legend();
     plt.show()
 
 def parse_args(cli=None):
@@ -39,7 +39,7 @@ def main(cli=None):
     args = parse_args(cli)
     trace_path = os.path.join(args.sim_path, 'trace.txt')
     trace = parse_trace(trace_path)
-    print(trace.head())
+    print(trace.tail())
     plot_adhoc(trace, norm=args.norm, units=args.units)
 
 
