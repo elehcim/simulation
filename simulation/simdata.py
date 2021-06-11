@@ -230,6 +230,7 @@ def get_df(sim_name, window_size=20, std=30, cut=None, data_dir=DATA_DIR):
 
     for col in ['lambda_r']:
         df[col] = lr_tbl[col]
+        df['lambda_reff'] = lr_tbl['lambda_reff_profile'][:,-1]
 
     for col in am_tbl.columns:
         # I already have those:
