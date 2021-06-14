@@ -146,17 +146,17 @@ def wang16(m):
 
 def wang16_scatter(m):
     mu = 0.506
-    nu = 3.293
+    nu = 3.293 + np.log10(2) # D -> r
 #     nu = 3.4
     sigma = 0.06
     rm = 10**(mu * np.log10(m) - nu - sigma)
     rp = 10**(mu * np.log10(m) - nu + sigma)
     return rm, rp
 
-def wang16_log10(m, mu=0.506, nu=3.293):
+def wang16_log10(m, mu=0.506, nu=3.293+np.log10(2)):
     return mu * np.log10(m) - nu
 
-def wang16_scatter_log10(m, mu=0.506, nu=3.293):
+def wang16_scatter_log10(m, mu=0.506, nu=3.293+np.log10(2)):
     sigma = 0.06
     rm = mu * np.log10(m) - nu - sigma
     rp = mu * np.log10(m) - nu + sigma
